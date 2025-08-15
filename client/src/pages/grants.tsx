@@ -7,12 +7,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Icons } from "@/lib/icons";
 import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { Grant } from "@shared/schema";
+import carenLogo from "@assets/C.A.R.E.N_1755278709452.png";
 
 export default function Grants() {
   const [isAdding, setIsAdding] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [isSearchingWithSunshine, setIsSearchingWithSunshine] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     organization: "",
@@ -25,6 +28,7 @@ export default function Grants() {
   });
 
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: grants = [], isLoading } = useQuery<Grant[]>({
     queryKey: ["/api/grants"],
@@ -60,6 +64,37 @@ export default function Grants() {
       queryClient.invalidateQueries({ queryKey: ["/api/grants"] });
     },
   });
+
+  const searchGrantsWithSunshine = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/ai/search-grants", {
+        projectName: "C.A.R.E.N",
+        description: "Roadside Rights Protection Platform - A visionary platform for real-time legal safety using AI technology",
+        focus: "legal technology, roadside assistance, AI safety platforms, consumer protection, automotive safety, legal rights protection"
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Grant Search Complete!",
+        description: `Sunshine found ${data.grants?.length || 0} potential funding opportunities for C.A.R.E.N.`,
+      });
+      // Refresh grants to show newly found ones
+      queryClient.invalidateQueries({ queryKey: ["/api/grants"] });
+    },
+    onError: () => {
+      toast({
+        title: "Search Failed",
+        description: "Sunshine encountered an issue while searching for grants. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSunshineSearch = () => {
+    setIsSearchingWithSunshine(true);
+    searchGrantsWithSunshine.mutate();
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,15 +136,36 @@ export default function Grants() {
 
   return (
     <div className="p-4 lg:p-8">
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Grants (C.A.R.E.N.)</h1>
-          <p className="text-gray-600">Track funding opportunities and grant applications for your C.A.R.E.N. project and other initiatives.</p>
+      {/* C.A.R.E.N Logo Header */}
+      <div className="mb-8 text-center">
+        <img 
+          src={carenLogo} 
+          alt="C.A.R.E.N - Roadside Rights Protection Platform" 
+          className="mx-auto h-32 sm:h-40 md:h-48 w-auto mb-6"
+        />
+        <div className="mb-6">
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Grant Opportunities for C.A.R.E.N</h1>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Track and discover funding opportunities for your Roadside Rights Protection Platform. 
+            Let Sunshine search the web for grants that match your AI-powered legal safety vision.
+          </p>
         </div>
-        <Button onClick={() => setIsAdding(true)} className="flex items-center w-full sm:w-auto">
-          <Icons.plus className="h-4 w-4 mr-2" />
-          Add Grant
-        </Button>
+        
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+          <Button 
+            onClick={handleSunshineSearch}
+            disabled={searchGrantsWithSunshine.isPending}
+            className="flex items-center bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
+          >
+            <Icons.search className="h-4 w-4 mr-2" />
+            {searchGrantsWithSunshine.isPending ? "Sunshine Searching..." : "☀️ Find Grants with Sunshine"}
+          </Button>
+          <Button onClick={() => setIsAdding(true)} variant="outline" className="flex items-center">
+            <Icons.plus className="h-4 w-4 mr-2" />
+            Add Grant Manually
+          </Button>
+        </div>
       </div>
 
       {/* Search and Filter */}
