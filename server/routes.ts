@@ -584,6 +584,48 @@ async function processAIMessage(
 }> {
   const lowerMessage = message.toLowerCase();
   
+  // Get conversation history for context and memory
+  const recentMessages = await storage.getChatMessages(userId);
+  const conversationContext = buildConversationContext(recentMessages, message);
+  
+  // Personal information/name handling
+  if (lowerMessage.includes("my name") || lowerMessage.includes("name is") || lowerMessage.includes("i'm") || lowerMessage.includes("i am")) {
+    // Store name if introduced, recall if asked
+    const nameMatch = message.match(/(my name is|i'm|i am)\s+([a-zA-Z]+)/i);
+    if (nameMatch) {
+      const name = nameMatch[2];
+      return {
+        message: `Nice to meet you, ${name}! I'll remember your name for our future conversations. How can I assist you with your music career and daily tasks?`,
+        confidence: 0.95,
+        suggestions: [
+          "Schedule a task",
+          "Research grants",
+          "Add radio stations",
+          "Create an invoice"
+        ]
+      };
+    } else if (lowerMessage.includes("what is my name") || lowerMessage.includes("what's my name")) {
+      if (conversationContext.userName) {
+        return {
+          message: `Your name is ${conversationContext.userName}! How can I help you today?`,
+          confidence: 0.95,
+          suggestions: [
+            "Schedule a task",
+            "Research grants",
+            "Add radio stations",
+            "Create an invoice"
+          ]
+        };
+      } else {
+        return {
+          message: "I don't know your name yet. Could you tell me your name so I can remember it for future conversations?",
+          confidence: 0.9,
+          suggestions: ["My name is..."]
+        };
+      }
+    }
+  }
+  
   // Task creation detection
   const taskKeywords = [
     "remind me", "schedule", "add task", "create task", 
@@ -648,9 +690,12 @@ async function processAIMessage(
     };
   }
   
-  // General assistance
+  // General assistance with personalization
+  const greeting = conversationContext.userName ? `Hi ${conversationContext.userName}! ` : 'Hello! ';
+  const welcomeBack = recentMessages.length > 0 ? 'Welcome back to ' : 'Welcome to ';
+  
   return {
-    message: `I'm your Life Assistant, here to help you manage your music career and daily tasks. I can help you with:\n\n• **Grant Research** - Track C.A.R.E.N. funding opportunities\n• **Radio Promotion** - Manage station submissions and follow-ups\n• **Sync Licensing** - Track opportunities for movies, TV, games\n• **Task Management** - Create reminders and schedule activities\n• **Invoicing** - Manage payments and track income\n• **Knowledge Base** - Store important information and contacts\n\nWhat would you like help with today?`,
+    message: `${greeting}${welcomeBack}your Life Assistant. I'm here to help you manage your music career and daily tasks. I can help you with:\n\n• **Grant Research** - Track C.A.R.E.N. funding opportunities\n• **Radio Promotion** - Manage station submissions and follow-ups\n• **Sync Licensing** - Track opportunities for movies, TV, games\n• **Task Management** - Create reminders and schedule activities\n• **Invoicing** - Manage payments and track income\n• **Knowledge Base** - Store important information and contacts\n\nWhat would you like help with today?`,
     confidence: 0.8,
     suggestions: [
       "Schedule a task",
@@ -808,4 +853,46 @@ async function monitorUserTasks(userId: string): Promise<{
     upcomingTasks,
     suggestions
   };
+}
+
+// Build conversation context for memory and personalization
+function buildConversationContext(messages: any[], currentMessage: string): {
+  userName?: string;
+  recentTopics: string[];
+  lastInteraction?: Date;
+} {
+  const context: {
+    userName?: string;
+    recentTopics: string[];
+    lastInteraction?: Date;
+  } = {
+    recentTopics: []
+  };
+  
+  // Extract user's name from conversation history
+  for (const msg of messages) {
+    if (msg.message) {
+      const nameMatch = msg.message.match(/(my name is|i'm|i am)\s+([a-zA-Z]+)/i);
+      if (nameMatch) {
+        context.userName = nameMatch[2];
+      }
+      
+      // Track recent topics
+      const msgLower = msg.message.toLowerCase();
+      if (msgLower.includes('grant')) context.recentTopics.push('grants');
+      if (msgLower.includes('radio')) context.recentTopics.push('radio');
+      if (msgLower.includes('sync') || msgLower.includes('licensing')) context.recentTopics.push('licensing');
+      if (msgLower.includes('task') || msgLower.includes('remind')) context.recentTopics.push('tasks');
+      if (msgLower.includes('invoice') || msgLower.includes('payment')) context.recentTopics.push('invoices');
+    }
+    
+    if (msg.createdAt) {
+      context.lastInteraction = new Date(msg.createdAt);
+    }
+  }
+  
+  // Remove duplicates from recent topics
+  context.recentTopics = [...new Set(context.recentTopics)];
+  
+  return context;
 }
