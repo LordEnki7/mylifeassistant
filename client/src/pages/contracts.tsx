@@ -31,6 +31,15 @@ const contractTypeColors = {
   sync_licensing: "bg-purple-100 text-purple-800",
   distribution: "bg-orange-100 text-orange-800",
   copyright: "bg-red-100 text-red-800",
+  production_distribution: "bg-indigo-100 text-indigo-800",
+  joint_partnership: "bg-cyan-100 text-cyan-800",
+  joint_venture: "bg-teal-100 text-teal-800",
+  master_use_license: "bg-amber-100 text-amber-800",
+  merchandise_licensing: "bg-rose-100 text-rose-800",
+  payment_obligation: "bg-gray-100 text-gray-800",
+  photographer: "bg-pink-100 text-pink-800",
+  producer_manager: "bg-violet-100 text-violet-800",
+  producer_assistant: "bg-emerald-100 text-emerald-800",
 };
 
 const contractTypeLabels = {
@@ -39,6 +48,15 @@ const contractTypeLabels = {
   sync_licensing: "Sync Licensing", 
   distribution: "Distribution",
   copyright: "Copyright Assignment",
+  production_distribution: "Production/Distribution",
+  joint_partnership: "Joint Partnership",
+  joint_venture: "Joint Venture",
+  master_use_license: "Master Use License",
+  merchandise_licensing: "Merchandise Licensing",
+  payment_obligation: "Payment Obligation",
+  photographer: "Photography",
+  producer_manager: "Producer/Manager",
+  producer_assistant: "Producer Assistant",
 };
 
 export default function ContractsPage() {

@@ -1761,27 +1761,7 @@ Kind regards,
         name: "Artist-Master Producer Contract",
         type: "artist_producer",
         description: "Comprehensive contract between artist and producer for master recording creation",
-        template: `ARTIST-MASTER PRODUCER AGREEMENT
-
-This Agreement is entered into on {{contract_date}} between {{artist_name}} ("Artist") and {{producer_name}} ("Producer").
-
-1. SERVICES
-Producer agrees to produce {{number_of_tracks}} master recordings for Artist according to the specifications outlined in Schedule A.
-
-2. COMPENSATION
-Artist agrees to pay Producer {{producer_fee}} plus {{percentage}}% of net receipts from the master recordings.
-
-3. CREDITS
-Producer shall receive appropriate credit as "Produced by {{producer_name}}" on all copies and promotional materials.
-
-4. DELIVERY
-Master recordings shall be delivered by {{delivery_date}} in {{format}} format.
-
-5. OWNERSHIP
-Copyright in the master recordings shall be owned by {{copyright_owner}}.
-
-Artist: {{artist_signature}} Date: {{date}}
-Producer: {{producer_signature}} Date: {{date}}`,
+        template: "ARTIST-MASTER PRODUCER AGREEMENT\n\nThis Agreement is entered into on {{contract_date}} between {{artist_name}} (\"Artist\") and {{producer_name}} (\"Producer\").\n\n1. SERVICES\nProducer agrees to produce {{number_of_tracks}} master recordings for Artist according to the specifications outlined in Schedule A.\n\n2. COMPENSATION\nArtist agrees to pay Producer {{producer_fee}} plus {{percentage}}% of net receipts from the master recordings.\n\n3. CREDITS\nProducer shall receive appropriate credit as \"Produced by {{producer_name}}\" on all copies and promotional materials.\n\n4. DELIVERY\nMaster recordings shall be delivered by {{delivery_date}} in {{format}} format.\n\n5. OWNERSHIP\nCopyright in the master recordings shall be owned by {{copyright_owner}}.\n\nArtist: {{artist_signature}} Date: {{date}}\nProducer: {{producer_signature}} Date: {{date}}",
         variables: {
           artist_name: "Artist Name",
           producer_name: "Producer Name",
@@ -1804,31 +1784,7 @@ Producer: {{producer_signature}} Date: {{date}}`,
         name: "Booking Contract",
         type: "booking",
         description: "Performance booking agreement for live shows and events",
-        template: `PERFORMANCE AGREEMENT
-
-This Agreement is made between {{venue_name}} ("Venue") and {{artist_name}} ("Artist") for a performance on {{performance_date}}.
-
-1. PERFORMANCE DETAILS
-Date: {{performance_date}}
-Time: {{performance_time}}
-Venue: {{venue_name}}
-Address: {{venue_address}}
-
-2. COMPENSATION
-Artist fee: {{performance_fee}}
-Payment terms: {{payment_terms}}
-
-3. TECHNICAL REQUIREMENTS
-{{technical_requirements}}
-
-4. CANCELLATION
-Cancellation policy: {{cancellation_policy}}
-
-5. ADDITIONAL TERMS
-{{additional_terms}}
-
-Venue: {{venue_signature}} Date: {{date}}
-Artist: {{artist_signature}} Date: {{date}}`,
+        template: "PERFORMANCE AGREEMENT\n\nThis Agreement is made between {{venue_name}} (\"Venue\") and {{artist_name}} (\"Artist\") for a performance on {{performance_date}}.\n\n1. PERFORMANCE DETAILS\nDate: {{performance_date}}\nTime: {{performance_time}}\nVenue: {{venue_name}}\nAddress: {{venue_address}}\n\n2. COMPENSATION\nArtist fee: {{performance_fee}}\nPayment terms: {{payment_terms}}\n\n3. TECHNICAL REQUIREMENTS\n{{technical_requirements}}\n\n4. CANCELLATION\nCancellation policy: {{cancellation_policy}}\n\n5. ADDITIONAL TERMS\n{{additional_terms}}\n\nVenue: {{venue_signature}} Date: {{date}}\nArtist: {{artist_signature}} Date: {{date}}",
         variables: {
           venue_name: "Venue Name",
           artist_name: "Artist Name",
@@ -1852,34 +1808,7 @@ Artist: {{artist_signature}} Date: {{date}}`,
         name: "Film Synchronization Contract",
         type: "sync_licensing",
         description: "Music synchronization license for film and video projects",
-        template: `SYNCHRONIZATION LICENSE AGREEMENT
-
-License granted from {{licensor_name}} ("Licensor") to {{licensee_name}} ("Licensee") for the musical composition "{{song_title}}".
-
-1. GRANT OF RIGHTS
-Licensor grants Licensee the right to synchronize the musical composition with visual images in the production titled "{{production_title}}".
-
-2. TERRITORY
-Territory: {{territory}}
-
-3. TERM
-Term: {{license_term}}
-
-4. MEDIA
-Authorized media: {{authorized_media}}
-
-5. FEE
-Sync fee: {{sync_fee}}
-Payment due: {{payment_due_date}}
-
-6. CREDITS
-Music credit: {{music_credit}}
-
-7. RESTRICTIONS
-{{restrictions}}
-
-Licensor: {{licensor_signature}} Date: {{date}}
-Licensee: {{licensee_signature}} Date: {{date}}`,
+        template: "SYNCHRONIZATION LICENSE AGREEMENT\n\nLicense granted from {{licensor_name}} (\"Licensor\") to {{licensee_name}} (\"Licensee\") for the musical composition \"{{song_title}}\".\n\n1. GRANT OF RIGHTS\nLicensor grants Licensee the right to synchronize the musical composition with visual images in the production titled \"{{production_title}}\".\n\n2. TERRITORY\nTerritory: {{territory}}\n\n3. TERM\nTerm: {{license_term}}\n\n4. MEDIA\nAuthorized media: {{authorized_media}}\n\n5. FEE\nSync fee: {{sync_fee}}\nPayment due: {{payment_due_date}}\n\n6. CREDITS\nMusic credit: {{music_credit}}\n\n7. RESTRICTIONS\n{{restrictions}}\n\nLicensor: {{licensor_signature}} Date: {{date}}\nLicensee: {{licensee_signature}} Date: {{date}}",
         variables: {
           licensor_name: "Licensor Name",
           licensee_name: "Licensee Name",
@@ -1904,36 +1833,7 @@ Licensee: {{licensee_signature}} Date: {{date}}`,
         name: "Distribution Agreement",
         type: "distribution",
         description: "Music distribution contract for digital and physical release",
-        template: `DISTRIBUTION AGREEMENT
-
-Agreement between {{artist_name}} ("Artist") and {{distributor_name}} ("Distributor") for distribution of musical recordings.
-
-1. GRANT OF RIGHTS
-Artist grants Distributor the exclusive right to distribute the recordings listed in Schedule A.
-
-2. TERRITORY
-Distribution territory: {{territory}}
-
-3. TERM
-Initial term: {{initial_term}}
-Renewal terms: {{renewal_terms}}
-
-4. REVENUE SPLIT
-Artist receives: {{artist_percentage}}%
-Distributor receives: {{distributor_percentage}}%
-
-5. DELIVERY REQUIREMENTS
-{{delivery_requirements}}
-
-6. MARKETING
-{{marketing_commitments}}
-
-7. ACCOUNTING
-Statements provided: {{accounting_frequency}}
-Payment terms: {{payment_terms}}
-
-Artist: {{artist_signature}} Date: {{date}}
-Distributor: {{distributor_signature}} Date: {{date}}`,
+        template: "DISTRIBUTION AGREEMENT\n\nAgreement between {{artist_name}} (\"Artist\") and {{distributor_name}} (\"Distributor\") for distribution of musical recordings.\n\n1. GRANT OF RIGHTS\nArtist grants Distributor the exclusive right to distribute the recordings listed in Schedule A.\n\n2. TERRITORY\nDistribution territory: {{territory}}\n\n3. TERM\nInitial term: {{initial_term}}\nRenewal terms: {{renewal_terms}}\n\n4. REVENUE SPLIT\nArtist receives: {{artist_percentage}}%\nDistributor receives: {{distributor_percentage}}%\n\n5. DELIVERY REQUIREMENTS\n{{delivery_requirements}}\n\n6. MARKETING\n{{marketing_commitments}}\n\n7. ACCOUNTING\nStatements provided: {{accounting_frequency}}\nPayment terms: {{payment_terms}}\n\nArtist: {{artist_signature}} Date: {{date}}\nDistributor: {{distributor_signature}} Date: {{date}}",
         variables: {
           artist_name: "Artist Name",
           distributor_name: "Distributor Name",
@@ -1958,29 +1858,7 @@ Distributor: {{distributor_signature}} Date: {{date}}`,
         name: "Copyright Assignment",
         type: "copyright",
         description: "Transfer of copyright ownership for musical works",
-        template: `COPYRIGHT ASSIGNMENT AGREEMENT
-
-Assignment of copyright from {{assignor_name}} ("Assignor") to {{assignee_name}} ("Assignee") for the musical work "{{work_title}}".
-
-1. ASSIGNMENT
-Assignor hereby assigns all right, title, and interest in the copyright of the musical work to Assignee.
-
-2. WORK DETAILS
-Title: {{work_title}}
-Composer(s): {{composers}}
-Date of creation: {{creation_date}}
-
-3. CONSIDERATION
-Consideration for assignment: {{consideration}}
-
-4. REPRESENTATIONS
-Assignor represents that they are the sole owner of the copyright and have full authority to make this assignment.
-
-5. FURTHER ASSURANCES
-Assignor agrees to execute any additional documents necessary to perfect this assignment.
-
-Assignor: {{assignor_signature}} Date: {{date}}
-Assignee: {{assignee_signature}} Date: {{date}}`,
+        template: "COPYRIGHT ASSIGNMENT AGREEMENT\n\nAssignment of copyright from {{assignor_name}} (\"Assignor\") to {{assignee_name}} (\"Assignee\") for the musical work \"{{work_title}}\".\n\n1. ASSIGNMENT\nAssignor hereby assigns all right, title, and interest in the copyright of the musical work to Assignee.\n\n2. WORK DETAILS\nTitle: {{work_title}}\nComposer(s): {{composers}}\nDate of creation: {{creation_date}}\n\n3. CONSIDERATION\nConsideration for assignment: {{consideration}}\n\n4. REPRESENTATIONS\nAssignor represents that they are the sole owner of the copyright and have full authority to make this assignment.\n\n5. FURTHER ASSURANCES\nAssignor agrees to execute any additional documents necessary to perfect this assignment.\n\nAssignor: {{assignor_signature}} Date: {{date}}\nAssignee: {{assignee_signature}} Date: {{date}}",
         variables: {
           assignor_name: "Assignor Name",
           assignee_name: "Assignee Name",
@@ -1995,6 +1873,271 @@ Assignee: {{assignee_signature}} Date: {{date}}`,
         parties: ["assignor", "assignee"],
         terms: { payment: "one_time", rights: "full_transfer", duration: "permanent" },
         tags: ["copyright", "assignment", "ownership"]
+      },
+      {
+        name: "Production/Distribution/Promotion Contract",
+        type: "production_distribution",
+        description: "Comprehensive production, distribution and promotion services contract",
+        template: "PRODUCTION/DISTRIBUTION/PROMOTION CONTRACT\n\nAGREEMENT made this {{day}} day of {{month}}, {{year}} by and between {{client_name}} (Client) and {{company_name}} (Company).\n\nClient and Company hereby accepts such agreement for services under the terms and conditions as herein provided and any riders to this Agreement.\n\nIt is agreed that the following services will be provided by Company for said Client:\n\nRecording Sessions: {{recording_sessions}}\n\nRecord Pressing: {{record_pressing}}\n\nRadio Service: {{radio_service}}\n\nPromotion: {{promotion}}\n\nResale Distribution: {{resale_distribution}}\n\nCompany will service major and independent distributors and one-stops. Company will pay for all commercial pressing costs. Following recoupment of all commercial pressing costs, Company will pay {{wholesale_percentage}}% of all gross wholesale receipts and {{retail_percentage}}% of all gross mail order and/or retail receipts.\n\nCOMPENSATION AGREED UPON: {{compensation}}\n\nCLIENT TO MAKE PAYMENT AS FOLLOWS: {{payment_terms}}\n\nCLIENT: {{client_signature}} \nCOMPANY: {{company_signature}}\n\nAddress: {{client_address}}\nTelephone: {{client_phone}}",
+        variables: {
+          day: "Day",
+          month: "Month",
+          year: "Year", 
+          client_name: "Client Name",
+          company_name: "Company Name",
+          recording_sessions: "Recording Sessions Details",
+          record_pressing: "Record Pressing Details",
+          radio_service: "Radio Service Details",
+          promotion: "Promotion Details",
+          resale_distribution: "Resale Distribution Details",
+          wholesale_percentage: "Wholesale Percentage",
+          retail_percentage: "Retail Percentage",
+          compensation: "Compensation Details",
+          payment_terms: "Payment Terms",
+          client_signature: "Client Signature",
+          company_signature: "Company Signature",
+          client_address: "Client Address",
+          client_phone: "Client Phone"
+        },
+        parties: ["client", "company"],
+        terms: { payment: "percentage_split", rights: "production_distribution", duration: "project_based" },
+        tags: ["production", "distribution", "promotion", "services"]
+      },
+      {
+        name: "Joint Partnership Agreement",
+        type: "joint_partnership",
+        description: "Joint partnership agreement for music business collaboration",
+        template: "JOINT PARTNERSHIP AGREEMENT\n\nThis JOINT PARTNERSHIP AGREEMENT (the AGREEMENT) is entered into on this {{day}} of {{month}}, {{year}}, by and between {{party_1_name}}, on behalf of {{party_1_company}}, {{party_1_address}}, and {{party_2_name}}, on behalf of {{party_2_company}}, {{party_2_address}}.\n\nIn accordance with the terms, conditions, and covenants of this AGREEMENT, the PARTNERS shall:\n\nForm a joint PARTNERSHIP (the JOINT PARTNERSHIP) for the purpose of: {{business_description}}\n\nThe EFFECTIVE DATE of the AGREEMENT shall be: {{effective_date}}\n\nThe duration (the TERM) of the JOINT PARTNERSHIP shall be: {{term_duration}}\n\nThe CAPITAL of the JOINT PARTNERSHIP shall total: {{total_capital}}\n\nThe FIRST PARTY shall contribute: {{party_1_contribution}}\n\nThe SECOND PARTY shall contribute: {{party_2_contribution}}\n\nThe CAPITAL funds are to be deposited in a SPECIAL ACCOUNT at {{bank_name}}, of {{bank_city}}.\n\n{{partnership_manager_name}} shall act as PARTNERSHIP MANAGER, and be charged with the management of the business.\n\nPARTY 1: {{party_1_signature}} DATE: {{date}}\nPARTY 2: {{party_2_signature}} DATE: {{date}}",
+        variables: {
+          day: "Day",
+          month: "Month",
+          year: "Year",
+          party_1_name: "First Party Name",
+          party_1_company: "First Party Company",
+          party_1_address: "First Party Address",
+          party_2_name: "Second Party Name",
+          party_2_company: "Second Party Company",
+          party_2_address: "Second Party Address",
+          business_description: "Business Description",
+          effective_date: "Effective Date",
+          term_duration: "Term Duration",
+          total_capital: "Total Capital",
+          party_1_contribution: "First Party Contribution",
+          party_2_contribution: "Second Party Contribution",
+          bank_name: "Bank Name",
+          bank_city: "Bank City",
+          partnership_manager_name: "Partnership Manager Name",
+          party_1_signature: "First Party Signature",
+          party_2_signature: "Second Party Signature",
+          date: "Date"
+        },
+        parties: ["party_1", "party_2"],
+        terms: { payment: "capital_split", rights: "joint_management", duration: "term_based" },
+        tags: ["partnership", "joint_venture", "collaboration"]
+      },
+      {
+        name: "Joint Venture Contract (Publisher/Record Company/Distributor)",
+        type: "joint_venture",
+        description: "Joint venture contract for publishing, recording and distribution",
+        template: "JOINT VENTURE CONTRACT\n(Publisher) (Record Company) (Record Distributor)\n\nThe undersigned, desiring to enter into a joint venture, agree as follows:\n\n1. The name of the joint venture shall be: {{venture_name}}\n\n2. The character of the business shall be:\n   (a) the publishing of music;\n   (b) the production of phonograph record masters and phonograph records;\n   (c) the promotion and distribution of phonograph records; and\n   (d) all other business necessary and related thereto.\n\n3. The location of the principal place of business shall be: {{business_location}}\n\n4. The name and place of residence of each of the undersigned is:\n{{partner_details}}\n\n5. Each of the undersigned shall contribute cash and property, and shall receive percentages of the net profit of the joint venture as follows:\n{{contribution_details}}\n\nLosses shall be shared in the same ratios as net profit.\n\nIN WITNESS WHEREOF, the undersigned members of the joint venture have hereunto set their hands this day:\n{{signatures}}",
+        variables: {
+          venture_name: "Joint Venture Name",
+          business_location: "Business Location",
+          partner_details: "Partner Names and Addresses",
+          contribution_details: "Contribution and Profit Share Details",
+          signatures: "Partner Signatures"
+        },
+        parties: ["publisher", "record_company", "distributor"],
+        terms: { payment: "profit_split", rights: "joint_venture", duration: "indefinite" },
+        tags: ["joint_venture", "publishing", "distribution", "recording"]
+      },
+      {
+        name: "Master Use Recording License",
+        type: "master_use_license",
+        description: "License for use of master recordings in film and media",
+        template: "MASTER USE RECORDING LICENSE\n\n1. The sound recording, hereafter referred to as 'Master' of the musical composition covered by this license: {{song_title}} with a duration of {{duration}} minutes and seconds.\n\n2. The film covered by this license is tentatively entitled: {{film_title}}\n\n3. The territory, hereafter referred to as 'Territory' covered hereby is: {{territory}}\n\n4. The type and duration of uses of the Master to be recorded are: {{use_type}}\n\n5. In consideration of the sum of {{license_fee}} Dollars ({{license_fee_amount}}) for each of the Masters, Payable upon the full execution of this license {{licensor_name}} herein referred to as 'Licensor' hereby grant to {{producer_name}} herein referred to as 'Producer', its successors and assigns the nonexclusive, irrevocable right, license, privilege, and authority to record, rerecord, reproduce and perform the Master in any manner, medium or form.\n\n6. This license does not authorize or permit any use of the master not expressly set forth herein. Licensor reserves all rights not expressly granted to Producer hereunder.\n\nLicensor: {{licensor_signature}} \nProducer: {{producer_signature}}",
+        variables: {
+          song_title: "Song Title",
+          duration: "Duration",
+          film_title: "Film/Production Title",
+          territory: "Territory",
+          use_type: "Type of Use",
+          license_fee: "License Fee",
+          license_fee_amount: "License Fee Amount",
+          licensor_name: "Licensor Name",
+          producer_name: "Producer Name",
+          licensor_signature: "Licensor Signature",
+          producer_signature: "Producer Signature"
+        },
+        parties: ["licensor", "producer"],
+        terms: { payment: "one_time_fee", rights: "master_use", duration: "perpetual" },
+        tags: ["master_use", "licensing", "film", "synchronization"]
+      },
+      {
+        name: "Merchandise Licensing Contract",
+        type: "merchandise_licensing",
+        description: "Licensing contract for manufacturing and distribution of music merchandise",
+        template: "MERCHANDISE LICENSING CONTRACT\n\nAgreement made and entered into this {{day}} day of {{month}}, {{year}} by and between {{owner_name}}, hereinafter referred to as 'Owner' and {{licensee_name}} of {{licensee_address}} hereinafter referred to as 'Licensee';\n\nWhereas, Owner was organized for the purpose of and is engaged in the United States of America in the creation and production of CD's, cassettes, videos, sheet music hereinafter referred to as 'music products';\n\nAnd Whereas, Licensee is in a position directly or indirectly to provide manufacturing, marketing and distribution facilities for products in the licensed territory referred to below;\n\nNOW THEREFORE, in consideration of the foregoing and of the mutual promises hereinafter set forth, it is agreed:\n\n1. Owner hereby grants to Licensee, for a period of {{license_period}} years from the date of this agreement, the {{exclusivity}} rights to manufacture, sell and distribute music products in the territory of {{licensed_territory}}.\n\n2. In consideration for the rights herein granted Licensee agrees to pay to Owner a sum equal to {{royalty_percentage}}% of the gross monies received by Licensee in the licensed territory.\n\n3. Payments by Licensee to Owner of royalties due shall be made {{payment_frequency}} and each such payment shall be accompanied by a statement setting forth in detail the computation of the amount thereof.\n\nOwner: {{owner_signature}}\nLicensee: {{licensee_signature}}",
+        variables: {
+          day: "Day",
+          month: "Month",
+          year: "Year",
+          owner_name: "Owner Name",
+          licensee_name: "Licensee Name",
+          licensee_address: "Licensee Address",
+          license_period: "License Period",
+          exclusivity: "Exclusive/Nonexclusive",
+          licensed_territory: "Licensed Territory",
+          royalty_percentage: "Royalty Percentage",
+          payment_frequency: "Payment Frequency",
+          owner_signature: "Owner Signature",
+          licensee_signature: "Licensee Signature"
+        },
+        parties: ["owner", "licensee"],
+        terms: { payment: "royalty_percentage", rights: "merchandise", duration: "term_based" },
+        tags: ["merchandise", "licensing", "manufacturing", "distribution"]
+      },
+      {
+        name: "Payment Obligation Contract",
+        type: "payment_obligation",
+        description: "Contract detailing payment obligations for recording services",
+        template: "PAYMENT OBLIGATION CONTRACT\\n\\nI, {{artist_name}}, (herein known as 'Artist') do hereby agree not to produce, sell, or market the recordings below listed until the debt and obligation to the parties herein listed are paid in full.\\n\\nThe musical compositions shall include and are limited to:\\n{{musical_compositions}}\\n\\nThese song(s) were recorded at {{studio_name}} Studios in the City of {{city}} in the State of {{state}} at the address of {{studio_address}} on the date(s) of: {{recording_dates}}\\n\\nI agree to make all payments to the persons listed below before releasing for sale to the public or assigning any rights in any of the above recordings.\\n\\nPersons due payment for services rendered on above recordings:\\n{{payment_obligations}}\\n\\nIf Producer has made payment to any of the parties below listed, I will reimburse Producer his receipted expenses incurred in making payments to abovementioned person(s).\\n\\nI further agree to reimburse Producer for any and all receipted expenses Producer has incurred in the production of the above song titles and during the recording sessions specified herein.\\n\\nAgreed to this {{day}} day of {{month}}, {{year}}.\\n\\nArtist: {{artist_signature}}",
+        variables: {
+          artist_name: "Artist Name",
+          musical_compositions: "Musical Compositions List",
+          studio_name: "Studio Name",
+          city: "City",
+          state: "State",
+          studio_address: "Studio Address",
+          recording_dates: "Recording Dates",
+          payment_obligations: "Payment Obligations List",
+          day: "Day",
+          month: "Month",
+          year: "Year",
+          artist_signature: "Artist Signature"
+        },
+        parties: ["artist", "producer"],
+        terms: { payment: "obligation_based", rights: "restricted_until_payment", duration: "until_payment" },
+        tags: ["payment", "obligation", "recording", "debt"]
+      },
+      {
+        name: "Photographer Contract",
+        type: "photographer",
+        description: "Work-for-hire contract for photography services",
+        template: "PHOTOGRAPHER CONTRACT\n\nAGREEMENT made this {{day}} day of {{month}}, {{year}}, by and between the undersigned PHOTOGRAPHER and the undersigned CLIENT.\n\nThis Agreement is entered into in the City of {{city}} and County of {{county}}, State of {{state}} and is guided by and governed by the laws of that state.\n\nThe undersigned parties hereby agree that all rights, copyrights, titles and interest in any photographs taken by photographer, on behalf of Client belong solely and exclusively to the Owner free from any claims whatsoever by the Photographer.\n\nThe enticement and consideration for this Agreement is the promise by the Client to pay the Photographer the amount of ${{payment_amount}}. This is a one-time compensation for Photographer's services (sometimes known as a work-for-hire) and Photographer understands that this will comprise Photographer's complete and sole payment.\n\nIN WITNESS WHEREOF we have entered into this written contract as of the date above written.\n\nPHOTOGRAPHER: {{photographer_signature}}\nCLIENT: {{client_signature}}",
+        variables: {
+          day: "Day",
+          month: "Month",
+          year: "Year",
+          city: "City",
+          county: "County",
+          state: "State",
+          payment_amount: "Payment Amount",
+          photographer_signature: "Photographer Signature",
+          client_signature: "Client Signature"
+        },
+        parties: ["photographer", "client"],
+        terms: { payment: "one_time_fee", rights: "work_for_hire", duration: "single_project" },
+        tags: ["photography", "work_for_hire", "media", "services"]
+      },
+      {
+        name: "Producer/Manager Contract",
+        type: "producer_manager",
+        description: "Letter of agreement for talent representation and production services",
+        template: `PRODUCER / MANAGER CONTRACT
+LETTER OF AGREEMENT
+
+{{date}}
+
+Dear {{artist_name}},
+
+This letter of agreement concerns your representing me as a talent and songwriter. For your services in promoting and representing me, I hereby agree to and guarantee the following:
+
+I. If, as a result of your efforts, I enter into a contract for my services as a recording artist with a major recording concern, I hereby agree to pay you TEN PERCENT (10%) of any and all sales, production, or royalty advances.
+
+a. A major recording concern is herein defined as a company that has gross sales in excess of one million (1,000,000) recordings annually.
+
+b. You will receive an additional payment of fifteen thousand dollars ($15,000) if any album released under this agreement is certified Gold by the R.I.A.A.
+
+c. You will receive an additional payment of twenty thousand dollars ($20,000) above the previously mentioned payment if any album released under this agreement is certified Platinum by the R.I.A.A.
+
+II. If, as a result of your efforts, I enter into a contract with a major management or booking concern, I agree to pay you one and one half percent (1.5%) of the gross income earned in the first two years of said agreement.
+
+III. If, as a result of your efforts, a major recording artist or company releases to the general public, one of my songs, I agree to assign FIFTY PERCENT (50%) of all publishing and copyrights to either {{ascap_entity}} ASCAP or {{bmi_entity}} BMI.
+
+IV. If none of the conditions in sections I, II, and III, come into being by {{expiration_date}}, this agreement may be made void by my written notification to you of such intent.
+
+I hereby agree to and am bound by these terms. I set my name to this Letter the {{day}} day of {{month}}, {{year}}.
+
+ARTIST: {{artist_signature}}`,
+        variables: {
+          date: "Date",
+          artist_name: "Artist Name",
+          ascap_entity: "ASCAP Entity",
+          bmi_entity: "BMI Entity",
+          expiration_date: "Expiration Date",
+          day: "Day",
+          month: "Month",
+          year: "Year",
+          artist_signature: "Artist Signature"
+        },
+        parties: ["producer_manager", "artist"],
+        terms: { payment: "percentage_based", rights: "representation", duration: "conditional" },
+        tags: ["producer", "manager", "representation", "publishing"]
+      },
+      {
+        name: "Master Producer-Assistant Contract",
+        type: "producer_assistant",
+        description: "Contract between master producer and assistant for recording session collaboration",
+        template: `MASTER PRODUCER-ASSISTANT CONTRACT
+
+City: {{city}}
+State: {{state}}
+Date: {{date}}
+
+IT IS AGREED that ASSISTANT will aide MASTER PRODUCER in the arrangement and A & R'ing of a recording session consisting of the following songs:
+
+SONG                         SONGWRITER                    PUBLISHER
+{{song_details}}
+
+to be sung by the following artist: {{artist_name}}
+
+IT IS AGREED that MASTER PRODUCER will, in return for this assistance, pay ASSISTANT ten percent (10%) of any and all master-rental monies he receives as a result of phonograph records sold and paid for in the United States and Foreign countries; IT IS ALSO AGREED that in the event MASTER PRODUCER distributes records of the abovestated session as a record company, MASTER PRODUCER will pay ASSISTANT one-half cent (1/2¢) per record sold and paid for in the United States.
+
+IT IS AGREED that payment will be made no later than fifteen (15) days after MASTER PRODUCER has received and cleared any and all checks consisting of said money or monies.
+
+IN WITNESS WHEREOF we have entered this agreement as of the above date:
+
+MASTER PRODUCER: {{master_producer_signature}}
+ADDRESS: {{master_producer_address}}
+PHONE #: {{master_producer_phone}}
+
+ASSISTANT: {{assistant_signature}}
+ADDRESS: {{assistant_address}}
+PHONE #: {{assistant_phone}}
+
+WITNESS TO BOTH SIGNATURES: {{witness_signature}}
+ADDRESS: {{witness_address}}
+PHONE #: {{witness_phone}}`,
+        variables: {
+          city: "City",
+          state: "State",
+          date: "Date",
+          song_details: "Song Details (Title, Songwriter, Publisher)",
+          artist_name: "Artist Name",
+          master_producer_signature: "Master Producer Signature",
+          master_producer_address: "Master Producer Address",
+          master_producer_phone: "Master Producer Phone",
+          assistant_signature: "Assistant Signature",
+          assistant_address: "Assistant Address",
+          assistant_phone: "Assistant Phone",
+          witness_signature: "Witness Signature",
+          witness_address: "Witness Address",
+          witness_phone: "Witness Phone"
+        },
+        parties: ["master_producer", "assistant"],
+        terms: { payment: "percentage_split", rights: "collaboration", duration: "project_based" },
+        tags: ["producer", "assistant", "recording", "collaboration"]
       }
     ];
 
