@@ -125,6 +125,25 @@ export const auditLogs = pgTable("audit_logs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const legalDocumentTemplates = pgTable("legal_document_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  category: text("category").notNull(), // credit_dispute, debt_validation, cease_desist, etc.
+  documentType: text("document_type").notNull(), // letter, notice, demand, settlement_offer
+  recipient: text("recipient"), // equifax, experian, transunion, debt_collector, etc.
+  template: text("template").notNull(), // The actual letter template with placeholders
+  variables: jsonb("variables"), // JSON object defining template variables
+  legalBasis: text("legal_basis").array(), // Array of legal statutes/sections referenced
+  escalationLevel: integer("escalation_level").default(1), // 1=initial, 2=second, 3=final, 4=settlement
+  instructions: text("instructions"), // Special instructions for using this template
+  tags: text("tags").array(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -178,6 +197,12 @@ export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
   createdAt: true,
 });
 
+export const insertLegalDocumentTemplateSchema = createInsertSchema(legalDocumentTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -208,3 +233,6 @@ export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+
+export type LegalDocumentTemplate = typeof legalDocumentTemplates.$inferSelect;
+export type InsertLegalDocumentTemplate = z.infer<typeof insertLegalDocumentTemplateSchema>;

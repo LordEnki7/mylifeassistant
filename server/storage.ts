@@ -9,6 +9,7 @@ import {
   type KnowledgeDoc, type InsertKnowledgeDoc,
   type ChatMessage, type InsertChatMessage,
   type AuditLog, type InsertAuditLog,
+  type LegalDocumentTemplate, type InsertLegalDocumentTemplate,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -77,6 +78,15 @@ export interface IStorage {
   getAuditLogs(userId: string): Promise<AuditLog[]>;
   createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
 
+  // Legal Document Templates
+  getLegalDocumentTemplates(userId: string): Promise<LegalDocumentTemplate[]>;
+  getLegalDocumentTemplate(id: string): Promise<LegalDocumentTemplate | undefined>;
+  createLegalDocumentTemplate(template: InsertLegalDocumentTemplate): Promise<LegalDocumentTemplate>;
+  updateLegalDocumentTemplate(id: string, template: Partial<LegalDocumentTemplate>): Promise<LegalDocumentTemplate | undefined>;
+  deleteLegalDocumentTemplate(id: string): Promise<boolean>;
+  getLegalDocumentTemplatesByCategory(userId: string, category: string): Promise<LegalDocumentTemplate[]>;
+  generateDocumentFromTemplate(templateId: string, variables: Record<string, any>): Promise<string>;
+
   // Dashboard stats
   getDashboardStats(userId: string): Promise<{
     emailsSent: number;
@@ -97,6 +107,7 @@ export class MemStorage implements IStorage {
   private knowledgeDocs: Map<string, KnowledgeDoc>;
   private chatMessages: Map<string, ChatMessage>;
   private auditLogs: Map<string, AuditLog>;
+  private legalDocumentTemplates: Map<string, LegalDocumentTemplate>;
 
   constructor() {
     this.users = new Map();
@@ -109,6 +120,7 @@ export class MemStorage implements IStorage {
     this.knowledgeDocs = new Map();
     this.chatMessages = new Map();
     this.auditLogs = new Map();
+    this.legalDocumentTemplates = new Map();
 
     // Initialize with demo user
     this.initializeDemoData();
@@ -125,6 +137,9 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
     };
     this.users.set(hardwiredUser.id, hardwiredUser);
+    
+    // Initialize credit dispute letter templates
+    this.initializeCreditDisputeTemplates(userId);
   }
 
   // Users
@@ -476,6 +491,242 @@ export class MemStorage implements IStorage {
       grantOpportunities,
       revenue,
     };
+  }
+
+  // Legal Document Templates
+  async getLegalDocumentTemplates(userId: string): Promise<LegalDocumentTemplate[]> {
+    return Array.from(this.legalDocumentTemplates.values()).filter(template => template.userId === userId);
+  }
+
+  async getLegalDocumentTemplate(id: string): Promise<LegalDocumentTemplate | undefined> {
+    return this.legalDocumentTemplates.get(id);
+  }
+
+  async createLegalDocumentTemplate(insertTemplate: InsertLegalDocumentTemplate): Promise<LegalDocumentTemplate> {
+    const id = randomUUID();
+    const template: LegalDocumentTemplate = {
+      ...insertTemplate,
+      id,
+      description: insertTemplate.description || null,
+      recipient: insertTemplate.recipient || null,
+      variables: insertTemplate.variables || null,
+      legalBasis: insertTemplate.legalBasis || null,
+      escalationLevel: insertTemplate.escalationLevel || 1,
+      instructions: insertTemplate.instructions || null,
+      tags: insertTemplate.tags || null,
+      isActive: insertTemplate.isActive !== undefined ? insertTemplate.isActive : true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.legalDocumentTemplates.set(id, template);
+    return template;
+  }
+
+  async updateLegalDocumentTemplate(id: string, templateUpdate: Partial<LegalDocumentTemplate>): Promise<LegalDocumentTemplate | undefined> {
+    const template = this.legalDocumentTemplates.get(id);
+    if (!template) return undefined;
+    const updated = { ...template, ...templateUpdate, updatedAt: new Date() };
+    this.legalDocumentTemplates.set(id, updated);
+    return updated;
+  }
+
+  async deleteLegalDocumentTemplate(id: string): Promise<boolean> {
+    return this.legalDocumentTemplates.delete(id);
+  }
+
+  async getLegalDocumentTemplatesByCategory(userId: string, category: string): Promise<LegalDocumentTemplate[]> {
+    return Array.from(this.legalDocumentTemplates.values())
+      .filter(template => template.userId === userId && template.category === category && template.isActive);
+  }
+
+  async generateDocumentFromTemplate(templateId: string, variables: Record<string, any>): Promise<string> {
+    const template = this.legalDocumentTemplates.get(templateId);
+    if (!template) {
+      throw new Error('Template not found');
+    }
+
+    let generatedDocument = template.template;
+    
+    // Replace template variables with actual values
+    Object.entries(variables).forEach(([key, value]) => {
+      const placeholder = `{{${key}}}`;
+      generatedDocument = generatedDocument.replace(new RegExp(placeholder, 'g'), String(value));
+    });
+
+    return generatedDocument;
+  }
+
+  private initializeCreditDisputeTemplates(userId: string) {
+    // Credit Dispute Letter Templates based on the provided PDFs
+    const creditDisputeTemplates = [
+      {
+        title: "Credit Dispute Letter 1 - Equifax",
+        description: "Initial credit dispute letter requesting verification documents from Equifax",
+        category: "credit_dispute",
+        documentType: "letter",
+        recipient: "equifax",
+        escalationLevel: 1,
+        legalBasis: ["15 U.S.C. § 1681g", "FCRA Section 611(a)(5)(A)(i)", "15 U.S.C. § 1681i"],
+        instructions: "Send via USPS Certified Mail. Attach copies of SSN card and Driver's License.",
+        tags: ["fcra", "credit_dispute", "verification", "equifax"],
+        template: `{{fullName}}
+{{address}}
+{{city}}, {{state}} {{zipCode}}
+SSN: {{ssn}} | DOB: {{dateOfBirth}}
+
+{{currentDate}}
+
+Equifax
+P.O. Box 740256
+Atlanta, GA 30374
+
+This letter is to inform you that I recently received a copy of my credit report that your company publishes and after reviewing it I found a number of items on the report that are inaccurate. The accounts in question are listed below.
+
+Please send me copies of the documents that you have in your files as of this date that you used to verify the accuracy of the accounts listed below.
+
+Under the Fair Credit Reporting Act, 15 U.S.C. § 1681g I have the right to demand that you disclose to me all of the documents that you have recorded and retained in your file at the time of this request concerning the accounts that you are reporting in my credit report. Please don't respond to my request by saying that these accounts have been verified. Send me copies of the documents that you have in your files that were used to verify them.
+
+If you do not have any documentation in your files to verify the accuracy of these disputed accounts then please delete them immediately as required under Section 611(a)(5)(A)(i). By publishing these inaccurate and unverified items on my credit report and distributing them to 3rd parties you are damaging my reputation and credit worthiness.
+
+Under the FCRA 15 U.S.C. § 1681i, all unverified accounts must be promptly deleted. Therefore, if you are unable to provide me with a copy of the verifiable proof that you have on file for each of the accounts listed below within 30 days of receipt of this letter then you must remove these accounts from my credit report.
+
+Please provide me with a copy of an updated and corrected credit report showing these items removed.
+
+I demand the following accounts be properly verified or removed immediately.
+
+Name of Account:         Account Number:           Provide Physical Proof of Verification
+
+{{disputedAccounts}}
+
+* NOTE: Please also remove all non-account holding inquiries over 30 days old.
+
+Thank You,
+
+{{signature}}
+{{fullName}}
+
+Attached: Copy of my Social Security Card & Drivers License is attached
+Sent: USPS Certified Mail`
+      },
+      {
+        title: "Credit Dispute Letter 1 - Experian",
+        description: "Initial credit dispute letter requesting verification documents from Experian",
+        category: "credit_dispute",
+        documentType: "letter",
+        recipient: "experian",
+        escalationLevel: 1,
+        legalBasis: ["15 U.S.C. § 1681g", "FCRA Section 611(a)(5)(A)(i)", "15 U.S.C. § 1681i"],
+        instructions: "Send via USPS Certified Mail. Attach copies of SSN card and Driver's License.",
+        tags: ["fcra", "credit_dispute", "verification", "experian"],
+        template: `{{fullName}}
+{{address}}
+{{city}}, {{state}} {{zipCode}}
+SSN: {{ssn}} | DOB: {{dateOfBirth}}
+
+{{currentDate}}
+
+Experian
+P.O. Box 2002
+Allen, TX 75013
+
+This letter is to inform you that I recently received a copy of my credit report that your company publishes and after reviewing it I found a number of items on the report that are inaccurate. The accounts in question are listed below.
+
+Please send me copies of the documents that you have in your files as of this date that you used to verify the accuracy of the accounts listed below.
+
+Under the Fair Credit Reporting Act, 15 U.S.C. § 1681g I have the right to demand that you disclose to me all of the documents that you have recorded and retained in your file at the time of this request concerning the accounts that you are reporting in my credit report. Please don't respond to my request by saying that these accounts have been verified. Send me copies of the documents that you have in your files that were used to verify them.
+
+If you do not have any documentation in your files to verify the accuracy of these disputed accounts then please delete them immediately as required under Section 611(a)(5)(A)(i). By publishing these inaccurate and unverified items on my credit report and distributing them to 3rd parties you are damaging my reputation and credit worthiness.
+
+Under the FCRA 15 U.S.C. § 1681i, all unverified accounts must be promptly deleted. Therefore, if you are unable to provide me with a copy of the verifiable proof that you have on file for each of the accounts listed below within 30 days of receipt of this letter then you must remove these accounts from my credit report.
+
+Please provide me with a copy of an updated and corrected credit report showing these items removed.
+
+I demand the following accounts be properly verified or removed immediately.
+
+Name of Account:         Account Number:           Provide Physical Proof of Verification
+
+{{disputedAccounts}}
+
+* NOTE: Please also remove all non-account holding inquiries over 30 days old.
+
+Thank You,
+
+{{signature}}
+{{fullName}}
+
+Attached: Copy of my Social Security Card & Drivers License is attached
+Sent: USPS Certified Mail`
+      },
+      {
+        title: "Credit Dispute Letter 1 - TransUnion",
+        description: "Initial credit dispute letter requesting verification documents from TransUnion",
+        category: "credit_dispute",
+        documentType: "letter",
+        recipient: "transunion",
+        escalationLevel: 1,
+        legalBasis: ["15 U.S.C. § 1681g", "FCRA Section 611(a)(5)(A)(i)", "15 U.S.C. § 1681i"],
+        instructions: "Send via USPS Certified Mail. Attach copies of SSN card and Driver's License.",
+        tags: ["fcra", "credit_dispute", "verification", "transunion"],
+        template: `{{fullName}}
+{{address}}
+{{city}}, {{state}} {{zipCode}}
+SSN: {{ssn}} | DOB: {{dateOfBirth}}
+
+{{currentDate}}
+
+Trans Union
+P.O. Box 2000
+Chester, PA 19022
+
+This letter is to inform you that I recently received a copy of my credit report that your company publishes and after reviewing it I found a number of items on the report that are inaccurate. The accounts in question are listed below.
+
+Please send me copies of the documents that you have in your files as of this date that you used to verify the accuracy of the accounts listed below.
+
+Under the Fair Credit Reporting Act, 15 U.S.C. § 1681g I have the right to demand that you disclose to me all of the documents that you have recorded and retained in your file at the time of this request concerning the accounts that you are reporting in my credit report. Please don't respond to my request by saying that these accounts have been verified. Send me copies of the documents that you have in your files that were used to verify them.
+
+If you do not have any documentation in your files to verify the accuracy of these disputed accounts then please delete them immediately as required under Section 611(a)(5)(A)(i). By publishing these inaccurate and unverified items on my credit report and distributing them to 3rd parties you are damaging my reputation and credit worthiness.
+
+Under the FCRA 15 U.S.C. § 1681i, all unverified accounts must be promptly deleted. Therefore, if you are unable to provide me with a copy of the verifiable proof that you have on file for each of the accounts listed below within 30 days of receipt of this letter then you must remove these accounts from my credit report.
+
+Please provide me with a copy of an updated and corrected credit report showing these items removed.
+
+I demand the following accounts be properly verified or removed immediately.
+
+Name of Account:         Account Number:           Provide Physical Proof of Verification
+
+{{disputedAccounts}}
+
+* NOTE: Please also remove all non-account holding inquiries over 30 days old.
+
+Thank You,
+
+{{signature}}
+{{fullName}}
+
+Attached: Copy of my Social Security Card & Drivers License is attached
+Sent: USPS Certified Mail`
+      }
+    ];
+
+    // Add the initial templates
+    creditDisputeTemplates.forEach(templateData => {
+      this.createLegalDocumentTemplate({
+        userId,
+        ...templateData,
+        variables: {
+          fullName: "Your Full Name",
+          address: "Your Address",
+          city: "City",
+          state: "State",
+          zipCode: "Zip Code",
+          ssn: "000-00-0000",
+          dateOfBirth: "MM/DD/YYYY",
+          currentDate: "Current Date",
+          disputedAccounts: "List disputed accounts here",
+          signature: "Your Signature"
+        }
+      });
+    });
   }
 }
 

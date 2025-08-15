@@ -100,6 +100,23 @@ export const schemas = {
     // userId is extracted from JWT token
   }),
 
+  // Legal document template validation
+  legalDocumentTemplate: z.object({
+    title: z.string().min(1, 'Template title is required').max(200, 'Title too long').trim(),
+    description: z.string().max(500, 'Description too long').optional().nullable(),
+    category: z.string().min(1, 'Category is required').max(50, 'Category too long').trim(),
+    documentType: z.string().min(1, 'Document type is required').max(50, 'Document type too long').trim(),
+    recipient: z.string().max(50, 'Recipient too long').optional().nullable(),
+    template: z.string().min(1, 'Template content is required').max(50000, 'Template too long'),
+    variables: z.record(z.string(), z.any()).optional().nullable(),
+    legalBasis: z.array(z.string().max(100, 'Legal basis too long')).optional().nullable(),
+    escalationLevel: z.number().int().min(1).max(10).default(1),
+    instructions: z.string().max(1000, 'Instructions too long').optional().nullable(),
+    tags: z.array(z.string().max(30, 'Tag too long')).optional().nullable(),
+    isActive: z.boolean().default(true)
+    // userId is extracted from JWT token
+  }),
+
   // Auth validation
   login: z.object({
     email: z.string().email('Invalid email format'),

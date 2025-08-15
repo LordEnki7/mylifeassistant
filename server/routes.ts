@@ -424,6 +424,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Legal Document Templates (all protected)
+  app.get("/api/legal-document-templates", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const category = req.query.category as string;
+      
+      let templates;
+      if (category) {
+        templates = await storage.getLegalDocumentTemplatesByCategory(userId, category);
+      } else {
+        templates = await storage.getLegalDocumentTemplates(userId);
+      }
+      
+      await auditLogger.logDataAccess(req, 'read', 'legal_document_templates', userId);
+      res.json(templates);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch legal document templates" });
+    }
+  });
+
+  app.get("/api/legal-document-templates/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const template = await storage.getLegalDocumentTemplate(id);
+      if (!template) {
+        return res.status(404).json({ error: "Legal document template not found" });
+      }
+      await auditLogger.logDataAccess(req, 'read', 'legal_document_template', id);
+      res.json(template);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch legal document template" });
+    }
+  });
+
+  app.post("/api/legal-document-templates", requireAuth, validateRequest(schemas.legalDocumentTemplate), async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const templateData = { ...req.body, userId };
+      const template = await storage.createLegalDocumentTemplate(templateData);
+      await auditLogger.logDataAccess(req, 'create', 'legal_document_template', template.id, true);
+      res.json(template);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'legal_document_template', undefined, false);
+      res.status(400).json({ error: "Invalid legal document template data" });
+    }
+  });
+
+  app.put("/api/legal-document-templates/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const template = await storage.updateLegalDocumentTemplate(id, req.body);
+      if (!template) {
+        await auditLogger.logDataAccess(req, 'update', 'legal_document_template', id, false);
+        return res.status(404).json({ error: "Legal document template not found" });
+      }
+      await auditLogger.logDataAccess(req, 'update', 'legal_document_template', id, true);
+      res.json(template);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'update', 'legal_document_template', req.params.id, false);
+      res.status(400).json({ error: "Failed to update legal document template" });
+    }
+  });
+
+  app.delete("/api/legal-document-templates/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteLegalDocumentTemplate(id);
+      if (!deleted) {
+        await auditLogger.logDataAccess(req, 'delete', 'legal_document_template', id, false);
+        return res.status(404).json({ error: "Legal document template not found" });
+      }
+      await auditLogger.logDataAccess(req, 'delete', 'legal_document_template', id, true);
+      res.json({ success: true });
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'delete', 'legal_document_template', req.params.id, false);
+      res.status(500).json({ error: "Failed to delete legal document template" });
+    }
+  });
+
+  app.post("/api/legal-document-templates/:id/generate", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { variables } = req.body;
+      
+      if (!variables) {
+        return res.status(400).json({ error: "Variables are required to generate document" });
+      }
+      
+      const generatedDocument = await storage.generateDocumentFromTemplate(id, variables);
+      await auditLogger.logDataAccess(req, 'create', 'legal_document', id, true);
+      
+      res.json({ 
+        document: generatedDocument,
+        templateId: id,
+        generatedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'legal_document', req.params.id, false);
+      res.status(500).json({ error: "Failed to generate document from template" });
+    }
+  });
+
   // Chat Messages (all protected with AI rate limiting)
   app.get("/api/chat-messages", requireAuth, async (req, res) => {
     try {
