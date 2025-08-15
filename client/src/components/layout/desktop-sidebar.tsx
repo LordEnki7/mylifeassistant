@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { Icons } from "@/lib/icons";
 import { useNavigation } from "@/hooks/use-navigation";
 import { Button } from "@/components/ui/button";
+import logoImage from "@assets/My Life Assistant_1755255862503.png";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Icons.dashboard },
@@ -22,8 +23,13 @@ export default function DesktopSidebar() {
   return (
     <nav className="hidden lg:flex lg:flex-col lg:w-64 bg-white shadow-lg">
       <div className="p-6 border-b">
-        <h1 className="text-2xl font-bold text-primary-500">My Life Assistant</h1>
-        <p className="text-sm text-gray-600 mt-1">AI-Powered Music Management</p>
+        <div className="flex items-center space-x-3 mb-2">
+          <img src={logoImage} alt="My Life Assistant" className="h-12 w-12" />
+          <div>
+            <h1 className="text-xl font-bold text-primary-500">My Life Assistant</h1>
+            <p className="text-xs text-gray-600">AI-Powered Music Management</p>
+          </div>
+        </div>
       </div>
       
       <div className="flex-1 overflow-y-auto p-4">
@@ -57,7 +63,7 @@ export default function DesktopSidebar() {
             JD
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">John Doe</p>
+            <p className="text-sm font-medium text-gray-900 truncate">User</p>
             <p className="text-xs text-gray-500 truncate">user@mylifeassistant.com</p>
           </div>
           <Button variant="ghost" size="sm">

@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { Icons } from "@/lib/icons";
 import { useNavigation } from "@/hooks/use-navigation";
 import { Button } from "@/components/ui/button";
+import logoImage from "@assets/My Life Assistant_1755255862503.png";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Icons.dashboard },
@@ -35,9 +36,12 @@ export default function MobileSidebar() {
       >
         <div className="p-6 bg-primary-500 text-white">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold">My Life Assistant</h2>
-              <p className="text-primary-100 text-sm mt-1">AI-Powered Music Management</p>
+            <div className="flex items-center space-x-3">
+              <img src={logoImage} alt="My Life Assistant" className="h-10 w-10" />
+              <div>
+                <h2 className="text-lg font-semibold">My Life Assistant</h2>
+                <p className="text-primary-100 text-xs">AI-Powered Music Management</p>
+              </div>
             </div>
             <Button
               variant="ghost"
@@ -82,7 +86,7 @@ export default function MobileSidebar() {
               JD
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">John Doe</p>
+              <p className="text-sm font-medium text-gray-900 truncate">User</p>
               <p className="text-xs text-gray-500 truncate">user@mylifeassistant.com</p>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/lib/icons";
 import { useNavigation } from "@/hooks/use-navigation";
+import logoImage from "@assets/My Life Assistant_1755255862503.png";
 
 export default function MobileHeader() {
   const { toggleMobileMenu } = useNavigation();
@@ -16,7 +17,10 @@ export default function MobileHeader() {
         >
           <Icons.menu className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-semibold">My Life Assistant</h1>
+        <div className="flex items-center space-x-2">
+          <img src={logoImage} alt="My Life Assistant" className="h-8 w-8" />
+          <h1 className="text-lg font-semibold">My Life Assistant</h1>
+        </div>
         <Button
           variant="ghost"
           size="sm"
