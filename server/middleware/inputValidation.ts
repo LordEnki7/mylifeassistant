@@ -9,8 +9,8 @@ export const schemas = {
     name: z.string().min(1, 'Name is required').max(100, 'Name too long').trim(),
     email: z.string().email('Invalid email format').optional().nullable(),
     company: z.string().max(100, 'Company name too long').optional().nullable(),
-    notes: z.string().max(1000, 'Notes too long').optional().nullable(),
-    userId: z.string().uuid('Invalid user ID')
+    notes: z.string().max(1000, 'Notes too long').optional().nullable()
+    // userId is extracted from JWT token
   }),
 
   // Radio station validation
@@ -23,8 +23,8 @@ export const schemas = {
     contactName: z.string().max(100, 'Contact name too long').optional().nullable(),
     website: z.string().url('Invalid website URL').optional().nullable(),
     status: z.enum(['pending', 'contacted', 'responded', 'rejected']).default('pending'),
-    notes: z.string().max(1000, 'Notes too long').optional().nullable(),
-    userId: z.string().uuid('Invalid user ID')
+    notes: z.string().max(1000, 'Notes too long').optional().nullable()
+    // userId is extracted from JWT token
   }),
 
   // Grant validation
@@ -37,8 +37,8 @@ export const schemas = {
     description: z.string().max(2000, 'Description too long').optional().nullable(),
     requirements: z.string().max(2000, 'Requirements too long').optional().nullable(),
     applicationUrl: z.string().url('Invalid application URL').optional().nullable(),
-    notes: z.string().max(1000, 'Notes too long').optional().nullable(),
-    userId: z.string().uuid('Invalid user ID')
+    notes: z.string().max(1000, 'Notes too long').optional().nullable()
+    // userId is extracted from JWT token
   }),
 
   // Invoice validation
@@ -49,8 +49,8 @@ export const schemas = {
     description: z.string().min(1, 'Description is required').max(1000, 'Description too long'),
     dueDate: z.string().datetime('Invalid due date').optional().nullable(),
     status: z.enum(['draft', 'sent', 'paid', 'overdue']).default('draft'),
-    paidDate: z.string().datetime('Invalid paid date').optional().nullable(),
-    userId: z.string().uuid('Invalid user ID')
+    paidDate: z.string().datetime('Invalid paid date').optional().nullable()
+    // userId is extracted from JWT token
   }),
 
   // Task validation
@@ -61,8 +61,8 @@ export const schemas = {
     priority: z.enum(['low', 'medium', 'high']).default('medium'),
     status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']).default('pending'),
     category: z.string().max(50, 'Category too long').optional().nullable(),
-    relatedId: z.string().optional().nullable(),
-    userId: z.string().uuid('Invalid user ID')
+    relatedId: z.string().optional().nullable()
+    // userId is extracted from JWT token
   }),
 
   // Chat message validation with content filtering
@@ -74,19 +74,19 @@ export const schemas = {
       .refine(
         (msg) => !containsProhibitedContent(msg),
         'Message contains prohibited content'
-      ),
-    userId: z.string().uuid('Invalid user ID')
+      )
+    // userId is now extracted from JWT token, not required in request body
   }),
 
   // Email campaign validation
   emailCampaign: z.object({
     name: z.string().min(1, 'Campaign name is required').max(100, 'Name too long').trim(),
     subject: z.string().min(1, 'Subject is required').max(200, 'Subject too long').trim(),
-    body: z.string().min(1, 'Email body is required').max(10000, 'Email body too long'),
+    template: z.string().min(1, 'Email body is required').max(10000, 'Email body too long'),
     recipients: z.array(z.string().email('Invalid recipient email')).min(1, 'At least one recipient required'),
     status: z.enum(['draft', 'scheduled', 'sending', 'sent', 'cancelled']).default('draft'),
-    scheduledAt: z.string().datetime('Invalid schedule date').optional().nullable(),
-    userId: z.string().uuid('Invalid user ID')
+    scheduledAt: z.string().datetime('Invalid schedule date').optional().nullable()
+    // userId is extracted from JWT token
   }),
 
   // Knowledge document validation
@@ -96,8 +96,8 @@ export const schemas = {
     category: z.string().max(50, 'Category too long').optional().nullable(),
     tags: z.array(z.string().max(30, 'Tag too long')).optional().nullable(),
     source: z.string().max(500, 'Source too long').optional().nullable(),
-    citation: z.string().max(500, 'Citation too long').optional().nullable(),
-    userId: z.string().uuid('Invalid user ID')
+    citation: z.string().max(500, 'Citation too long').optional().nullable()
+    // userId is extracted from JWT token
   }),
 
   // Auth validation
