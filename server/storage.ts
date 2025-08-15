@@ -931,6 +931,359 @@ This reference document can be used to:
 4. Support litigation threats with real case examples
 
 IMPORTANT: This is a reference document only. Consult with a qualified attorney for legal advice specific to your situation.`
+      },
+      {
+        title: "Warning of Expired Statute of Limitations",
+        description: "Letter warning collection agencies about expired debt under statute of limitations",
+        category: "credit_dispute",
+        documentType: "warning_letter",
+        recipient: "collection_agency",
+        escalationLevel: 2,
+        legalBasis: ["Statute of Limitations", "FDCPA", "State Collection Laws"],
+        instructions: "Use when the debt has exceeded the statute of limitations period. Send via USPS Certified Mail.",
+        tags: ["statute_limitations", "expired_debt", "fdcpa", "warning"],
+        template: `{{client_first_name}} {{client_last_name}}
+{{client_address}}
+
+{{creditor_name}}
+{{creditor_address}}
+{{creditor_city}} {{creditor_state}} {{creditor_zip}}
+
+{{curr_date}}
+
+RE: Account number {{account_number}}
+
+To Whom It May Concern,
+
+Please be advised that you are attempting to collect on an expired debt. I am invoking my right to cease you, based on factual law that this debt in question is legally expired under the Statute of Limitations.
+
+Accordingly, I am requesting that you do not attempt to collect this expired debt, and should you seek legal recourse I will invoke my right of the expired statute as a valid defense.
+
+Additionally any attempts to harm my credit rating by updating or changing dates after you have been informed that the debt is expired, are a direct violation of the FDCPA. Any abuse to my credit rating on your part will be met with all recourse available to me.
+
+I am aware of how long items may remain on my credit reports and any attempt to extend the reporting time will be investigated by me, and reported to the American Collectors Association and my State Attorney General.
+
+I am completely aware of how long the debt is legally collectable and how long it is legally reportable. I realize a debt is allowed to be reported to my credit for 7 years, and my research has shown me that often a collection agency will reset the date of original charge off to the date they purchased it, thus trying to extend the reporting time in an attempt to force a consumer into paying it. I am informing you of this knowledge so that you may do the right thing.
+
+I have no intention of renewing the expired statute of limitations, so please stop wasting your time contacting me.
+
+I expect this will be the last time I hear from you.
+
+Sincerely,
+
+{{client_signature}}____________________________
+{{client_first_name}} {{client_last_name}}`
+      },
+      {
+        title: "Warning of VOD Refusal and FDCPA Violations",
+        description: "Warning letter addressing validation of debt refusal and Fair Debt Collection Practices Act violations",
+        category: "debt_validation", 
+        documentType: "warning_letter",
+        recipient: "collection_agency",
+        escalationLevel: 3,
+        legalBasis: ["15 USC 1692(g) Section 809(b)", "15 USC 1692(g) Section 805(c)", "15 USC 1692(g) Section 806(5)", "FCRA", "FDCPA"],
+        instructions: "Use when collection agency has violated FDCPA after your validation request. Send via USPS Certified Mail with receipt number.",
+        tags: ["fdcpa_violations", "debt_validation", "harassment", "cease_desist"],
+        template: `{{client_first_name}} {{client_last_name}}
+{{client_address}}
+
+{{creditor_name}}
+{{creditor_address}}
+{{creditor_city}} {{creditor_state}} {{creditor_zip}}
+
+{{curr_date}}
+
+Re: {{account_number}}
+
+To Whom It May Concern,
+
+Please be apprised that you are in direct violation of the Fair Debt Collections Practices Act. In my opinion you have violated at least three sections of this act by:
+
+Failing to validate a debt as allowed to the debtor under 15 USC 1692 (g) Section 809 (b)
+
+Communicating with a debtor after receiving a cease and desist certified mail under 15 USC 1692 (g) Section 805 (c)
+
+Harassment of alleged debtor under the "abuse & harassment" subsection of the statute, USC 1692 (g) Section 806 (5)
+
+I have complete and thorough records of your violations and I am prepared to protect myself and my rights from unscrupulous collection agencies.
+
+In {{exact_date}}, I sent by certified mail (receipt number: {{certified_mail_receipt_number}}), a request for your office to provide me with proof and evidence of the debt you alleged I owed, and I did so within 30 days of receiving your first notice. In that same letter I also included my cease and desist instructions.
+
+After verified delivery of my letter (via your office's signature), you proceeded to mail a simple bill which is NOT considered a "validation of debt" by any means. You may wish to familiarize yourself with what is required when validating a debt.
+
+Your office also proceeded to contact me by phone after the delivery and acceptance of my certified letter. Contacting a person after a cease and desist can lead to serious trouble for your agency including damages of up to $1000.00 per incident.
+
+I highly doubt that this \${{debt_amount}} debt is worth your agency's license and the fees and penalties for violations of the FDCPA.
+
+There is no question that you willfully violated my rights and that I could bring charges against you immediately. However, I am assuming this has been a terrible mistake on your part and that you will take appropriate steps to enlighten yourself and your staff of such dangerous actions.
+
+I will also be checking my credit report to see if you have willfully reported an unverified and disputable debt to the credit bureaus. If so, that will be a violation of the Fair Credit Reporting Act. I will state again in this certified mailing that you have failed to verify the debt as accurate, you have provided no proof of this alleged debt, and I must remind you again to not contact me in any way via phone or mail in reference to collecting this debt.
+
+If I receive anything other than absolute proof from you, provided by the original creditor, I will assume you are harassing me and ignoring my cease and desist, and I will take action against you for these continued violations and abuse.
+
+Sincerely,
+
+{{client_signature}}____________________________
+{{client_first_name}} {{client_last_name}}`
+      },
+      {
+        title: "Second Notice - Cease and Desist with Debt Validation",
+        description: "Comprehensive second cease and desist letter with full debt validation requirements and legal warnings",
+        category: "cease_desist",
+        documentType: "cease_desist_letter",
+        recipient: "collection_agency",
+        escalationLevel: 2,
+        legalBasis: ["15 U.S. Code § 1692c", "FDCPA", "15 USC 1692g Sec 809(b)", "FCRA", "FTC Debt Parking Law"],
+        instructions: "Use as second notice after first cease and desist was ignored. Send via USPS Certified Mail. Include all supporting documentation.",
+        tags: ["cease_desist", "debt_validation", "second_notice", "fdcpa", "legal_action"],
+        template: `{{consumer_name}}
+{{consumer_address}}
+
+{{creditor_name}}
+{{creditor_address}}
+{{creditor_city}}, {{creditor_state}} {{creditor_zip}}
+
+{{current_date}}
+
+Subject: Second Notice - Cease and Desist Communication and Dispute of False Reporting
+
+Dear {{creditor_name}},
+
+I am writing to address the ongoing inaccuracies in reporting and the persistent harassment I have experienced from your organization. This letter serves as my second and final notice before seeking legal action for violations of the Fair Debt Collection Practices Act (FDCPA) and other relevant regulations.
+
+Upon reviewing my credit report, I discovered that you are still reporting an account that I am not responsible for. Despite my previous notice to cease and desist communication and disputing the accuracy of this account, your company continues to harass me with threats of legal action.
+
+Under the FDCPA, specifically 15 U.S. Code § 1692c, debt collectors are obligated to cease communication upon written request from the consumer, except under specific circumstances outlined in the law. Your failure to honor this request constitutes a clear violation.
+
+Additionally, your actions may also constitute a violation of the recently enacted FTC "Debt Parking" law, which requires consumers to be notified if their debt is being reported. Your failure to provide such notice is unacceptable and further compounds the issue.
+
+I demand that you immediately cease all communication with me and your associates and refrain from reporting any inaccurate information to third parties. Furthermore, I require written proof that the reported accounts have been closed and no further collection attempts will be made.
+
+Failure to comply with my demands within fifteen (15) days will leave me with no choice but to seek legal representation to address these violations. Please be advised that continued harassment and false reporting will result in legal action, including seeking damages as allowed under the law.
+
+Furthermore, pursuant to the Fair Debt Collection Practices Act, 15 USC 1692g Sec, 809 (b) that your claim is disputed, and validation is requested.
+
+This is NOT a request for "verification" or proof of my mailing address, but a request for VALIDATION, made pursuant to the above named Title and Section. I respectfully request that your office provide me with competent evidence that I have any legal obligation to pay you.
+
+Please provide me with the following:
+
+• What the money you say I owe is for.
+• Explain and show me how you calculated what you say I owe.
+• Provide me with copies of any papers that show I agreed to pay what you say I owe.
+• Provide a verification or copy of any judgment if applicable.
+• Identify the original creditor.
+• Prove the Statute of Limitations has not expired on this account.
+• Show me that you are licensed to collect in my state; and
+• Provide me with your license number and Registered Agent.
+
+If your office has reported invalidated information to any of the three major Credit Bureaus (Equifax, Trans Union or Experian), said action might constitute fraud under both Federal and State laws. Due to this fact, if any negative mark is found on any of my credit reports by your company or the company that you represent, I will not hesitate in bringing legal action against you for the following:
+
+• Violation of the Fair Credit Reporting Act
+• Violation of the Fair Debt Collection Practices Act
+• Defamation of Character
+
+If your offices are able to provide the proper documentation as requested, I will require at least 30 days to investigate this information and during such times all collection activity must cease and desist.
+
+Also, during this validation period, if any action is taken which could be considered detrimental to any of my credit reports, I will consult with my legal counsel. This includes any information to a credit reporting repository that could be inaccurate or invalidated or verifying an account as accurate when in fact there is no provided proof that it is.
+
+If your offices fail to respond to this validation request within 15 days from the date of your receipt, all references to this account must be deleted and completely removed from my credit file and a copy of such deletion request shall be sent to me immediately.
+
+I would also like to request, in writing, that no telephone contact be made by your offices to my home or to my place of employment. If your offices attempt telephone communication with me, including but not limited to computer generated calls or correspondence sent to any third parties, it will be considered harassment, and I will have no choice but to file a suit. All future communications with me MUST be done in writing and sent to the address noted in this letter.
+
+This is an attempt to correct your records, any information obtained shall be used for that.
+
+Sincerely,
+
+{{consumer_signature}}
+{{consumer_name}}`
+      },
+      {
+        title: "Validation of Debt (Admission by Silence)",
+        description: "Debt validation letter using the legal doctrine of admission by silence",
+        category: "debt_validation",
+        documentType: "validation_letter",
+        recipient: "collection_agency", 
+        escalationLevel: 2,
+        legalBasis: ["FDCPA", "FCRA", "Admission by Silence Doctrine", "15 U.S.C. § 1692"],
+        instructions: "Use when collection agency has ignored previous validation requests. The silence doctrine means failure to respond implies agreement. Send via USPS Certified Mail.",
+        tags: ["debt_validation", "admission_by_silence", "legal_doctrine", "fdcpa"],
+        template: `{{client_first_name}} {{client_last_name}}
+{{client_address}}
+
+{{creditor_name}}
+{{creditor_address}}
+{{creditor_city}}, {{creditor_state}} {{creditor_zip}}
+
+{{curr_date}}
+
+Re: Account number: {{account_number}}
+
+To Whom It May Concern:
+
+This certified letter, receipt number: {{certified_receipt_number}} is to formally advise you that I believe your company has violated my consumer rights in the following ways.
+
+Specifically you: [list all that apply]
+
+- Failed to validate a debt at my request- FDCPA violation
+- Continued to report a disputed debt to the CRA- FCRA violation
+- Continued to attempt to collect a disputed debt- FDCPA violation
+- Ignored my cease and desist- FDCPA violation
+
+Not only have you ignored my prior requests for validation of debt (see enclosed copies of receipts letters) but you also continue to report this debt to the credit bureaus causing damage to my character. This letter will again request that you follow guidelines of The Fair Debt Collection Practices Act (FDCPA), 15 U.S.C. § 1692 and please provide the following:
+
+Validation of Debt Request
+
+- Proof of your right to own/collect this alleged debt
+- Balance claimed including all fees, interest and penalties
+- Contract bearing my personal signature
+- License proof to collect debts in my state
+
+As you certainly are aware, "Admission by Silence" means that you had a legal duty to defend your position but failed to do so and if my claims were untrue you would have been compelled to deny my charges. I will use the Admission by Silence in my defense should I be summoned to court or take action against you.
+
+I expect to receive proof requested above, within 15 days of this letter. Should you continue to ignore my request for this validation of debt I reserve the right to sue your company for violations of my consumer rights as indicated under both the FDCPA and the FCRA. I may also seek damages from you if warranted.
+
+Kind regards,
+
+{{client_signature}}_________________________________________
+{{client_first_name}} {{client_last_name}}`
+      },
+      {
+        title: "Validation of Debt (After Dispute to Bureau)",
+        description: "Debt validation letter sent after disputing account with credit reporting agencies",
+        category: "debt_validation",
+        documentType: "validation_letter",
+        recipient: "collection_agency",
+        escalationLevel: 2,
+        legalBasis: ["15 USC 1692(e)", "15 USC 1692(f)", "FDCPA", "FCRA", "15 USC 1692 et seq"],
+        instructions: "Use after credit bureau confirms the collector verified the debt. Demands proof of authorization and debt validation. Send via USPS Certified Mail.",
+        tags: ["debt_validation", "credit_bureau_dispute", "authorization_proof", "fdcpa"],
+        template: `{{client_first_name}} {{client_last_name}}
+{{client_address}}
+
+{{creditor_name}}
+{{creditor_address}}
+{{creditor_city}} {{creditor_state}} {{creditor_zip}}
+
+{{curr_date}}
+
+Re: Account #{{account_number}}
+
+To Whom It May Concern:
+
+Your company is reporting the below referenced account on my credit report as a collection account.
+
+{{dispute_item_and_explanation}}
+
+I have disputed this item with the credit reporting agency and they reported you confirmed the account as valid.
+
+In a good faith effort to resolve the matter amicably, I must demand proof of this debt, specifically the alleged contract or other instrument bearing my signature, as well as proof of your authority in this matter. Absent such proof, you must correct any erroneous reports of this past debt as mine.
+
+I am writing to request that you please provide the following information:
+
+1. Please evidence your authorization under 15 USC 1692(e) and 15 USC 1692(f) in this alleged matter.
+2. What is your authorization of law for your collection of information?
+3. What is your authorization of law for your collection of this alleged debt?
+4. Please evidence your authorization to do business or operate in this state.
+5. Please evidence proof of the alleged debt, including the alleged contract or other instrument bearing my signature.
+6. Please provide a complete account history including all fees, charges, and payments.
+7. Please provide proof of the chain of title of this alleged debt.
+8. Please provide me with a copy of your license to collect debts in this state.
+
+You have thirty (30) days from receipt of this notice to respond. Failure to respond in writing, hand-signed, and in a timely manner, will be considered a waiver to any and all of your claims in this matter, and will entitle me to presume you placed this on my credit report(s) in error and that this matter is permanently closed. Provide the proof, or correct the record and remove this invalid debt from all sources to which you have reported it.
+
+For the purposes of 15 USC 1692 et seq., this Notice has the same effect as a dispute to the validity of the alleged debt and a dispute to the validity of your claims. This Notice is an attempt to correct your records, and any information received from you will be collected as evidence should further action be necessary. This is a request for information only, and is not a statement, election, or waiver of status.
+
+{{client_first_name}} {{client_last_name}} (DO NOT SIGN)`
+      },
+      {
+        title: "Validation of Debt (Estoppel by Silence)",
+        description: "Debt validation letter using the legal doctrine of estoppel by silence",
+        category: "debt_validation",
+        documentType: "validation_letter",
+        recipient: "collection_agency",
+        escalationLevel: 2,
+        legalBasis: ["FDCPA", "FCRA", "Estoppel by Silence Doctrine"],
+        instructions: "Use when collection agency ignored validation requests. Estoppel by silence means their failure to respond legally implies agreement with your position. Send via USPS Certified Mail.",
+        tags: ["debt_validation", "estoppel_by_silence", "legal_doctrine", "fdcpa"],
+        template: `{{client_first_name}} {{client_last_name}}
+{{client_address}}
+
+{{creditor_name}}
+{{creditor_address}}
+{{creditor_city}}, {{creditor_state}} {{creditor_zip}}
+
+{{curr_date}}
+
+Re: Account number: {{account_number}}
+
+To Whom It May Concern:
+
+This certified letter, receipt number: {{certified_receipt_number}} is to formally advise you that I believe your company has violated several of my consumer rights. Specifically:
+
+You failed to validate a debt at my request, which is a FDCPA violation and you continued to report a disputed debt to the Credit Bureaus: another FCRA violation
+
+Not only have you ignored my prior requests for validation of debt (proof attached: receipt copies or letter copies) but you continue to report this debt to the credit bureaus causing damage to my character. This letter will again request that you follow the FDCPA and please provide the following:
+
+Validation of Debt Request
+- Proof of your right to own/collect this alleged debt
+- Balance claimed including all fees, interest and penalties
+- Contract bearing my personal signature
+
+As you may be aware, "Estoppel by Silence" legally means that you had a duty to speak but failed to do so therefore, that must mean you agree with me that this debt is false. I will use the Estoppel in my defense.
+
+I expect to receive the proof requested above within 15 days of this letter. Should you again ignore my request for validation of debt I reserve the right to sue your company for violations of my consumer rights as specified under both the FDCPA and the FCRA. I may also seek damages from you if warranted.
+
+Kind regards,
+
+{{client_signature}}_________________________________________
+{{client_first_name}} {{client_last_name}}`
+      },
+      {
+        title: "Validation of Medical Debt (HIPAA Request)",
+        description: "Special debt validation letter for medical debts incorporating HIPAA privacy protections",
+        category: "debt_validation",
+        documentType: "medical_validation",
+        recipient: "medical_collector",
+        escalationLevel: 1,
+        legalBasis: ["FDCPA", "HIPAA", "Health Insurance Portability and Accountability Act of 1996", "FCRA"],
+        instructions: "Use specifically for medical debt collection. Combines debt validation with HIPAA privacy rights. Send via USPS Certified Mail.",
+        tags: ["medical_debt", "hipaa", "debt_validation", "fdcpa", "privacy_rights"],
+        template: `{{consumer_name}}
+{{consumer_address}}
+
+{{creditor_name}}
+{{creditor_address}}
+{{creditor_city}}, {{creditor_state}} {{creditor_zip}}
+
+{{current_date}}
+
+Amount of debt: \${{debt_amount}} 
+Date of Service: {{service_date}}
+Provider of Service: {{provider_name}}
+
+To Whom It May Concern,
+
+I received a bill from you on {{bill_date}} and as allowable under the Fair Debt Collections Practices Act, I am requesting validation of the alleged debt. I am aware that there is a debt from {{provider_name}} but I am unaware of the amount due and your bill does not include a detailed breakdown of any fees.
+
+Furthermore, I am allowed under the HIPAA law (Health Insurance Portability and Accountability Act of 1996) to protect my privacy and medical records from third parties. I do not recall giving permission to {{provider_name}} for them to release my medical information to a third party. I understand that the HIPAA does allow for limited information about me, but any details may only be revealed with the patient's authorization, therefore my request is twofold and as follows:
+
+Validation of Debt and HIPAA authorization
+- Please provide a breakdown of fees including any and all collection costs and medical charges
+- Please provide a copy of my signature with the provider of service to release my medical information to you
+- Immediately cease any credit bureau reporting until debt has been validated by me
+
+Please send this information to my address listed above and accept this letter, sent certified mail, as my formal debt validation request, of which I am allowed under the FDCPA.
+
+Please note that withholding the information you received from any medical provider in an attempt to be HIPAA compliant will be a violation of the FDCPA because you will be deceiving me after my written request. I am requesting full documentation of what you received from the provider of service in connection with this alleged debt.
+
+Furthermore, any reporting of this debt to the credit bureaus prior to allowing me to validate it may be a violation of the Fair Credit Reporting Act, which can allow me to seek damages from a collection agent.
+
+I await your reply with the above requested proof. Upon receiving it, I will correspond back with you by certified mail.
+
+Kind regards,
+
+{{consumer_signature}}________________________
+{{consumer_name}}`
       }
     ];
 
@@ -951,7 +1304,31 @@ IMPORTANT: This is a reference document only. Consult with a qualified attorney 
           disputedAccounts: "List disputed accounts here",
           disputedAccountsList: "1. ACCOUNT NAME\n2. ACCOUNT NAME\n3. ACCOUNT NAME",
           defendantName: "Consumer Name",
-          signature: "Your Signature"
+          signature: "Your Signature",
+          // New variables for additional templates
+          client_first_name: "Client First Name",
+          client_last_name: "Client Last Name",
+          client_address: "Client Address",
+          client_signature: "Client Signature",
+          creditor_name: "Creditor/Collection Agency Name",
+          creditor_address: "Creditor Address",
+          creditor_city: "City",
+          creditor_state: "State", 
+          creditor_zip: "Zip Code",
+          curr_date: "Current Date",
+          account_number: "Account Number",
+          exact_date: "Exact Date (MM/DD/YYYY)",
+          certified_mail_receipt_number: "Certified Mail Receipt Number",
+          debt_amount: "Debt Amount",
+          consumer_name: "Consumer Full Name",
+          consumer_address: "Consumer Address",
+          consumer_signature: "Consumer Signature",
+          current_date: "Current Date",
+          certified_receipt_number: "Certified Receipt Number", 
+          dispute_item_and_explanation: "Disputed Item and Explanation",
+          bill_date: "Date Bill Received",
+          service_date: "Date of Service",
+          provider_name: "Medical Provider Name"
         }
       });
     });
