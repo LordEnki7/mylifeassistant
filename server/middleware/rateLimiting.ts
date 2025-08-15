@@ -3,24 +3,19 @@ import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import slowDown from 'express-slow-down';
 import type { Request, Response } from 'express';
 
-// IPv6-safe key generator helper
+// IPv6-safe key generator helper using express-rate-limit's ipKeyGenerator
 function generateRateLimitKey(req: Request): string {
   // Use user ID if authenticated, otherwise use normalized IP
   if (req.user?.id) {
     return `user:${req.user.id}`;
   }
   
-  // Normalize IPv6 addresses for rate limiting
+  // Get the client IP address
   const forwarded = req.headers['x-forwarded-for'] as string;
-  const ip = forwarded ? forwarded.split(',')[0].trim() : req.ip || 'unknown';
+  const clientIP = forwarded ? forwarded.split(',')[0].trim() : req.ip || req.connection?.remoteAddress || 'unknown';
   
-  // Handle IPv6 addresses by normalizing them
-  if (ip.includes(':')) {
-    // For IPv6, use a simplified approach to avoid bypassing
-    return `ip:${ip.toLowerCase().replace(/[:%]/g, '_')}`;
-  }
-  
-  return `ip:${ip}`;
+  // Use express-rate-limit's built-in IPv6-safe key generator
+  return ipKeyGenerator(clientIP);
 }
 
 // General API rate limiting
