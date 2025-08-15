@@ -22,7 +22,7 @@ export default function DesktopSidebar() {
   return (
     <nav className="hidden lg:flex lg:flex-col lg:w-64 bg-white shadow-lg">
       <div className="p-6 border-b">
-        <h1 className="text-2xl font-bold text-primary-500">MusicBiz Pro</h1>
+        <h1 className="text-2xl font-bold text-primary-500">My Life Assistant</h1>
         <p className="text-sm text-gray-600 mt-1">AI-Powered Music Management</p>
       </div>
       
@@ -58,7 +58,7 @@ export default function DesktopSidebar() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">John Doe</p>
-            <p className="text-xs text-gray-500 truncate">john@musicbizpro.com</p>
+            <p className="text-xs text-gray-500 truncate">user@mylifeassistant.com</p>
           </div>
           <Button variant="ghost" size="sm">
             <Icons.more className="h-4 w-4" />

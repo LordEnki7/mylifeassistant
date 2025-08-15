@@ -271,7 +271,7 @@ export default function Radio() {
 
                   <div className="flex space-x-2 pt-3">
                     <select
-                      value={station.status}
+                      value={station.status || "pending"}
                       onChange={(e) => handleStatusChange(station.id, e.target.value)}
                       className="text-xs border border-gray-300 rounded px-2 py-1 flex-1"
                     >

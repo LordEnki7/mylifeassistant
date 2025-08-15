@@ -119,8 +119,8 @@ export class MemStorage implements IStorage {
       id: "demo-user",
       username: "johndoe",
       password: "hashed-password",
-      email: "john@musicbizpro.com",
-      name: "John Doe",
+      email: "user@mylifeassistant.com",
+      name: "User",
       createdAt: new Date(),
     };
     this.users.set(demoUser.id, demoUser);
@@ -164,6 +164,9 @@ export class MemStorage implements IStorage {
     const contact: Contact = {
       ...insertContact,
       id,
+      email: insertContact.email || null,
+      company: insertContact.company || null,
+      notes: insertContact.notes || null,
       createdAt: new Date(),
     };
     this.contacts.set(id, contact);
@@ -196,6 +199,15 @@ export class MemStorage implements IStorage {
     const station: RadioStation = {
       ...insertStation,
       id,
+      frequency: insertStation.frequency || null,
+      location: insertStation.location || null,
+      genre: insertStation.genre || null,
+      contactEmail: insertStation.contactEmail || null,
+      contactName: insertStation.contactName || null,
+      website: insertStation.website || null,
+      status: insertStation.status || "pending",
+      lastContacted: insertStation.lastContacted || null,
+      notes: insertStation.notes || null,
       createdAt: new Date(),
     };
     this.radioStations.set(id, station);
@@ -228,6 +240,13 @@ export class MemStorage implements IStorage {
     const grant: Grant = {
       ...insertGrant,
       id,
+      amount: insertGrant.amount || null,
+      deadline: insertGrant.deadline || null,
+      status: insertGrant.status || "discovered",
+      description: insertGrant.description || null,
+      requirements: insertGrant.requirements || null,
+      applicationUrl: insertGrant.applicationUrl || null,
+      notes: insertGrant.notes || null,
       createdAt: new Date(),
     };
     this.grants.set(id, grant);
@@ -260,6 +279,10 @@ export class MemStorage implements IStorage {
     const invoice: Invoice = {
       ...insertInvoice,
       id,
+      status: insertInvoice.status || "draft",
+      dueDate: insertInvoice.dueDate || null,
+      paidDate: insertInvoice.paidDate || null,
+      stripePaymentLink: insertInvoice.stripePaymentLink || null,
       createdAt: new Date(),
     };
     this.invoices.set(id, invoice);
@@ -292,6 +315,12 @@ export class MemStorage implements IStorage {
     const task: Task = {
       ...insertTask,
       id,
+      description: insertTask.description || null,
+      dueDate: insertTask.dueDate || null,
+      priority: insertTask.priority || "medium",
+      status: insertTask.status || "pending",
+      category: insertTask.category || null,
+      relatedId: insertTask.relatedId || null,
       createdAt: new Date(),
     };
     this.tasks.set(id, task);
@@ -324,6 +353,7 @@ export class MemStorage implements IStorage {
     const campaign: EmailCampaign = {
       ...insertCampaign,
       id,
+      status: insertCampaign.status || "draft",
       sentCount: 0,
       totalRecipients: 0,
       createdAt: new Date(),
@@ -358,6 +388,9 @@ export class MemStorage implements IStorage {
     const doc: KnowledgeDoc = {
       ...insertDoc,
       id,
+      tags: insertDoc.tags || null,
+      source: insertDoc.source || null,
+      citation: insertDoc.citation || null,
       createdAt: new Date(),
     };
     this.knowledgeDocs.set(id, doc);
@@ -390,6 +423,8 @@ export class MemStorage implements IStorage {
     const message: ChatMessage = {
       ...insertMessage,
       id,
+      response: insertMessage.response || null,
+      context: insertMessage.context || null,
       createdAt: new Date(),
     };
     this.chatMessages.set(id, message);
@@ -406,6 +441,9 @@ export class MemStorage implements IStorage {
     const log: AuditLog = {
       ...insertLog,
       id,
+      userId: insertLog.userId || null,
+      resourceId: insertLog.resourceId || null,
+      details: insertLog.details || null,
       createdAt: new Date(),
     };
     this.auditLogs.set(id, log);
@@ -424,7 +462,7 @@ export class MemStorage implements IStorage {
     const grants = await this.getGrants(userId);
     const invoices = await this.getInvoices(userId);
 
-    const emailsSent = campaigns.reduce((sum, campaign) => sum + campaign.sentCount, 0);
+    const emailsSent = campaigns.reduce((sum, campaign) => sum + (campaign.sentCount || 0), 0);
     const radioStations = stations.length;
     const grantOpportunities = grants.filter(g => g.status === 'discovered').length;
     const revenue = invoices

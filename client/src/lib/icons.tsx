@@ -24,6 +24,7 @@ import {
   ChevronLeft,
   ChevronRight,
   User,
+  Clock,
 } from "lucide-react";
 
 export const Icons = {
@@ -52,4 +53,5 @@ export const Icons = {
   chevronLeft: ChevronLeft,
   chevronRight: ChevronRight,
   user: User,
+  clock: Clock,
 };

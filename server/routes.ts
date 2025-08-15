@@ -324,16 +324,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = "demo-user";
       const messageData = insertChatMessageSchema.parse({ ...req.body, userId });
       
-      // Simple AI response simulation
-      const aiResponse = `I understand you're asking about: "${messageData.message}". This is a placeholder response. In a production environment, this would integrate with OpenAI, Anthropic, or similar AI services for intelligent responses.`;
+      // Enhanced AI response with task management capabilities
+      const aiResponse = await processAIMessage(messageData.message, userId);
       
       const messageWithResponse = await storage.createChatMessage({
         ...messageData,
-        response: aiResponse,
+        response: aiResponse.message,
         context: { 
           citations: [],
           sources: [],
-          confidence: 0.8
+          confidence: aiResponse.confidence || 0.8,
+          actions: aiResponse.actions || []
         }
       });
       
@@ -343,6 +344,255 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Processing Endpoints
+  app.post("/api/ai/process", async (req, res) => {
+    try {
+      const { message, type, context } = req.body;
+      const userId = "demo-user";
+      
+      const response = await processAIMessage(message, userId, type, context);
+      res.json(response);
+    } catch (error) {
+      res.status(500).json({ error: "AI processing failed" });
+    }
+  });
+
+  app.get("/api/ai/monitor-tasks", async (req, res) => {
+    try {
+      const userId = "demo-user";
+      const monitoring = await monitorUserTasks(userId);
+      res.json(monitoring);
+    } catch (error) {
+      res.status(500).json({ error: "Task monitoring failed" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
+}
+
+// AI Task Management Functions
+async function processAIMessage(
+  message: string, 
+  userId: string, 
+  type: string = "general", 
+  context?: any
+): Promise<{
+  message: string;
+  actions?: Array<{type: string; data: any}>;
+  confidence: number;
+  suggestions?: string[];
+}> {
+  const lowerMessage = message.toLowerCase();
+  
+  // Task creation detection
+  const taskKeywords = [
+    "remind me", "schedule", "add task", "create task", 
+    "need to", "have to", "should", "must", "todo", "deadline"
+  ];
+  
+  const hasTaskIntent = taskKeywords.some(keyword => lowerMessage.includes(keyword));
+  
+  if (hasTaskIntent) {
+    return await handleTaskCreation(message, userId);
+  }
+  
+  // Grant research
+  if (lowerMessage.includes("grant") || lowerMessage.includes("c.a.r.e.n") || lowerMessage.includes("funding")) {
+    return {
+      message: "I can help you research grants for your C.A.R.E.N. project. Would you like me to add any specific grant opportunities to track? I can also help you organize application deadlines and requirements.",
+      confidence: 0.9,
+      suggestions: [
+        "Add a new grant opportunity",
+        "Check upcoming grant deadlines",
+        "Review C.A.R.E.N. project grants"
+      ]
+    };
+  }
+  
+  // Radio submission
+  if (lowerMessage.includes("radio") || lowerMessage.includes("submit") || lowerMessage.includes("music promotion")) {
+    return {
+      message: "I can help you manage radio station submissions for your music. Would you like me to help you find new stations, track submission status, or schedule follow-ups?",
+      confidence: 0.9,
+      suggestions: [
+        "Add new radio stations",
+        "Check submission status",
+        "Schedule follow-up emails"
+      ]
+    };
+  }
+  
+  // Sync licensing
+  if (lowerMessage.includes("sync") || lowerMessage.includes("licensing") || lowerMessage.includes("tv") || lowerMessage.includes("movie") || lowerMessage.includes("commercial")) {
+    return {
+      message: "I can assist with sync licensing opportunities for movies, TV shows, games, and commercials. Would you like me to help you track submissions or research new opportunities?",
+      confidence: 0.9,
+      suggestions: [
+        "Research new sync opportunities",
+        "Track licensing submissions",
+        "Organize music library for sync"
+      ]
+    };
+  }
+  
+  // Invoice management
+  if (lowerMessage.includes("invoice") || lowerMessage.includes("payment") || lowerMessage.includes("bill")) {
+    return {
+      message: "I can help you manage invoices and track payments. Would you like me to create a new invoice, check payment status, or send reminders?",
+      confidence: 0.9,
+      suggestions: [
+        "Create new invoice",
+        "Check overdue payments",
+        "Send payment reminders"
+      ]
+    };
+  }
+  
+  // General assistance
+  return {
+    message: `I'm your Life Assistant, here to help you manage your music career and daily tasks. I can help you with:\n\n• **Grant Research** - Track C.A.R.E.N. funding opportunities\n• **Radio Promotion** - Manage station submissions and follow-ups\n• **Sync Licensing** - Track opportunities for movies, TV, games\n• **Task Management** - Create reminders and schedule activities\n• **Invoicing** - Manage payments and track income\n• **Knowledge Base** - Store important information and contacts\n\nWhat would you like help with today?`,
+    confidence: 0.8,
+    suggestions: [
+      "Schedule a task",
+      "Research grants",
+      "Add radio stations",
+      "Create an invoice"
+    ]
+  };
+}
+
+async function handleTaskCreation(
+  message: string, 
+  userId: string
+): Promise<{
+  message: string;
+  actions: Array<{type: string; data: any}>;
+  confidence: number;
+}> {
+  const lowerMessage = message.toLowerCase();
+  
+  // Extract task details
+  let priority = "medium";
+  if (lowerMessage.includes("urgent") || lowerMessage.includes("asap")) {
+    priority = "high";
+  } else if (lowerMessage.includes("whenever") || lowerMessage.includes("low priority")) {
+    priority = "low";
+  }
+  
+  // Extract due date
+  let dueDate: Date | null = null;
+  if (lowerMessage.includes("today")) {
+    dueDate = new Date();
+  } else if (lowerMessage.includes("tomorrow")) {
+    dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 1);
+  } else if (lowerMessage.includes("next week")) {
+    dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 7);
+  }
+  
+  // Determine category
+  let category = "general";
+  if (lowerMessage.includes("grant") || lowerMessage.includes("c.a.r.e.n")) {
+    category = "grants";
+  } else if (lowerMessage.includes("radio") || lowerMessage.includes("submission")) {
+    category = "radio";
+  } else if (lowerMessage.includes("sync") || lowerMessage.includes("licensing")) {
+    category = "licensing";
+  } else if (lowerMessage.includes("invoice") || lowerMessage.includes("payment")) {
+    category = "invoicing";
+  }
+  
+  // Create task
+  const taskData = {
+    userId,
+    title: extractTaskTitle(message),
+    description: message,
+    priority,
+    status: "pending",
+    category,
+    dueDate: dueDate || null
+  };
+  
+  try {
+    await storage.createTask(taskData);
+    
+    const dueDateText = dueDate ? ` for ${dueDate.toLocaleDateString()}` : "";
+    
+    return {
+      message: `✅ I've created a ${priority} priority task: "${taskData.title}"${dueDateText}. I'll monitor this task and remind you if needed.`,
+      actions: [{
+        type: "create_task",
+        data: taskData
+      }],
+      confidence: 0.95
+    };
+  } catch (error) {
+    return {
+      message: "I had trouble creating that task. Could you try rephrasing your request?",
+      actions: [],
+      confidence: 0.3
+    };
+  }
+}
+
+function extractTaskTitle(message: string): string {
+  // Simple title extraction - remove common prefixes
+  let title = message;
+  const prefixes = [
+    "remind me to", "remind me", "i need to", "i have to", 
+    "i should", "i must", "please", "can you", "schedule"
+  ];
+  
+  for (const prefix of prefixes) {
+    if (title.toLowerCase().startsWith(prefix)) {
+      title = title.substring(prefix.length).trim();
+      break;
+    }
+  }
+  
+  // Capitalize first letter
+  return title.charAt(0).toUpperCase() + title.slice(1);
+}
+
+async function monitorUserTasks(userId: string): Promise<{
+  overdueTasks: any[];
+  upcomingTasks: any[];
+  suggestions: string[];
+}> {
+  const tasks = await storage.getTasks(userId);
+  const now = new Date();
+  
+  const overdueTasks = tasks.filter(task => {
+    if (!task.dueDate || task.status === "completed") return false;
+    return new Date(task.dueDate) < now;
+  });
+  
+  const upcomingTasks = tasks.filter(task => {
+    if (!task.dueDate || task.status === "completed") return false;
+    const taskDate = new Date(task.dueDate);
+    const daysDiff = Math.ceil((taskDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return daysDiff <= 3 && daysDiff >= 0;
+  });
+  
+  const suggestions = [];
+  
+  if (overdueTasks.length > 0) {
+    suggestions.push(`You have ${overdueTasks.length} overdue task(s). Consider updating their status or rescheduling.`);
+  }
+  
+  if (upcomingTasks.length > 0) {
+    suggestions.push(`${upcomingTasks.length} task(s) are due in the next 3 days.`);
+  }
+  
+  if (tasks.filter(t => t.status === "pending").length > 10) {
+    suggestions.push("You have many pending tasks. Consider prioritizing or breaking them into smaller items.");
+  }
+  
+  return {
+    overdueTasks,
+    upcomingTasks,
+    suggestions
+  };
 }

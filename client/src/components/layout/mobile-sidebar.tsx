@@ -36,7 +36,7 @@ export default function MobileSidebar() {
         <div className="p-6 bg-primary-500 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold">MusicBiz Pro</h2>
+              <h2 className="text-xl font-semibold">My Life Assistant</h2>
               <p className="text-primary-100 text-sm mt-1">AI-Powered Music Management</p>
             </div>
             <Button
@@ -83,7 +83,7 @@ export default function MobileSidebar() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">John Doe</p>
-              <p className="text-xs text-gray-500 truncate">john@musicbizpro.com</p>
+              <p className="text-xs text-gray-500 truncate">user@mylifeassistant.com</p>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 # Overview
 
-This is a full-stack music business management application called "MusicBiz Pro" that helps musicians manage their professional activities. The application serves as an AI-powered platform for managing email outreach, radio station contacts, sync licensing opportunities, grant applications, invoicing, calendar events, and knowledge management. It features a comprehensive dashboard, AI assistant integration, and specialized modules for different aspects of the music business including radio promotion, licensing scouts, grant tracking for a project called C.A.R.E.N., and professional invoicing with payment processing.
+This is a personal Life Assistant application called "My Life Assistant" that helps the user manage their daily activities and music industry work. The application serves as an AI-powered platform for managing email outreach, radio station contacts, sync licensing opportunities, grant applications, invoicing, calendar events, and knowledge management. It features a comprehensive dashboard, AI assistant integration, and specialized modules for different aspects of the music business including radio promotion, licensing scouts, grant tracking for a project called C.A.R.E.N., and professional invoicing with payment processing. The app includes hardwired email identification for automatic user recognition and AI task management capabilities.
 
 # User Preferences
 

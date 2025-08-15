@@ -3,13 +3,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Icons } from "@/lib/icons";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
+import { useAI } from "@/hooks/useAI";
 import type { ChatMessage } from "@shared/schema";
 
 export default function Chat() {
   const [message, setMessage] = useState("");
+  const [taskSuggestions, setTaskSuggestions] = useState<string[]>([]);
   const queryClient = useQueryClient();
+  const { user, isAuthenticated } = useAuth();
+  const { chat, isProcessing } = useAI();
 
   const { data: messages = [], isLoading } = useQuery<ChatMessage[]>({
     queryKey: ["/api/chat-messages"],
@@ -17,6 +23,10 @@ export default function Chat() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (messageText: string) => {
+      // Use enhanced AI service for processing
+      const aiResponse = await chat(messageText);
+      
+      // Also store in chat history
       const response = await apiRequest("POST", "/api/chat-messages", {
         message: messageText,
       });
@@ -24,6 +34,8 @@ export default function Chat() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/chat-messages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       setMessage("");
     },
   });
@@ -44,8 +56,21 @@ export default function Chat() {
   return (
     <div className="p-4 lg:p-8 max-w-4xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">AI Assistant</h1>
-        <p className="text-gray-600">Get help with your music business tasks and questions.</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">AI Assistant</h1>
+            <p className="text-gray-600">Get help with your music business tasks and questions.</p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              <Icons.user className="h-3 w-3 mr-1" />
+              {user?.name || 'User'}
+            </Badge>
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              Auto-identified
+            </Badge>
+          </div>
+        </div>
       </div>
 
       <Card className="material-card">
@@ -71,19 +96,26 @@ export default function Chat() {
                 </div>
                 <div className="flex-1 bg-gray-100 rounded-lg p-4">
                   <p className="text-sm text-gray-900">
-                    Hello! I'm your AI assistant for music business management. I can help you with:
+                    Hello {user?.name || 'there'}! I'm your Life Assistant, automatically recognizing you by your hardwired email ({user?.email}). I can help you with:
                   </p>
                   <ul className="list-disc list-inside mt-2 text-sm text-gray-700 space-y-1">
-                    <li>Email outreach strategies and templates</li>
-                    <li>Finding radio stations and contacts</li>
-                    <li>Grant research and applications</li>
-                    <li>Music licensing opportunities</li>
-                    <li>Business planning and advice</li>
-                    <li>Industry insights and trends</li>
+                    <li>🎯 **Creating and managing tasks** - Just tell me what you need to do</li>
+                    <li>📧 **Email outreach strategies** and templates</li>
+                    <li>📻 **Radio station submissions** and follow-ups</li>
+                    <li>💰 **C.A.R.E.N. grant research** and applications</li>
+                    <li>🎬 **Sync licensing opportunities** for movies, TV, games</li>
+                    <li>📊 **Invoice management** and payment tracking</li>
+                    <li>📅 **Scheduling and reminders** - I'll monitor your tasks</li>
                   </ul>
-                  <p className="text-sm text-gray-900 mt-2">
-                    What would you like to work on today?
-                  </p>
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-900 font-medium">💡 Try saying:</p>
+                    <ul className="text-xs text-blue-800 mt-1 space-y-1">
+                      <li>• "Remind me to submit my track to KQED tomorrow"</li>
+                      <li>• "I need to research grants for C.A.R.E.N."</li>
+                      <li>• "Create an invoice for my recent gig"</li>
+                      <li>• "Schedule a follow-up with that music supervisor"</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -107,6 +139,18 @@ export default function Chat() {
                       </div>
                       <div className="flex-1 bg-gray-100 rounded-lg p-4">
                         <p className="text-sm text-gray-900 whitespace-pre-wrap">{msg.response}</p>
+                        {msg.context && (msg.context as any).actions && (msg.context as any).actions.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <p className="text-xs text-gray-600 font-medium mb-2">Actions taken:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {(msg.context as any).actions.map((action: any, idx: number) => (
+                                <Badge key={idx} variant="secondary" className="text-xs">
+                                  {action.type.replace('_', ' ')}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -114,7 +158,7 @@ export default function Chat() {
               ))
             )}
             
-            {sendMessageMutation.isPending && (
+            {(sendMessageMutation.isPending || isProcessing) && (
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
                   AI
@@ -138,7 +182,7 @@ export default function Chat() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                disabled={sendMessageMutation.isPending}
+                disabled={sendMessageMutation.isPending || isProcessing}
                 className="min-h-[100px] resize-none"
               />
               <div className="flex justify-between items-center">
@@ -147,7 +191,7 @@ export default function Chat() {
                 </p>
                 <Button
                   onClick={handleSendMessage}
-                  disabled={!message.trim() || sendMessageMutation.isPending}
+                  disabled={!message.trim() || sendMessageMutation.isPending || isProcessing}
                   className="px-8"
                 >
                   <Icons.send className="h-4 w-4 mr-2" />

@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Chat from "@/pages/chat";
@@ -16,6 +17,20 @@ import Knowledge from "@/pages/knowledge";
 import AppShell from "@/components/layout/app-shell";
 
 function Router() {
+  const { isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">My Life Assistant</h2>
+          <p className="text-gray-600">Initializing your personal assistant...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Switch>
       <Route path="/" component={Dashboard} />

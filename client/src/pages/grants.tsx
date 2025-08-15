@@ -298,7 +298,7 @@ export default function Grants() {
           </Card>
         ) : (
           filteredGrants.map((grant) => {
-            const deadlineStatus = getDeadlineStatus(grant.deadline);
+            const deadlineStatus = getDeadlineStatus(grant.deadline ? grant.deadline.toString() : null);
             return (
               <Card key={grant.id} className="material-card hover:material-card-elevated transition-all">
                 <CardHeader>
@@ -359,7 +359,7 @@ export default function Grants() {
 
                     <div className="flex flex-col gap-2 pt-3">
                       <select
-                        value={grant.status}
+                        value={grant.status || "discovered"}
                         onChange={(e) => handleStatusChange(grant.id, e.target.value)}
                         className="text-sm border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-primary-500"
                         disabled={updateGrantMutation.isPending}

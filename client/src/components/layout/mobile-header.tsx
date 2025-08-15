@@ -16,7 +16,7 @@ export default function MobileHeader() {
         >
           <Icons.menu className="h-6 w-6" />
         </Button>
-        <h1 className="text-lg font-semibold">MusicBiz Pro</h1>
+        <h1 className="text-lg font-semibold">My Life Assistant</h1>
         <Button
           variant="ghost"
           size="sm"
