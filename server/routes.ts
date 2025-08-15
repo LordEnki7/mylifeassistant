@@ -12,358 +12,564 @@ import {
   insertChatMessageSchema,
 } from "@shared/schema";
 
+// Security Middleware Imports
+import { requireAuth, getUserId, generateToken, loginHardwiredUser } from "./middleware/auth";
+import { 
+  apiRateLimit, 
+  emailRateLimit, 
+  aiRateLimit, 
+  progressiveDelay,
+  emailQueue 
+} from "./middleware/rateLimiting";
+import { auditLogger, auditMiddleware } from "./middleware/auditLogger";
+import { 
+  validateRequest, 
+  validateQuery, 
+  sanitizeMiddleware, 
+  schemas 
+} from "./middleware/inputValidation";
+import { contentFilter } from "./middleware/contentFilter";
+
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Dashboard
-  app.get("/api/dashboard/stats", async (req, res) => {
+  // Apply global security middleware
+  app.use(sanitizeMiddleware);
+  app.use(auditMiddleware);
+  app.use(apiRateLimit);
+  app.use(progressiveDelay);
+
+  // Health check endpoint (no auth required)
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // Authentication endpoints (no auth required)
+  app.post("/api/auth/login", async (req, res) => {
     try {
-      const userId = "demo-user"; // In real app, get from authentication
+      await auditLogger.logAuth(req, 'login', true);
+      const { token, user } = await loginHardwiredUser();
+      res.json({ token, user });
+    } catch (error) {
+      await auditLogger.logAuth(req, 'login', false, error instanceof Error ? error.message : 'Login failed');
+      res.status(401).json({ error: "Authentication failed", message: error instanceof Error ? error.message : "Login failed" });
+    }
+  });
+
+  app.get("/api/auth/user", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      await auditLogger.logDataAccess(req, 'read', 'user', userId);
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user data" });
+    }
+  });
+
+  // Dashboard (protected)
+  app.get("/api/dashboard/stats", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
       const stats = await storage.getDashboardStats(userId);
+      await auditLogger.logDataAccess(req, 'read', 'dashboard_stats', userId);
       res.json(stats);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch dashboard stats" });
     }
   });
 
-  // Contacts
-  app.get("/api/contacts", async (req, res) => {
+  // Contacts (all protected)
+  app.get("/api/contacts", requireAuth, async (req, res) => {
     try {
-      const userId = "demo-user";
+      const userId = getUserId(req);
       const contacts = await storage.getContacts(userId);
+      await auditLogger.logDataAccess(req, 'read', 'contacts', userId);
       res.json(contacts);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch contacts" });
     }
   });
 
-  app.post("/api/contacts", async (req, res) => {
+  app.post("/api/contacts", requireAuth, validateRequest(schemas.contact), async (req, res) => {
     try {
-      const userId = "demo-user";
-      const contactData = insertContactSchema.parse({ ...req.body, userId });
+      const userId = getUserId(req);
+      const contactData = { ...req.body, userId };
       const contact = await storage.createContact(contactData);
+      await auditLogger.logDataAccess(req, 'create', 'contact', contact.id, true);
       res.json(contact);
     } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'contact', undefined, false);
       res.status(400).json({ error: "Invalid contact data" });
     }
   });
 
-  app.put("/api/contacts/:id", async (req, res) => {
+  app.put("/api/contacts/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const contact = await storage.updateContact(id, req.body);
       if (!contact) {
+        await auditLogger.logDataAccess(req, 'update', 'contact', id, false);
         return res.status(404).json({ error: "Contact not found" });
       }
+      await auditLogger.logDataAccess(req, 'update', 'contact', id, true);
       res.json(contact);
     } catch (error) {
+      await auditLogger.logDataAccess(req, 'update', 'contact', req.params.id, false);
       res.status(400).json({ error: "Failed to update contact" });
     }
   });
 
-  app.delete("/api/contacts/:id", async (req, res) => {
+  app.delete("/api/contacts/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const deleted = await storage.deleteContact(id);
       if (!deleted) {
+        await auditLogger.logDataAccess(req, 'delete', 'contact', id, false);
         return res.status(404).json({ error: "Contact not found" });
       }
+      await auditLogger.logDataAccess(req, 'delete', 'contact', id, true);
       res.json({ success: true });
     } catch (error) {
+      await auditLogger.logDataAccess(req, 'delete', 'contact', req.params.id, false);
       res.status(500).json({ error: "Failed to delete contact" });
     }
   });
 
-  // Radio Stations
-  app.get("/api/radio-stations", async (req, res) => {
+  // Radio Stations (all protected)
+  app.get("/api/radio-stations", requireAuth, async (req, res) => {
     try {
-      const userId = "demo-user";
+      const userId = getUserId(req);
       const stations = await storage.getRadioStations(userId);
+      await auditLogger.logDataAccess(req, 'read', 'radio_stations', userId);
       res.json(stations);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch radio stations" });
     }
   });
 
-  app.post("/api/radio-stations", async (req, res) => {
+  app.post("/api/radio-stations", requireAuth, validateRequest(schemas.radioStation), async (req, res) => {
     try {
-      const userId = "demo-user";
-      const stationData = insertRadioStationSchema.parse({ ...req.body, userId });
+      const userId = getUserId(req);
+      const stationData = { ...req.body, userId };
       const station = await storage.createRadioStation(stationData);
+      await auditLogger.logDataAccess(req, 'create', 'radio_station', station.id, true);
       res.json(station);
     } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'radio_station', undefined, false);
       res.status(400).json({ error: "Invalid radio station data" });
     }
   });
 
-  app.put("/api/radio-stations/:id", async (req, res) => {
+  app.put("/api/radio-stations/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const station = await storage.updateRadioStation(id, req.body);
       if (!station) {
+        await auditLogger.logDataAccess(req, 'update', 'radio_station', id, false);
         return res.status(404).json({ error: "Radio station not found" });
       }
+      await auditLogger.logDataAccess(req, 'update', 'radio_station', id, true);
       res.json(station);
     } catch (error) {
+      await auditLogger.logDataAccess(req, 'update', 'radio_station', req.params.id, false);
       res.status(400).json({ error: "Failed to update radio station" });
     }
   });
 
-  app.delete("/api/radio-stations/:id", async (req, res) => {
+  app.delete("/api/radio-stations/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const deleted = await storage.deleteRadioStation(id);
       if (!deleted) {
+        await auditLogger.logDataAccess(req, 'delete', 'radio_station', id, false);
         return res.status(404).json({ error: "Radio station not found" });
       }
+      await auditLogger.logDataAccess(req, 'delete', 'radio_station', id, true);
       res.json({ success: true });
     } catch (error) {
+      await auditLogger.logDataAccess(req, 'delete', 'radio_station', req.params.id, false);
       res.status(500).json({ error: "Failed to delete radio station" });
     }
   });
 
-  // Grants
-  app.get("/api/grants", async (req, res) => {
+  // Grants (all protected)
+  app.get("/api/grants", requireAuth, async (req, res) => {
     try {
-      const userId = "demo-user";
+      const userId = getUserId(req);
       const grants = await storage.getGrants(userId);
+      await auditLogger.logDataAccess(req, 'read', 'grants', userId);
       res.json(grants);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch grants" });
     }
   });
 
-  app.post("/api/grants", async (req, res) => {
+  app.post("/api/grants", requireAuth, validateRequest(schemas.grant), async (req, res) => {
     try {
-      const userId = "demo-user";
-      const grantData = insertGrantSchema.parse({ ...req.body, userId });
+      const userId = getUserId(req);
+      const grantData = { ...req.body, userId };
       const grant = await storage.createGrant(grantData);
+      await auditLogger.logDataAccess(req, 'create', 'grant', grant.id, true);
       res.json(grant);
     } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'grant', undefined, false);
       res.status(400).json({ error: "Invalid grant data" });
     }
   });
 
-  app.put("/api/grants/:id", async (req, res) => {
+  app.put("/api/grants/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const grant = await storage.updateGrant(id, req.body);
       if (!grant) {
+        await auditLogger.logDataAccess(req, 'update', 'grant', id, false);
         return res.status(404).json({ error: "Grant not found" });
       }
+      await auditLogger.logDataAccess(req, 'update', 'grant', id, true);
       res.json(grant);
     } catch (error) {
+      await auditLogger.logDataAccess(req, 'update', 'grant', req.params.id, false);
       res.status(400).json({ error: "Failed to update grant" });
     }
   });
 
-  app.delete("/api/grants/:id", async (req, res) => {
+  app.delete("/api/grants/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const deleted = await storage.deleteGrant(id);
       if (!deleted) {
+        await auditLogger.logDataAccess(req, 'delete', 'grant', id, false);
         return res.status(404).json({ error: "Grant not found" });
       }
+      await auditLogger.logDataAccess(req, 'delete', 'grant', id, true);
       res.json({ success: true });
     } catch (error) {
+      await auditLogger.logDataAccess(req, 'delete', 'grant', req.params.id, false);
       res.status(500).json({ error: "Failed to delete grant" });
     }
   });
 
-  // Invoices
-  app.get("/api/invoices", async (req, res) => {
+  // Invoices (all protected)
+  app.get("/api/invoices", requireAuth, async (req, res) => {
     try {
-      const userId = "demo-user";
+      const userId = getUserId(req);
       const invoices = await storage.getInvoices(userId);
+      await auditLogger.logDataAccess(req, 'read', 'invoices', userId);
       res.json(invoices);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch invoices" });
     }
   });
 
-  app.post("/api/invoices", async (req, res) => {
+  app.post("/api/invoices", requireAuth, validateRequest(schemas.invoice), async (req, res) => {
     try {
-      const userId = "demo-user";
-      const invoiceData = insertInvoiceSchema.parse({ ...req.body, userId });
+      const userId = getUserId(req);
+      const invoiceData = { ...req.body, userId };
       const invoice = await storage.createInvoice(invoiceData);
+      await auditLogger.logDataAccess(req, 'create', 'invoice', invoice.id, true);
       res.json(invoice);
     } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'invoice', undefined, false);
       res.status(400).json({ error: "Invalid invoice data" });
     }
   });
 
-  app.put("/api/invoices/:id", async (req, res) => {
+  app.put("/api/invoices/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const invoice = await storage.updateInvoice(id, req.body);
       if (!invoice) {
+        await auditLogger.logDataAccess(req, 'update', 'invoice', id, false);
         return res.status(404).json({ error: "Invoice not found" });
       }
+      await auditLogger.logDataAccess(req, 'update', 'invoice', id, true);
       res.json(invoice);
     } catch (error) {
+      await auditLogger.logDataAccess(req, 'update', 'invoice', req.params.id, false);
       res.status(400).json({ error: "Failed to update invoice" });
     }
   });
 
-  app.delete("/api/invoices/:id", async (req, res) => {
+  app.delete("/api/invoices/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const deleted = await storage.deleteInvoice(id);
       if (!deleted) {
+        await auditLogger.logDataAccess(req, 'delete', 'invoice', id, false);
         return res.status(404).json({ error: "Invoice not found" });
       }
+      await auditLogger.logDataAccess(req, 'delete', 'invoice', id, true);
       res.json({ success: true });
     } catch (error) {
+      await auditLogger.logDataAccess(req, 'delete', 'invoice', req.params.id, false);
       res.status(500).json({ error: "Failed to delete invoice" });
     }
   });
 
-  // Tasks
-  app.get("/api/tasks", async (req, res) => {
+  // Tasks (all protected)
+  app.get("/api/tasks", requireAuth, async (req, res) => {
     try {
-      const userId = "demo-user";
+      const userId = getUserId(req);
       const tasks = await storage.getTasks(userId);
+      await auditLogger.logDataAccess(req, 'read', 'tasks', userId);
       res.json(tasks);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch tasks" });
     }
   });
 
-  app.post("/api/tasks", async (req, res) => {
+  app.post("/api/tasks", requireAuth, validateRequest(schemas.task), async (req, res) => {
     try {
-      const userId = "demo-user";
-      const taskData = insertTaskSchema.parse({ ...req.body, userId });
+      const userId = getUserId(req);
+      const taskData = { ...req.body, userId };
       const task = await storage.createTask(taskData);
+      await auditLogger.logDataAccess(req, 'create', 'task', task.id, true);
       res.json(task);
     } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'task', undefined, false);
       res.status(400).json({ error: "Invalid task data" });
     }
   });
 
-  app.put("/api/tasks/:id", async (req, res) => {
+  app.put("/api/tasks/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const task = await storage.updateTask(id, req.body);
       if (!task) {
+        await auditLogger.logDataAccess(req, 'update', 'task', id, false);
         return res.status(404).json({ error: "Task not found" });
       }
+      await auditLogger.logDataAccess(req, 'update', 'task', id, true);
       res.json(task);
     } catch (error) {
+      await auditLogger.logDataAccess(req, 'update', 'task', req.params.id, false);
       res.status(400).json({ error: "Failed to update task" });
     }
   });
 
-  app.delete("/api/tasks/:id", async (req, res) => {
+  app.delete("/api/tasks/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const deleted = await storage.deleteTask(id);
       if (!deleted) {
+        await auditLogger.logDataAccess(req, 'delete', 'task', id, false);
         return res.status(404).json({ error: "Task not found" });
       }
+      await auditLogger.logDataAccess(req, 'delete', 'task', id, true);
       res.json({ success: true });
     } catch (error) {
+      await auditLogger.logDataAccess(req, 'delete', 'task', req.params.id, false);
       res.status(500).json({ error: "Failed to delete task" });
     }
   });
 
-  // Email Campaigns
-  app.get("/api/email-campaigns", async (req, res) => {
+  // Email Campaigns (all protected with rate limiting)
+  app.get("/api/email-campaigns", requireAuth, async (req, res) => {
     try {
-      const userId = "demo-user";
+      const userId = getUserId(req);
       const campaigns = await storage.getEmailCampaigns(userId);
+      await auditLogger.logDataAccess(req, 'read', 'email_campaigns', userId);
       res.json(campaigns);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch email campaigns" });
     }
   });
 
-  app.post("/api/email-campaigns", async (req, res) => {
+  app.post("/api/email-campaigns", requireAuth, emailRateLimit, validateRequest(schemas.emailCampaign), async (req, res) => {
     try {
-      const userId = "demo-user";
-      const campaignData = insertEmailCampaignSchema.parse({ ...req.body, userId });
+      const userId = getUserId(req);
+      const campaignData = { ...req.body, userId };
       const campaign = await storage.createEmailCampaign(campaignData);
+      
+      // Queue emails for campaign
+      const queuePromises = campaignData.recipients.map((email: string) => 
+        emailQueue.addJob({
+          userId,
+          to: email,
+          subject: campaignData.subject,
+          body: campaignData.template,
+          priority: 'normal'
+        })
+      );
+      
+      await Promise.all(queuePromises);
+      await auditLogger.logEmail(req, campaignData, true);
+      await auditLogger.logDataAccess(req, 'create', 'email_campaign', campaign.id, true);
+      
       res.json(campaign);
     } catch (error) {
+      await auditLogger.logEmail(req, req.body, false, error instanceof Error ? error.message : 'Campaign creation failed');
+      await auditLogger.logDataAccess(req, 'create', 'email_campaign', undefined, false);
       res.status(400).json({ error: "Invalid email campaign data" });
     }
   });
 
-  // Knowledge Docs
-  app.get("/api/knowledge-docs", async (req, res) => {
+  // Knowledge Docs (all protected)
+  app.get("/api/knowledge-docs", requireAuth, async (req, res) => {
     try {
-      const userId = "demo-user";
+      const userId = getUserId(req);
       const docs = await storage.getKnowledgeDocs(userId);
+      await auditLogger.logDataAccess(req, 'read', 'knowledge_docs', userId);
       res.json(docs);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch knowledge docs" });
     }
   });
 
-  app.post("/api/knowledge-docs", async (req, res) => {
+  app.post("/api/knowledge-docs", requireAuth, validateRequest(schemas.knowledgeDoc), async (req, res) => {
     try {
-      const userId = "demo-user";
-      const docData = insertKnowledgeDocSchema.parse({ ...req.body, userId });
+      const userId = getUserId(req);
+      const docData = { ...req.body, userId };
       const doc = await storage.createKnowledgeDoc(docData);
+      await auditLogger.logDataAccess(req, 'create', 'knowledge_doc', doc.id, true);
       res.json(doc);
     } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'knowledge_doc', undefined, false);
       res.status(400).json({ error: "Invalid knowledge doc data" });
     }
   });
 
-  // Chat Messages
-  app.get("/api/chat-messages", async (req, res) => {
+  // Chat Messages (all protected with AI rate limiting)
+  app.get("/api/chat-messages", requireAuth, async (req, res) => {
     try {
-      const userId = "demo-user";
+      const userId = getUserId(req);
       const messages = await storage.getChatMessages(userId);
+      await auditLogger.logDataAccess(req, 'read', 'chat_messages', userId);
       res.json(messages);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch chat messages" });
     }
   });
 
-  app.post("/api/chat-messages", async (req, res) => {
+  app.post("/api/chat-messages", requireAuth, aiRateLimit, validateRequest(schemas.chatMessage), async (req, res) => {
     try {
-      const userId = "demo-user";
-      const messageData = insertChatMessageSchema.parse({ ...req.body, userId });
+      const userId = getUserId(req);
+      const messageData = { ...req.body, userId };
       
-      // Enhanced AI response with task management capabilities
+      // Enhanced AI response with task management capabilities and content filtering
       const aiResponse = await processAIMessage(messageData.message, userId);
+      
+      // Apply content filtering to AI response
+      const filteredResponse = contentFilter.filterAIResponse(aiResponse.message, {
+        userMessage: messageData.message,
+        confidence: aiResponse.confidence
+      });
+      
+      if (filteredResponse.blocked) {
+        await auditLogger.logSecurityEvent(req, 'ai_content_blocked', {
+          reason: filteredResponse.reason,
+          userMessage: messageData.message.substring(0, 100)
+        }, 'medium');
+        return res.status(400).json({ 
+          error: "Content filtered", 
+          message: "This request contains content that cannot be processed.",
+          reason: filteredResponse.reason
+        });
+      }
       
       const messageWithResponse = await storage.createChatMessage({
         ...messageData,
-        response: aiResponse.message,
+        response: filteredResponse.filtered + (filteredResponse.disclaimer || ''),
         context: { 
           citations: [],
           sources: [],
           confidence: aiResponse.confidence || 0.8,
-          actions: aiResponse.actions || []
+          actions: aiResponse.actions || [],
+          filtered: filteredResponse.disclaimer ? true : false
         }
       });
       
+      await auditLogger.logAIInteraction(req, {
+        id: messageWithResponse.id,
+        message: messageData.message,
+        response: filteredResponse.filtered,
+        confidence: aiResponse.confidence,
+        actions: aiResponse.actions
+      }, true);
+      
+      await auditLogger.logDataAccess(req, 'create', 'chat_message', messageWithResponse.id, true);
       res.json(messageWithResponse);
     } catch (error) {
+      await auditLogger.logAIInteraction(req, {
+        message: req.body.message,
+        response: null,
+        confidence: 0
+      }, false, error instanceof Error ? error.message : 'AI processing failed');
+      await auditLogger.logDataAccess(req, 'create', 'chat_message', undefined, false);
       res.status(400).json({ error: "Invalid chat message data" });
     }
   });
 
-  // AI Processing Endpoints
-  app.post("/api/ai/process", async (req, res) => {
+  // AI Processing Endpoints (protected with AI rate limiting)
+  app.post("/api/ai/process", requireAuth, aiRateLimit, async (req, res) => {
     try {
       const { message, type, context } = req.body;
-      const userId = "demo-user";
+      const userId = getUserId(req);
       
       const response = await processAIMessage(message, userId, type, context);
-      res.json(response);
+      
+      // Apply content filtering
+      const filteredResponse = contentFilter.filterAIResponse(response.message, {
+        userMessage: message,
+        confidence: response.confidence,
+        type: type
+      });
+      
+      if (filteredResponse.blocked) {
+        await auditLogger.logSecurityEvent(req, 'ai_content_blocked', {
+          reason: filteredResponse.reason,
+          userMessage: message.substring(0, 100),
+          type: type
+        }, 'medium');
+        return res.status(400).json({ 
+          error: "Content filtered", 
+          message: "This request contains content that cannot be processed.",
+          reason: filteredResponse.reason
+        });
+      }
+      
+      await auditLogger.logAIInteraction(req, {
+        message: message,
+        response: filteredResponse.filtered,
+        confidence: response.confidence,
+        type: type
+      }, true);
+      
+      res.json({
+        ...response,
+        message: filteredResponse.filtered + (filteredResponse.disclaimer || '')
+      });
     } catch (error) {
+      await auditLogger.logAIInteraction(req, {
+        message: req.body.message,
+        response: null,
+        confidence: 0
+      }, false, error instanceof Error ? error.message : 'AI processing failed');
       res.status(500).json({ error: "AI processing failed" });
     }
   });
 
-  app.get("/api/ai/monitor-tasks", async (req, res) => {
+  app.get("/api/ai/monitor-tasks", requireAuth, async (req, res) => {
     try {
-      const userId = "demo-user";
+      const userId = getUserId(req);
       const monitoring = await monitorUserTasks(userId);
+      await auditLogger.logDataAccess(req, 'read', 'task_monitoring', userId);
       res.json(monitoring);
     } catch (error) {
       res.status(500).json({ error: "Task monitoring failed" });
+    }
+  });
+
+  // Email queue status endpoint (protected)
+  app.get("/api/email/queue-status", requireAuth, async (req, res) => {
+    try {
+      const stats = emailQueue.getQueueStats();
+      await auditLogger.logDataAccess(req, 'read', 'email_queue_status', getUserId(req));
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch queue status" });
     }
   });
 
@@ -516,7 +722,21 @@ async function handleTaskCreation(
   };
   
   try {
-    await storage.createTask(taskData);
+    const newTask = await storage.createTask(taskData);
+    
+    // Log task creation for audit
+    await storage.createAuditLog({
+      userId,
+      action: 'ai_create_task',
+      resource: 'task',
+      resourceId: newTask.id,
+      details: {
+        taskTitle: taskData.title,
+        priority: taskData.priority,
+        category: taskData.category,
+        aiGenerated: true
+      }
+    });
     
     const dueDateText = dueDate ? ` for ${dueDate.toLocaleDateString()}` : "";
     

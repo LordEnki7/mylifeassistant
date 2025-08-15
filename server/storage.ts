@@ -115,15 +115,16 @@ export class MemStorage implements IStorage {
   }
 
   private initializeDemoData() {
-    const demoUser: User = {
-      id: "demo-user",
-      username: "johndoe",
-      password: "hashed-password",
+    const userId = randomUUID();
+    const hardwiredUser: User = {
+      id: userId,
+      username: "user@mylifeassistant.com",
+      password: "hardwired-user-no-password-needed",
       email: "user@mylifeassistant.com",
-      name: "User",
+      name: "My Life Assistant User",
       createdAt: new Date(),
     };
-    this.users.set(demoUser.id, demoUser);
+    this.users.set(hardwiredUser.id, hardwiredUser);
   }
 
   // Users
