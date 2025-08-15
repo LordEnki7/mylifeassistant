@@ -158,6 +158,84 @@ export const songs = pgTable("songs", {
   description: text("description"),
   promotionStatus: text("promotion_status").default("active"), // active, paused, completed
   targetLicenseTypes: text("target_license_types").array(), // film, tv, commercial, game, etc.
+  website: text("website"), // Artist website
+  rightsStatus: text("rights_status").default("100_clear"), // 100_clear, pending, issues
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const songVersions = pgTable("song_versions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  songId: varchar("song_id").references(() => songs.id).notNull(),
+  versionType: text("version_type").notNull(), // full, instrumental, stems, 30sec, 60sec, etc.
+  filePath: text("file_path").notNull(),
+  fileFormat: text("file_format").notNull(),
+  duration: integer("duration"), // Duration in seconds
+  status: text("status").default("created"), // created, optimized, ready
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const musicSupervisors = pgTable("music_supervisors", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  email: text("email"),
+  company: text("company"),
+  position: text("position"),
+  projects: text("projects").array(), // Past/current projects
+  genres: text("genres").array(), // Preferred music genres
+  contactStatus: text("contact_status").default("not_contacted"), // not_contacted, contacted, responded, relationship
+  lastContacted: timestamp("last_contacted"),
+  responseRate: integer("response_rate").default(0), // Percentage 0-100
+  notes: text("notes"),
+  website: text("website"),
+  linkedIn: text("linkedin"),
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const syncCampaigns = pgTable("sync_campaigns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  songId: varchar("song_id").references(() => songs.id).notNull(),
+  targetType: text("target_type").notNull(), // film, tv, commercial, game, etc.
+  status: text("status").default("planning"), // planning, active, paused, completed
+  supervisorsTargeted: integer("supervisors_targeted").default(0),
+  responsesReceived: integer("responses_received").default(0),
+  placementsAchieved: integer("placements_achieved").default(0),
+  totalRevenue: decimal("total_revenue").default("0"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const platformSubmissions = pgTable("platform_submissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  songId: varchar("song_id").references(() => songs.id).notNull(),
+  platform: text("platform").notNull(), // BeatStars, Songtradr, Epidemic Sound, etc.
+  submissionDate: timestamp("submission_date").defaultNow(),
+  status: text("status").default("submitted"), // submitted, accepted, rejected, live
+  platformUrl: text("platform_url"), // URL on the platform
+  revenue: decimal("revenue").default("0"),
+  downloads: integer("downloads").default(0),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const actionItems = pgTable("action_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  category: text("category").notNull(), // sync_optimization, rights_documentation, professional_materials, platform_presence, networking
+  title: text("title").notNull(),
+  description: text("description"),
+  priority: text("priority").default("high"), // low, medium, high, critical
+  status: text("status").default("pending"), // pending, in_progress, completed, blocked
+  dueDate: timestamp("due_date"),
+  completedDate: timestamp("completed_date"),
+  relatedId: varchar("related_id"), // Related song, campaign, etc.
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -225,6 +303,31 @@ export const insertSongSchema = createInsertSchema(songs).omit({
   createdAt: true,
 });
 
+export const insertSongVersionSchema = createInsertSchema(songVersions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertMusicSupervisorSchema = createInsertSchema(musicSupervisors).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSyncCampaignSchema = createInsertSchema(syncCampaigns).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPlatformSubmissionSchema = createInsertSchema(platformSubmissions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertActionItemSchema = createInsertSchema(actionItems).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -261,3 +364,18 @@ export type InsertLegalDocumentTemplate = z.infer<typeof insertLegalDocumentTemp
 
 export type Song = typeof songs.$inferSelect;
 export type InsertSong = z.infer<typeof insertSongSchema>;
+
+export type SongVersion = typeof songVersions.$inferSelect;
+export type InsertSongVersion = z.infer<typeof insertSongVersionSchema>;
+
+export type MusicSupervisor = typeof musicSupervisors.$inferSelect;
+export type InsertMusicSupervisor = z.infer<typeof insertMusicSupervisorSchema>;
+
+export type SyncCampaign = typeof syncCampaigns.$inferSelect;
+export type InsertSyncCampaign = z.infer<typeof insertSyncCampaignSchema>;
+
+export type PlatformSubmission = typeof platformSubmissions.$inferSelect;
+export type InsertPlatformSubmission = z.infer<typeof insertPlatformSubmissionSchema>;
+
+export type ActionItem = typeof actionItems.$inferSelect;
+export type InsertActionItem = z.infer<typeof insertActionItemSchema>;

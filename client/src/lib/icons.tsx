@@ -27,6 +27,11 @@ import {
   Clock,
   Music,
   Eye,
+  CheckCircle,
+  Clipboard,
+  Users,
+  BarChart,
+  Edit,
 } from "lucide-react";
 
 export const Icons = {
@@ -58,4 +63,10 @@ export const Icons = {
   clock: Clock,
   music: Music,
   eye: Eye,
+  checkCircle: CheckCircle,
+  clipboard: Clipboard,
+  users: Users,
+  barChart: BarChart,
+  edit: Edit,
+  mail: Mail,
 };

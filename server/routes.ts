@@ -751,6 +751,269 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Song Versions API
+  app.get('/api/songs/:songId/versions', requireAuth, async (req, res) => {
+    try {
+      const versions = await storage.getSongVersions(req.params.songId);
+      await auditLogger.logDataAccess(req, 'read', 'song_versions', req.params.songId);
+      res.json(versions);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch song versions' });
+    }
+  });
+
+  app.post('/api/songs/:songId/versions', requireAuth, async (req, res) => {
+    try {
+      const versionData = { ...req.body, songId: req.params.songId };
+      const version = await storage.createSongVersion(versionData);
+      await auditLogger.logDataAccess(req, 'create', 'song_version', version.id, true);
+      res.json(version);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'song_version', undefined, false);
+      res.status(400).json({ error: 'Failed to create song version' });
+    }
+  });
+
+  app.put('/api/song-versions/:id', requireAuth, async (req, res) => {
+    try {
+      const version = await storage.updateSongVersion(req.params.id, req.body);
+      if (!version) {
+        return res.status(404).json({ error: 'Song version not found' });
+      }
+      await auditLogger.logDataAccess(req, 'update', 'song_version', req.params.id, true);
+      res.json(version);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'update', 'song_version', req.params.id, false);
+      res.status(400).json({ error: 'Failed to update song version' });
+    }
+  });
+
+  app.delete('/api/song-versions/:id', requireAuth, async (req, res) => {
+    try {
+      const deleted = await storage.deleteSongVersion(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: 'Song version not found' });
+      }
+      await auditLogger.logDataAccess(req, 'delete', 'song_version', req.params.id, true);
+      res.json({ message: 'Song version deleted successfully' });
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'delete', 'song_version', req.params.id, false);
+      res.status(500).json({ error: 'Failed to delete song version' });
+    }
+  });
+
+  // Music Supervisors API
+  app.get('/api/music-supervisors', requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const supervisors = await storage.getMusicSupervisors(userId);
+      await auditLogger.logDataAccess(req, 'read', 'music_supervisors', userId);
+      res.json(supervisors);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch music supervisors' });
+    }
+  });
+
+  app.post('/api/music-supervisors', requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const supervisorData = { ...req.body, userId };
+      const supervisor = await storage.createMusicSupervisor(supervisorData);
+      await auditLogger.logDataAccess(req, 'create', 'music_supervisor', supervisor.id, true);
+      res.json(supervisor);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'music_supervisor', undefined, false);
+      res.status(400).json({ error: 'Failed to create music supervisor' });
+    }
+  });
+
+  app.put('/api/music-supervisors/:id', requireAuth, async (req, res) => {
+    try {
+      const supervisor = await storage.updateMusicSupervisor(req.params.id, req.body);
+      if (!supervisor) {
+        return res.status(404).json({ error: 'Music supervisor not found' });
+      }
+      await auditLogger.logDataAccess(req, 'update', 'music_supervisor', req.params.id, true);
+      res.json(supervisor);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'update', 'music_supervisor', req.params.id, false);
+      res.status(400).json({ error: 'Failed to update music supervisor' });
+    }
+  });
+
+  app.delete('/api/music-supervisors/:id', requireAuth, async (req, res) => {
+    try {
+      const deleted = await storage.deleteMusicSupervisor(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: 'Music supervisor not found' });
+      }
+      await auditLogger.logDataAccess(req, 'delete', 'music_supervisor', req.params.id, true);
+      res.json({ message: 'Music supervisor deleted successfully' });
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'delete', 'music_supervisor', req.params.id, false);
+      res.status(500).json({ error: 'Failed to delete music supervisor' });
+    }
+  });
+
+  // Sync Campaigns API
+  app.get('/api/sync-campaigns', requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const campaigns = await storage.getSyncCampaigns(userId);
+      await auditLogger.logDataAccess(req, 'read', 'sync_campaigns', userId);
+      res.json(campaigns);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch sync campaigns' });
+    }
+  });
+
+  app.post('/api/sync-campaigns', requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const campaignData = { ...req.body, userId };
+      const campaign = await storage.createSyncCampaign(campaignData);
+      await auditLogger.logDataAccess(req, 'create', 'sync_campaign', campaign.id, true);
+      res.json(campaign);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'sync_campaign', undefined, false);
+      res.status(400).json({ error: 'Failed to create sync campaign' });
+    }
+  });
+
+  app.put('/api/sync-campaigns/:id', requireAuth, async (req, res) => {
+    try {
+      const campaign = await storage.updateSyncCampaign(req.params.id, req.body);
+      if (!campaign) {
+        return res.status(404).json({ error: 'Sync campaign not found' });
+      }
+      await auditLogger.logDataAccess(req, 'update', 'sync_campaign', req.params.id, true);
+      res.json(campaign);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'update', 'sync_campaign', req.params.id, false);
+      res.status(400).json({ error: 'Failed to update sync campaign' });
+    }
+  });
+
+  app.delete('/api/sync-campaigns/:id', requireAuth, async (req, res) => {
+    try {
+      const deleted = await storage.deleteSyncCampaign(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: 'Sync campaign not found' });
+      }
+      await auditLogger.logDataAccess(req, 'delete', 'sync_campaign', req.params.id, true);
+      res.json({ message: 'Sync campaign deleted successfully' });
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'delete', 'sync_campaign', req.params.id, false);
+      res.status(500).json({ error: 'Failed to delete sync campaign' });
+    }
+  });
+
+  // Platform Submissions API
+  app.get('/api/platform-submissions', requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const submissions = await storage.getPlatformSubmissions(userId);
+      await auditLogger.logDataAccess(req, 'read', 'platform_submissions', userId);
+      res.json(submissions);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch platform submissions' });
+    }
+  });
+
+  app.post('/api/platform-submissions', requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const submissionData = { ...req.body, userId };
+      const submission = await storage.createPlatformSubmission(submissionData);
+      await auditLogger.logDataAccess(req, 'create', 'platform_submission', submission.id, true);
+      res.json(submission);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'platform_submission', undefined, false);
+      res.status(400).json({ error: 'Failed to create platform submission' });
+    }
+  });
+
+  app.put('/api/platform-submissions/:id', requireAuth, async (req, res) => {
+    try {
+      const submission = await storage.updatePlatformSubmission(req.params.id, req.body);
+      if (!submission) {
+        return res.status(404).json({ error: 'Platform submission not found' });
+      }
+      await auditLogger.logDataAccess(req, 'update', 'platform_submission', req.params.id, true);
+      res.json(submission);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'update', 'platform_submission', req.params.id, false);
+      res.status(400).json({ error: 'Failed to update platform submission' });
+    }
+  });
+
+  app.delete('/api/platform-submissions/:id', requireAuth, async (req, res) => {
+    try {
+      const deleted = await storage.deletePlatformSubmission(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: 'Platform submission not found' });
+      }
+      await auditLogger.logDataAccess(req, 'delete', 'platform_submission', req.params.id, true);
+      res.json({ message: 'Platform submission deleted successfully' });
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'delete', 'platform_submission', req.params.id, false);
+      res.status(500).json({ error: 'Failed to delete platform submission' });
+    }
+  });
+
+  // Action Items API
+  app.get('/api/action-items', requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const items = await storage.getActionItems(userId);
+      await auditLogger.logDataAccess(req, 'read', 'action_items', userId);
+      res.json(items);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch action items' });
+    }
+  });
+
+  app.post('/api/action-items', requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const itemData = { ...req.body, userId };
+      const item = await storage.createActionItem(itemData);
+      await auditLogger.logDataAccess(req, 'create', 'action_item', item.id, true);
+      res.json(item);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'action_item', undefined, false);
+      res.status(400).json({ error: 'Failed to create action item' });
+    }
+  });
+
+  app.put('/api/action-items/:id', requireAuth, async (req, res) => {
+    try {
+      const item = await storage.updateActionItem(req.params.id, req.body);
+      if (!item) {
+        return res.status(404).json({ error: 'Action item not found' });
+      }
+      await auditLogger.logDataAccess(req, 'update', 'action_item', req.params.id, true);
+      res.json(item);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'update', 'action_item', req.params.id, false);
+      res.status(400).json({ error: 'Failed to update action item' });
+    }
+  });
+
+  app.delete('/api/action-items/:id', requireAuth, async (req, res) => {
+    try {
+      const deleted = await storage.deleteActionItem(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: 'Action item not found' });
+      }
+      await auditLogger.logDataAccess(req, 'delete', 'action_item', req.params.id, true);
+      res.json({ message: 'Action item deleted successfully' });
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'delete', 'action_item', req.params.id, false);
+      res.status(500).json({ error: 'Failed to delete action item' });
+    }
+  });
+
   // AI Licensing Opportunities Search (protected with AI rate limiting)
   app.post("/api/ai/search-licensing", requireAuth, aiRateLimit, async (req, res) => {
     try {

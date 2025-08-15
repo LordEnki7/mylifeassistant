@@ -11,6 +11,11 @@ import {
   type AuditLog, type InsertAuditLog,
   type LegalDocumentTemplate, type InsertLegalDocumentTemplate,
   type Song, type InsertSong,
+  type SongVersion, type InsertSongVersion,
+  type MusicSupervisor, type InsertMusicSupervisor,
+  type SyncCampaign, type InsertSyncCampaign,
+  type PlatformSubmission, type InsertPlatformSubmission,
+  type ActionItem, type InsertActionItem,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -95,6 +100,40 @@ export interface IStorage {
   updateSong(id: string, song: Partial<Song>): Promise<Song | undefined>;
   deleteSong(id: string): Promise<boolean>;
 
+  // Song Versions
+  getSongVersions(songId: string): Promise<SongVersion[]>;
+  createSongVersion(version: InsertSongVersion): Promise<SongVersion>;
+  updateSongVersion(id: string, version: Partial<SongVersion>): Promise<SongVersion | undefined>;
+  deleteSongVersion(id: string): Promise<boolean>;
+
+  // Music Supervisors
+  getMusicSupervisors(userId: string): Promise<MusicSupervisor[]>;
+  getMusicSupervisor(id: string): Promise<MusicSupervisor | undefined>;
+  createMusicSupervisor(supervisor: InsertMusicSupervisor): Promise<MusicSupervisor>;
+  updateMusicSupervisor(id: string, supervisor: Partial<MusicSupervisor>): Promise<MusicSupervisor | undefined>;
+  deleteMusicSupervisor(id: string): Promise<boolean>;
+
+  // Sync Campaigns
+  getSyncCampaigns(userId: string): Promise<SyncCampaign[]>;
+  getSyncCampaign(id: string): Promise<SyncCampaign | undefined>;
+  createSyncCampaign(campaign: InsertSyncCampaign): Promise<SyncCampaign>;
+  updateSyncCampaign(id: string, campaign: Partial<SyncCampaign>): Promise<SyncCampaign | undefined>;
+  deleteSyncCampaign(id: string): Promise<boolean>;
+
+  // Platform Submissions
+  getPlatformSubmissions(userId: string): Promise<PlatformSubmission[]>;
+  getPlatformSubmission(id: string): Promise<PlatformSubmission | undefined>;
+  createPlatformSubmission(submission: InsertPlatformSubmission): Promise<PlatformSubmission>;
+  updatePlatformSubmission(id: string, submission: Partial<PlatformSubmission>): Promise<PlatformSubmission | undefined>;
+  deletePlatformSubmission(id: string): Promise<boolean>;
+
+  // Action Items
+  getActionItems(userId: string): Promise<ActionItem[]>;
+  getActionItem(id: string): Promise<ActionItem | undefined>;
+  createActionItem(item: InsertActionItem): Promise<ActionItem>;
+  updateActionItem(id: string, item: Partial<ActionItem>): Promise<ActionItem | undefined>;
+  deleteActionItem(id: string): Promise<boolean>;
+
   // Dashboard stats
   getDashboardStats(userId: string): Promise<{
     emailsSent: number;
@@ -117,6 +156,11 @@ export class MemStorage implements IStorage {
   private auditLogs: Map<string, AuditLog>;
   private legalDocumentTemplates: Map<string, LegalDocumentTemplate>;
   private songs: Map<string, Song>;
+  private songVersions: Map<string, SongVersion>;
+  private musicSupervisors: Map<string, MusicSupervisor>;
+  private syncCampaigns: Map<string, SyncCampaign>;
+  private platformSubmissions: Map<string, PlatformSubmission>;
+  private actionItems: Map<string, ActionItem>;
 
   constructor() {
     this.users = new Map();
@@ -131,6 +175,11 @@ export class MemStorage implements IStorage {
     this.auditLogs = new Map();
     this.legalDocumentTemplates = new Map();
     this.songs = new Map();
+    this.songVersions = new Map();
+    this.musicSupervisors = new Map();
+    this.syncCampaigns = new Map();
+    this.platformSubmissions = new Map();
+    this.actionItems = new Map();
 
     // Initialize with demo user
     this.initializeDemoData();
@@ -152,9 +201,105 @@ export class MemStorage implements IStorage {
       description: "Alternative rock song with strong commercial potential for sync licensing opportunities in film, TV, and advertising. Official Shakim & Project DNA release.",
       promotionStatus: "active",
       targetLicenseTypes: ["film", "tv", "commercial", "game"],
+      website: "projectdnamusic.com",
+      rightsStatus: "100_clear",
       createdAt: new Date(),
     };
     this.songs.set(demoSong.id, demoSong);
+    
+    // Create song versions for sync optimization (Action Item #1)
+    const versions = [
+      { versionType: "full", filePath: "attached_assets/5 - Shakim & Project DNA - CountyLine Rd_1755280279583.mp3", duration: 210 },
+      { versionType: "instrumental", filePath: "pending", duration: 210, status: "pending" },
+      { versionType: "30sec", filePath: "pending", duration: 30, status: "pending" },
+      { versionType: "60sec", filePath: "pending", duration: 60, status: "pending" },
+      { versionType: "stems", filePath: "pending", duration: 210, status: "pending" },
+    ];
+    
+    versions.forEach(version => {
+      const songVersion: SongVersion = {
+        id: randomUUID(),
+        songId: demoSong.id,
+        versionType: version.versionType,
+        filePath: version.filePath,
+        fileFormat: "mp3",
+        duration: version.duration,
+        status: version.status || "ready",
+        createdAt: new Date(),
+      };
+      this.songVersions.set(songVersion.id, songVersion);
+    });
+  }
+  
+  private initializeActionItems(userId: string) {
+    const immediateActions: InsertActionItem[] = [
+      {
+        userId,
+        category: "sync_optimization",
+        title: "Optimize 'Countyline Rd' - Create instrumental, stems, and edit lengths",
+        description: "Create professional sync-ready versions: instrumental, stems (drums, bass, guitar, vocals), 30-second edit, 60-second edit, and fade versions for licensing flexibility.",
+        priority: "critical",
+        status: "in_progress",
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week
+        notes: "Essential for sync placement opportunities. Most supervisors need multiple versions."
+      },
+      {
+        userId,
+        category: "rights_documentation",
+        title: "Ensure 100% clear ownership/publishing rights documentation",
+        description: "Compile and organize all rights documentation for 'Countyline Rd' including songwriter agreements, publishing splits, master recording ownership, and licensing permissions.",
+        priority: "critical",
+        status: "pending",
+        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days
+        notes: "ISRC: US-S1Z-21-00005 already assigned. Need complete rights chain documentation."
+      },
+      {
+        userId,
+        category: "professional_materials",
+        title: "Create EPK, sync reel, and supervisor-ready demos",
+        description: "Develop Electronic Press Kit (EPK), sync placement reel showcasing 'Countyline Rd' in visual contexts, and professional demo materials for music supervisors.",
+        priority: "high",
+        status: "pending",
+        dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days
+        notes: "Include projectdnamusic.com website integration and professional bio/photos."
+      },
+      {
+        userId,
+        category: "platform_presence",
+        title: "Upload to BeatStars, Songtradr, and target music libraries",
+        description: "Submit 'Countyline Rd' to major sync licensing platforms: BeatStars, Songtradr, Epidemic Sound, Artlist, and other premium music libraries for maximum exposure.",
+        priority: "high",
+        status: "pending",
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 2 weeks
+        notes: "Prioritize platforms with highest sync placement rates. Track submission URLs and responses."
+      },
+      {
+        userId,
+        category: "networking",
+        title: "Join Guild of Music Supervisors and attend industry events",
+        description: "Register for Guild of Music Supervisors membership, attend 2025 Member Summit, and participate in sync-focused showcases and pitch sessions.",
+        priority: "medium",
+        status: "pending",
+        dueDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000), // 3 weeks
+        notes: "Guild of Music Supervisors 2025 Summit - key networking opportunity. Build relationships with sync agents."
+      }
+    ];
+    
+    immediateActions.forEach(action => {
+      const actionItem: ActionItem = {
+        ...action,
+        id: randomUUID(),
+        status: action.status || "pending",
+        priority: action.priority || "medium",
+        description: action.description || null,
+        notes: action.notes || null,
+        dueDate: action.dueDate || null,
+        createdAt: new Date(),
+        completedDate: null,
+        relatedId: null,
+      };
+      this.actionItems.set(actionItem.id, actionItem);
+    });
   }
 
   private initializeDemoData() {
@@ -174,6 +319,9 @@ export class MemStorage implements IStorage {
     
     // Initialize demo song for Shakim & Project DNA
     this.initializeDemoSongs(userId);
+    
+    // Initialize immediate action items for sync licensing
+    this.initializeActionItems(userId);
   }
 
   // Users
@@ -620,6 +768,198 @@ export class MemStorage implements IStorage {
 
   async deleteSong(id: string): Promise<boolean> {
     return this.songs.delete(id);
+  }
+
+  // Song Versions
+  async getSongVersions(songId: string): Promise<SongVersion[]> {
+    return Array.from(this.songVersions.values()).filter(version => version.songId === songId);
+  }
+
+  async createSongVersion(insertVersion: InsertSongVersion): Promise<SongVersion> {
+    const id = randomUUID();
+    const version: SongVersion = {
+      ...insertVersion,
+      id,
+      createdAt: new Date(),
+    };
+    this.songVersions.set(id, version);
+    return version;
+  }
+
+  async updateSongVersion(id: string, updateData: Partial<SongVersion>): Promise<SongVersion | undefined> {
+    const version = this.songVersions.get(id);
+    if (!version) return undefined;
+    const updated = { ...version, ...updateData };
+    this.songVersions.set(id, updated);
+    return updated;
+  }
+
+  async deleteSongVersion(id: string): Promise<boolean> {
+    return this.songVersions.delete(id);
+  }
+
+  // Music Supervisors
+  async getMusicSupervisors(userId: string): Promise<MusicSupervisor[]> {
+    return Array.from(this.musicSupervisors.values()).filter(supervisor => supervisor.userId === userId);
+  }
+
+  async getMusicSupervisor(id: string): Promise<MusicSupervisor | undefined> {
+    return this.musicSupervisors.get(id);
+  }
+
+  async createMusicSupervisor(insertSupervisor: InsertMusicSupervisor): Promise<MusicSupervisor> {
+    const id = randomUUID();
+    const supervisor: MusicSupervisor = {
+      ...insertSupervisor,
+      id,
+      email: insertSupervisor.email || null,
+      company: insertSupervisor.company || null,
+      position: insertSupervisor.position || null,
+      projects: insertSupervisor.projects || [],
+      genres: insertSupervisor.genres || [],
+      contactStatus: insertSupervisor.contactStatus || "not_contacted",
+      lastContacted: insertSupervisor.lastContacted || null,
+      responseRate: insertSupervisor.responseRate || 0,
+      notes: insertSupervisor.notes || null,
+      website: insertSupervisor.website || null,
+      linkedIn: insertSupervisor.linkedIn || null,
+      tags: insertSupervisor.tags || [],
+      createdAt: new Date(),
+    };
+    this.musicSupervisors.set(id, supervisor);
+    return supervisor;
+  }
+
+  async updateMusicSupervisor(id: string, updateData: Partial<MusicSupervisor>): Promise<MusicSupervisor | undefined> {
+    const supervisor = this.musicSupervisors.get(id);
+    if (!supervisor) return undefined;
+    const updated = { ...supervisor, ...updateData };
+    this.musicSupervisors.set(id, updated);
+    return updated;
+  }
+
+  async deleteMusicSupervisor(id: string): Promise<boolean> {
+    return this.musicSupervisors.delete(id);
+  }
+
+  // Sync Campaigns
+  async getSyncCampaigns(userId: string): Promise<SyncCampaign[]> {
+    return Array.from(this.syncCampaigns.values()).filter(campaign => campaign.userId === userId);
+  }
+
+  async getSyncCampaign(id: string): Promise<SyncCampaign | undefined> {
+    return this.syncCampaigns.get(id);
+  }
+
+  async createSyncCampaign(insertCampaign: InsertSyncCampaign): Promise<SyncCampaign> {
+    const id = randomUUID();
+    const campaign: SyncCampaign = {
+      ...insertCampaign,
+      id,
+      status: insertCampaign.status || "planning",
+      supervisorsTargeted: insertCampaign.supervisorsTargeted || 0,
+      responsesReceived: insertCampaign.responsesReceived || 0,
+      placementsAchieved: insertCampaign.placementsAchieved || 0,
+      totalRevenue: insertCampaign.totalRevenue || "0",
+      startDate: insertCampaign.startDate || null,
+      endDate: insertCampaign.endDate || null,
+      notes: insertCampaign.notes || null,
+      createdAt: new Date(),
+    };
+    this.syncCampaigns.set(id, campaign);
+    return campaign;
+  }
+
+  async updateSyncCampaign(id: string, updateData: Partial<SyncCampaign>): Promise<SyncCampaign | undefined> {
+    const campaign = this.syncCampaigns.get(id);
+    if (!campaign) return undefined;
+    const updated = { ...campaign, ...updateData };
+    this.syncCampaigns.set(id, updated);
+    return updated;
+  }
+
+  async deleteSyncCampaign(id: string): Promise<boolean> {
+    return this.syncCampaigns.delete(id);
+  }
+
+  // Platform Submissions
+  async getPlatformSubmissions(userId: string): Promise<PlatformSubmission[]> {
+    return Array.from(this.platformSubmissions.values()).filter(submission => submission.userId === userId);
+  }
+
+  async getPlatformSubmission(id: string): Promise<PlatformSubmission | undefined> {
+    return this.platformSubmissions.get(id);
+  }
+
+  async createPlatformSubmission(insertSubmission: InsertPlatformSubmission): Promise<PlatformSubmission> {
+    const id = randomUUID();
+    const submission: PlatformSubmission = {
+      ...insertSubmission,
+      id,
+      submissionDate: insertSubmission.submissionDate || new Date(),
+      status: insertSubmission.status || "submitted",
+      platformUrl: insertSubmission.platformUrl || null,
+      revenue: insertSubmission.revenue || "0",
+      downloads: insertSubmission.downloads || 0,
+      notes: insertSubmission.notes || null,
+      createdAt: new Date(),
+    };
+    this.platformSubmissions.set(id, submission);
+    return submission;
+  }
+
+  async updatePlatformSubmission(id: string, updateData: Partial<PlatformSubmission>): Promise<PlatformSubmission | undefined> {
+    const submission = this.platformSubmissions.get(id);
+    if (!submission) return undefined;
+    const updated = { ...submission, ...updateData };
+    this.platformSubmissions.set(id, updated);
+    return updated;
+  }
+
+  async deletePlatformSubmission(id: string): Promise<boolean> {
+    return this.platformSubmissions.delete(id);
+  }
+
+  // Action Items
+  async getActionItems(userId: string): Promise<ActionItem[]> {
+    return Array.from(this.actionItems.values()).filter(item => item.userId === userId);
+  }
+
+  async getActionItem(id: string): Promise<ActionItem | undefined> {
+    return this.actionItems.get(id);
+  }
+
+  async createActionItem(insertItem: InsertActionItem): Promise<ActionItem> {
+    const id = randomUUID();
+    const item: ActionItem = {
+      ...insertItem,
+      id,
+      description: insertItem.description || null,
+      priority: insertItem.priority || "medium",
+      status: insertItem.status || "pending",
+      dueDate: insertItem.dueDate || null,
+      relatedId: insertItem.relatedId || null,
+      notes: insertItem.notes || null,
+      createdAt: new Date(),
+      completedDate: null,
+    };
+    this.actionItems.set(id, item);
+    return item;
+  }
+
+  async updateActionItem(id: string, updateData: Partial<ActionItem>): Promise<ActionItem | undefined> {
+    const item = this.actionItems.get(id);
+    if (!item) return undefined;
+    const updated = { ...item, ...updateData };
+    if (updateData.status === 'completed' && !updated.completedDate) {
+      updated.completedDate = new Date();
+    }
+    this.actionItems.set(id, updated);
+    return updated;
+  }
+
+  async deleteActionItem(id: string): Promise<boolean> {
+    return this.actionItems.delete(id);
   }
 
   private initializeCreditDisputeTemplates(userId: string) {
