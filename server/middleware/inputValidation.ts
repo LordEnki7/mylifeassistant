@@ -117,6 +117,22 @@ export const schemas = {
     // userId is extracted from JWT token
   }),
 
+  // Song validation
+  song: z.object({
+    title: z.string().min(1, 'Song title is required').max(200, 'Title too long').trim(),
+    artist: z.string().min(1, 'Artist is required').max(100, 'Artist name too long').trim(),
+    album: z.string().max(100, 'Album name too long').optional().nullable(),
+    genre: z.string().max(50, 'Genre too long').optional().nullable(),
+    duration: z.number().int().positive('Duration must be positive').optional().nullable(),
+    isrc: z.string().max(20, 'ISRC too long').optional().nullable(),
+    filePath: z.string().max(500, 'File path too long').optional().nullable(),
+    fileFormat: z.enum(['mp3', 'wav', 'flac', 'aac']).optional().nullable(),
+    description: z.string().max(1000, 'Description too long').optional().nullable(),
+    promotionStatus: z.enum(['active', 'paused', 'completed']).default('active'),
+    targetLicenseTypes: z.array(z.enum(['film', 'tv', 'commercial', 'game', 'other'])).optional().nullable()
+    // userId is extracted from JWT token
+  }),
+
   // Auth validation
   login: z.object({
     email: z.string().email('Invalid email format'),

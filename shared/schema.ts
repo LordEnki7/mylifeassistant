@@ -144,6 +144,23 @@ export const legalDocumentTemplates = pgTable("legal_document_templates", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const songs = pgTable("songs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  artist: text("artist").notNull(),
+  album: text("album"),
+  genre: text("genre"),
+  duration: integer("duration"), // Duration in seconds
+  isrc: text("isrc"), // International Standard Recording Code
+  filePath: text("file_path"), // Path to audio file
+  fileFormat: text("file_format"), // mp3, wav, etc.
+  description: text("description"),
+  promotionStatus: text("promotion_status").default("active"), // active, paused, completed
+  targetLicenseTypes: text("target_license_types").array(), // film, tv, commercial, game, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -203,6 +220,11 @@ export const insertLegalDocumentTemplateSchema = createInsertSchema(legalDocumen
   updatedAt: true,
 });
 
+export const insertSongSchema = createInsertSchema(songs).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -236,3 +258,6 @@ export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 
 export type LegalDocumentTemplate = typeof legalDocumentTemplates.$inferSelect;
 export type InsertLegalDocumentTemplate = z.infer<typeof insertLegalDocumentTemplateSchema>;
+
+export type Song = typeof songs.$inferSelect;
+export type InsertSong = z.infer<typeof insertSongSchema>;

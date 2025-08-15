@@ -694,6 +694,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Songs (all protected)
+  app.get("/api/songs", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const songs = await storage.getSongs(userId);
+      await auditLogger.logDataAccess(req, 'read', 'songs', userId);
+      res.json(songs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch songs" });
+    }
+  });
+
+  app.post("/api/songs", requireAuth, validateRequest(schemas.song), async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const songData = { ...req.body, userId };
+      const song = await storage.createSong(songData);
+      await auditLogger.logDataAccess(req, 'create', 'song', song.id, true);
+      res.json(song);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'song', undefined, false);
+      res.status(400).json({ error: "Invalid song data" });
+    }
+  });
+
+  app.put("/api/songs/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const song = await storage.updateSong(id, req.body);
+      if (!song) {
+        await auditLogger.logDataAccess(req, 'update', 'song', id, false);
+        return res.status(404).json({ error: "Song not found" });
+      }
+      await auditLogger.logDataAccess(req, 'update', 'song', id, true);
+      res.json(song);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'update', 'song', req.params.id, false);
+      res.status(400).json({ error: "Failed to update song" });
+    }
+  });
+
+  app.delete("/api/songs/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteSong(id);
+      if (!deleted) {
+        await auditLogger.logDataAccess(req, 'delete', 'song', id, false);
+        return res.status(404).json({ error: "Song not found" });
+      }
+      await auditLogger.logDataAccess(req, 'delete', 'song', id, true);
+      res.json({ success: true });
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'delete', 'song', req.params.id, false);
+      res.status(500).json({ error: "Failed to delete song" });
+    }
+  });
+
+  // AI Licensing Opportunities Search (protected with AI rate limiting)
+  app.post("/api/ai/search-licensing", requireAuth, aiRateLimit, async (req, res) => {
+    try {
+      const { songTitle, artist, genre, description } = req.body;
+      const userId = getUserId(req);
+      
+      // Use AI to search for relevant sync licensing opportunities
+      const licensingSearchResults = await searchLicensingWithAI({
+        songTitle,
+        artist,
+        genre,
+        description,
+        userId
+      });
+      
+      await auditLogger.logAIInteraction(req, {
+        message: `Licensing search for ${songTitle} by ${artist}: ${description}`,
+        response: `Found ${licensingSearchResults.opportunities.length} potential opportunities`,
+        confidence: 0.9,
+        type: 'licensing_search'
+      }, true);
+      
+      res.json({
+        success: true,
+        opportunities: licensingSearchResults.opportunities,
+        searchTerms: licensingSearchResults.searchTerms,
+        message: `Sunshine found ${licensingSearchResults.opportunities.length} sync licensing opportunities for "${songTitle}"!`
+      });
+    } catch (error) {
+      await auditLogger.logAIInteraction(req, {
+        message: `Licensing search failed for ${req.body.songTitle}`,
+        response: null,
+        confidence: 0
+      }, false, error instanceof Error ? error.message : 'Licensing search failed');
+      res.status(500).json({ error: "Licensing search failed" });
+    }
+  });
+
   // Email queue status endpoint (protected)
   app.get("/api/email/queue-status", requireAuth, async (req, res) => {
     try {
@@ -1373,6 +1468,129 @@ Return as JSON:
     console.error('Grant search error:', error);
     return {
       grants: [],
+      searchTerms: []
+    };
+  }
+}
+
+// AI-powered sync licensing opportunities search functionality
+async function searchLicensingWithAI({
+  songTitle,
+  artist,
+  genre,
+  description,
+  userId
+}: {
+  songTitle: string;
+  artist: string;
+  genre: string;
+  description: string;
+  userId: string;
+}): Promise<{
+  opportunities: any[];
+  searchTerms: string[];
+}> {
+  try {
+    // Generate search terms specific to sync licensing opportunities
+    const searchQueries = [
+      `${genre} music licensing film TV commercial`,
+      `sync licensing opportunities ${genre} artists`,
+      `music supervisors seeking ${genre} songs`,
+      `${artist} style music placement opportunities`,
+      `${songTitle} sync licensing commercial use`,
+      `${genre} alternative rock sync opportunities`,
+      `music licensing ${genre} indie film TV`,
+      `sync placement ${genre} advertising commercial`
+    ];
+
+    // Use OpenAI to search for and generate sync licensing opportunities
+    const openai = new (await import('openai')).default({
+      apiKey: process.env.OPENAI_API_KEY!
+    });
+
+    const licensingSearchPrompt = `I need to find sync licensing opportunities for the ${genre} song "${songTitle}" by ${artist}. ${description}
+
+Please help me find potential sync licensing opportunities including:
+- Film production companies looking for ${genre} music
+- TV shows that might use alternative rock songs
+- Commercial/advertising agencies seeking this style of music
+- Music supervisors who work with ${genre} artists
+- Video game companies that license alternative rock music
+- Streaming platforms or content creators who need ${genre} songs
+- Documentary filmmakers seeking ${artist} style music
+
+For each opportunity, please provide:
+- Company/Project name
+- Contact person/music supervisor name
+- Type of project (film, TV, commercial, game, etc.)
+- Genre preference
+- Contact email (if available)
+- Budget range (if known)
+- Deadline information
+- Project description
+- Submission requirements
+
+Please respond in JSON format with an array of opportunities.`;
+
+    const licensingGenerationResponse = await openai.chat.completions.create({
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      messages: [
+        {
+          role: "system",
+          content: `You are Sunshine, an expert AI assistant for sync licensing and music placement. You help musicians find opportunities for their songs in films, TV shows, commercials, video games, and other media. You have extensive knowledge of music supervisors, production companies, and sync licensing opportunities.
+
+When generating sync licensing opportunities, focus on realistic, current market opportunities and provide specific, actionable information that musicians can use to submit their music.
+
+Always respond in valid JSON format with this structure:
+
+{
+  "opportunities": [
+    {
+      "title": "Opportunity Title",
+      "company": "Company/Project Name",
+      "type": "film", "tv", "commercial", "game", or "other",
+      "genre": "Genre preference",
+      "contactEmail": "contact@company.com",
+      "contactName": "Music Supervisor Name",
+      "budget": "$X,XXX-$X,XXX",
+      "deadline": "YYYY-MM-DD",
+      "description": "Project description and what they're looking for",
+      "requirements": "Submission requirements and notes"
+    }
+  ]
+}`
+        },
+        { role: "user", content: licensingSearchPrompt }
+      ],
+      max_tokens: 1500,
+      temperature: 0.8,
+      response_format: { type: "json_object" }
+    });
+
+    const licensingData = JSON.parse(licensingGenerationResponse.choices[0].message.content || '{"opportunities": []}');
+    const potentialOpportunities = licensingData.opportunities || [];
+
+    // For now, return the opportunities as-is (in a real app, you might want to store them)
+    // The opportunities are returned to the frontend where they can be displayed and acted upon
+    const processedOpportunities = potentialOpportunities.map((opp: any, index: number) => ({
+      ...opp,
+      id: `sunshine-${Date.now()}-${index}`,
+      status: 'discovered',
+      discoveredBy: 'Sunshine AI',
+      songTitle,
+      artist,
+      notes: `🌟 Found by Sunshine AI for "${songTitle}" by ${artist}`
+    }));
+
+    return {
+      opportunities: processedOpportunities,
+      searchTerms: searchQueries
+    };
+
+  } catch (error) {
+    console.error('Licensing search error:', error);
+    return {
+      opportunities: [],
       searchTerms: []
     };
   }

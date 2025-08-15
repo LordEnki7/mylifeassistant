@@ -10,6 +10,7 @@ import {
   type ChatMessage, type InsertChatMessage,
   type AuditLog, type InsertAuditLog,
   type LegalDocumentTemplate, type InsertLegalDocumentTemplate,
+  type Song, type InsertSong,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -87,6 +88,13 @@ export interface IStorage {
   getLegalDocumentTemplatesByCategory(userId: string, category: string): Promise<LegalDocumentTemplate[]>;
   generateDocumentFromTemplate(templateId: string, variables: Record<string, any>): Promise<string>;
 
+  // Songs
+  getSongs(userId: string): Promise<Song[]>;
+  getSong(id: string): Promise<Song | undefined>;
+  createSong(song: InsertSong): Promise<Song>;
+  updateSong(id: string, song: Partial<Song>): Promise<Song | undefined>;
+  deleteSong(id: string): Promise<boolean>;
+
   // Dashboard stats
   getDashboardStats(userId: string): Promise<{
     emailsSent: number;
@@ -108,6 +116,7 @@ export class MemStorage implements IStorage {
   private chatMessages: Map<string, ChatMessage>;
   private auditLogs: Map<string, AuditLog>;
   private legalDocumentTemplates: Map<string, LegalDocumentTemplate>;
+  private songs: Map<string, Song>;
 
   constructor() {
     this.users = new Map();
@@ -121,9 +130,31 @@ export class MemStorage implements IStorage {
     this.chatMessages = new Map();
     this.auditLogs = new Map();
     this.legalDocumentTemplates = new Map();
+    this.songs = new Map();
 
     // Initialize with demo user
     this.initializeDemoData();
+  }
+
+  private initializeDemoSongs(userId: string) {
+    // Add Shakim & Project DNA's "Countyline Rd" song
+    const demoSong: Song = {
+      id: randomUUID(),
+      userId,
+      title: "Countyline Rd",
+      artist: "Shakim & Project DNA",
+      album: "The Great Attractor",
+      genre: "Alternative Rock",
+      duration: 210, // 3:30 duration in seconds
+      isrc: "US-S1Z-21-00005", // From the ISRC document provided
+      filePath: "attached_assets/5 - Shakim & Project DNA - CountyLine Rd_1755280279583.mp3",
+      fileFormat: "mp3",
+      description: "Alternative rock song with strong commercial potential for sync licensing opportunities in film, TV, and advertising.",
+      promotionStatus: "active",
+      targetLicenseTypes: ["film", "tv", "commercial", "game"],
+      createdAt: new Date(),
+    };
+    this.songs.set(demoSong.id, demoSong);
   }
 
   private initializeDemoData() {
@@ -140,6 +171,9 @@ export class MemStorage implements IStorage {
     
     // Initialize credit dispute letter templates
     this.initializeCreditDisputeTemplates(userId);
+    
+    // Initialize demo song for Shakim & Project DNA
+    this.initializeDemoSongs(userId);
   }
 
   // Users
@@ -554,6 +588,38 @@ export class MemStorage implements IStorage {
     });
 
     return generatedDocument;
+  }
+
+  // Songs
+  async getSongs(userId: string): Promise<Song[]> {
+    return Array.from(this.songs.values()).filter(song => song.userId === userId);
+  }
+
+  async getSong(id: string): Promise<Song | undefined> {
+    return this.songs.get(id);
+  }
+
+  async createSong(song: InsertSong): Promise<Song> {
+    const id = randomUUID();
+    const newSong: Song = {
+      id,
+      ...song,
+      createdAt: new Date(),
+    };
+    this.songs.set(id, newSong);
+    return newSong;
+  }
+
+  async updateSong(id: string, songUpdate: Partial<Song>): Promise<Song | undefined> {
+    const song = this.songs.get(id);
+    if (!song) return undefined;
+    const updated = { ...song, ...songUpdate };
+    this.songs.set(id, updated);
+    return updated;
+  }
+
+  async deleteSong(id: string): Promise<boolean> {
+    return this.songs.delete(id);
   }
 
   private initializeCreditDisputeTemplates(userId: string) {

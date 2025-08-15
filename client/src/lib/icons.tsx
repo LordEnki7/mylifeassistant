@@ -25,6 +25,8 @@ import {
   ChevronRight,
   User,
   Clock,
+  Music,
+  Eye,
 } from "lucide-react";
 
 export const Icons = {
@@ -54,4 +56,6 @@ export const Icons = {
   chevronRight: ChevronRight,
   user: User,
   clock: Clock,
+  music: Music,
+  eye: Eye,
 };
