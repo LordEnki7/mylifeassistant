@@ -237,14 +237,25 @@ export default function Licensing() {
                   {(songs as Song[]).map((song: Song) => (
                     <Card key={song.id} className="hover:shadow-lg transition-shadow">
                       <CardHeader>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <Icons.music className="h-5 w-5 text-blue-600" />
-                          {song.title}
-                        </CardTitle>
-                        <p className="text-sm text-gray-600">{song.artist}</p>
-                        {song.album && (
-                          <p className="text-xs text-gray-500">Album: {song.album}</p>
-                        )}
+                        <div className="flex items-center gap-3 mb-3">
+                          {song.artist === "Shakim & Project DNA" && (
+                            <img 
+                              src="/attached_assets/image_1755280969223.jpeg" 
+                              alt="Shakim & Project DNA Logo" 
+                              className="h-12 w-12 rounded-lg object-cover border-2 border-blue-200" 
+                            />
+                          )}
+                          <div className="flex-1">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                              <Icons.music className="h-5 w-5 text-blue-600" />
+                              {song.title}
+                            </CardTitle>
+                            <p className="text-sm text-gray-600 font-medium">{song.artist}</p>
+                            {song.album && (
+                              <p className="text-xs text-gray-500">Album: {song.album}</p>
+                            )}
+                          </div>
+                        </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="flex flex-wrap gap-2">
@@ -281,17 +292,17 @@ export default function Licensing() {
                           <Button
                             onClick={() => handleLicensingSearch(song)}
                             disabled={isSearchingLicensing || licensingSearchMutation.isPending}
-                            className="flex-1 text-sm"
+                            className="flex-1 text-sm bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
                             size="sm"
                           >
                             {isSearchingLicensing ? (
                               <>
                                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                                Searching...
+                                Sunshine Searching...
                               </>
                             ) : (
                               <>
-                                ☀️ Find Opportunities
+                                ☀️ Find Opportunities with Sunshine
                               </>
                             )}
                           </Button>

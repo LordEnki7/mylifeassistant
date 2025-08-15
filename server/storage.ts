@@ -137,7 +137,7 @@ export class MemStorage implements IStorage {
   }
 
   private initializeDemoSongs(userId: string) {
-    // Add Shakim & Project DNA's "Countyline Rd" song
+    // Add Shakim & Project DNA's "Countyline Rd" song with official logo
     const demoSong: Song = {
       id: randomUUID(),
       userId,
@@ -149,7 +149,7 @@ export class MemStorage implements IStorage {
       isrc: "US-S1Z-21-00005", // From the ISRC document provided
       filePath: "attached_assets/5 - Shakim & Project DNA - CountyLine Rd_1755280279583.mp3",
       fileFormat: "mp3",
-      description: "Alternative rock song with strong commercial potential for sync licensing opportunities in film, TV, and advertising.",
+      description: "Alternative rock song with strong commercial potential for sync licensing opportunities in film, TV, and advertising. Official Shakim & Project DNA release.",
       promotionStatus: "active",
       targetLicenseTypes: ["film", "tv", "commercial", "game"],
       createdAt: new Date(),
