@@ -171,7 +171,7 @@ export default function AIChatWidget() {
               </div>
               <div className="flex-1 bg-gray-100 rounded-lg p-3">
                 <p className="text-sm text-gray-900">
-                  Hello! I'm Sunshine, your AI assistant. I can help you with email outreach, finding radio stations, grant research, and more. What would you like to work on today?
+                  Hey there! ☀️ I'm Sunshine - your witty, warm, and wonderfully helpful AI companion! Ready to tackle some email outreach, hunt down radio stations, dig up grants, or just chat about life? What's on your mind today?
                 </p>
               </div>
             </div>

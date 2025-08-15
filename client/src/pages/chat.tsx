@@ -201,7 +201,7 @@ export default function Chat() {
                 </div>
                 <div className="flex-1 bg-gray-100 rounded-lg p-4">
                   <p className="text-sm text-gray-900">
-                    Hello {user?.name || 'there'}! I'm Sunshine, your AI Life Assistant! I'm automatically recognizing you by your hardwired email ({user?.email}). I can help you with:
+                    Hey there, sunshine! ☀️ I'm Sunshine, your witty and warm AI Life Assistant! I've already spotted you through your hardwired email ({user?.email}) - no sneaking past me! 😉 I can help you with:
                   </p>
                   <ul className="list-disc list-inside mt-2 text-sm text-gray-700 space-y-1">
                     <li>🎯 **Creating and managing tasks** - Just tell me what you need to do</li>
