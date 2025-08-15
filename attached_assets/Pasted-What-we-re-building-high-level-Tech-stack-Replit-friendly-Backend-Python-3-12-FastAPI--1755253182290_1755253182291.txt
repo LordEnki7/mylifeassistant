@@ -1,0 +1,95 @@
+What we’re building (high level)
+Tech stack (Replit-friendly):
+
+Backend: Python 3.12 + FastAPI
+
+DB: SQLite (upgradeable to Postgres), SQLAlchemy ORM
+
+Vector store: FAISS local index for RAG (legal corpus + your docs)
+
+Jobs: APScheduler (for recurring scans: grants, radio, licensing)
+
+Auth & Security: JWT, API keys for your personal use, request signing, audit logs
+
+Email: SMTP (or SendGrid/Mailgun), templated
+
+Invoices: PDF generation + Stripe payment links
+
+Calendar: iCal feed + optional Google Calendar OAuth (later)
+
+AI layer: abstraction that can call Replit AI / OpenAI (you can swap keys)
+
+Secrets: Replit Secrets (never hardcode)
+
+Compliance: CAN-SPAM basics for outreach; legal module responses are “educational with citations,” not legal advice
+
+Core modules (“plugins”):
+
+AI Chat + Memory (RAG)
+
+Email Outreach (Radio/College/Sync)
+
+Radio Finder & Music Licensing Scout (web search jobs; curated DB)
+
+Grants Scout for C.A.R.E.N.
+
+Calendar (events & reminders, iCal export)
+
+Invoices (PDF + Stripe links)
+
+Knowledge Packs (Legal/Finance) with curated official sources & citations
+
+Admin & Security (audit log, rate limit, secrets, dependency pinning)
+
+Step-by-step build plan (do this in order)
+Phase 0 — Replit setup (15–30 min)
+Create a new Python (FastAPI) Replit.
+
+Add secrets: AI_API_KEY, SMTP_USER, SMTP_PASS, STRIPE_API_KEY (optional now), OWNER_EMAIL.
+
+Paste the repo skeleton below into your Replit (files + code).
+
+pip install -r requirements.txt, then Run. You should get /healthz = OK.
+
+Phase 1 — Core platform
+Auth: single-user JWT; lock down admin endpoints.
+
+DB migrations: first SQLite schema (users, contacts, stations, grants, invoices, tasks, knowledge_docs, embeddings, audit_logs).
+
+Job runner: APScheduler startup with sample cron (e.g., weekly grant scan placeholder).
+
+Phase 2 — AI chat + memory (RAG)
+Embed a starter legal knowledge pack (statutes/uscode index summaries you add) + your business docs.
+
+Chat endpoint streams answers with citations pulled from the vector store.
+
+Guardrails: answers in “legal” domain include a disclaimer line and linkable citations.
+
+Phase 3 — Email outreach
+Templated emails (HTML + text) for radio station submissions + licensing pitches.
+
+Attach or link your music package (host files on Replit or a cloud bucket).
+
+CAN-SPAM footer with your business info.
+
+Phase 4 — Radio finder & licensing scout
+CSV import (you paste station lists).
+
+Scheduled web search job stubs (you confirm results before email fires).
+
+“One-click send” with throttling, retries, logging.
+
+Phase 5 — Grants scout (C.A.R.E.N.)
+Store queries; run weekly scans; queue candidates for manual review.
+
+One-click “save & draft email” to the funder with your standard intro.
+
+Phase 6 — Calendar
+CRUD events; generate a personal .ics feed you can subscribe to from Apple/Google Calendar.
+
+Optional Google Calendar sync later.
+
+Phase 7 — Invoices
+Create invoice → PDF → optional Stripe payment link → send by email.
+
+Track status locally.
