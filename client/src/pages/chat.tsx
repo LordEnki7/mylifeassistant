@@ -125,7 +125,7 @@ export default function Chat() {
         voice.name.toLowerCase().includes('zira') ||
         voice.name.toLowerCase().includes('hazel') ||
         voice.name.toLowerCase().includes('tessa') ||
-        (voice.name.toLowerCase().includes('english') && voice.name.toLowerCase().includes('united states') && voice.gender && voice.gender.toLowerCase() === 'female')
+        voice.name.toLowerCase().includes('english')
       ) || voices.find(voice => voice.lang.startsWith('en') && voice.name.includes('Female'));
       
       if (femaleVoice) {
@@ -163,7 +163,7 @@ export default function Chat() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">AI Assistant</h1>
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">☀️ Sunshine - Your AI Assistant</h1>
             <p className="text-gray-600">Get help with your music business tasks and questions.</p>
           </div>
           <div className="flex items-center space-x-3">
@@ -182,7 +182,7 @@ export default function Chat() {
         <CardHeader className="border-b">
           <CardTitle className="flex items-center">
             <Icons.chat className="mr-2 h-5 w-5 text-primary-500" />
-            Chat with your AI Assistant
+            Chat with Sunshine
           </CardTitle>
         </CardHeader>
         
@@ -197,11 +197,11 @@ export default function Chat() {
             ) : messages.length === 0 ? (
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                  AI
+                  ☀️
                 </div>
                 <div className="flex-1 bg-gray-100 rounded-lg p-4">
                   <p className="text-sm text-gray-900">
-                    Hello {user?.name || 'there'}! I'm your Life Assistant, automatically recognizing you by your hardwired email ({user?.email}). I can help you with:
+                    Hello {user?.name || 'there'}! I'm Sunshine, your AI Life Assistant! I'm automatically recognizing you by your hardwired email ({user?.email}). I can help you with:
                   </p>
                   <ul className="list-disc list-inside mt-2 text-sm text-gray-700 space-y-1">
                     <li>🎯 **Creating and managing tasks** - Just tell me what you need to do</li>
@@ -215,10 +215,10 @@ export default function Chat() {
                   <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <p className="text-sm text-blue-900 font-medium">💡 Try saying:</p>
                     <ul className="text-xs text-blue-800 mt-1 space-y-1">
-                      <li>• "Remind me to submit my track to KQED tomorrow"</li>
-                      <li>• "I need to research grants for C.A.R.E.N."</li>
-                      <li>• "Create an invoice for my recent gig"</li>
-                      <li>• "Schedule a follow-up with that music supervisor"</li>
+                      <li>• "Hey Sunshine, remind me to submit my track to KQED tomorrow"</li>
+                      <li>• "Sunshine, I need to research grants for C.A.R.E.N."</li>
+                      <li>• "Sunshine, create an invoice for my recent gig"</li>
+                      <li>• "Sunshine, schedule a follow-up with that music supervisor"</li>
                     </ul>
                   </div>
                 </div>
@@ -240,7 +240,7 @@ export default function Chat() {
                   {msg.response && (
                     <div className="flex items-start space-x-3">
                       <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                        AI
+                        ☀️
                       </div>
                       <div className="flex-1 bg-gray-100 rounded-lg p-4">
                         <p className="text-sm text-gray-900 whitespace-pre-wrap">{msg.response}</p>
@@ -266,7 +266,7 @@ export default function Chat() {
             {(sendMessageMutation.isPending || isProcessing) && (
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                  AI
+                  ☀️
                 </div>
                 <div className="flex-1 bg-gray-100 rounded-lg p-4">
                   <div className="flex items-center space-x-2">

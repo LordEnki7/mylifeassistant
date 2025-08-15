@@ -113,7 +113,7 @@ export default function AIChatWidget() {
         voice.name.toLowerCase().includes('zira') ||
         voice.name.toLowerCase().includes('hazel') ||
         voice.name.toLowerCase().includes('tessa') ||
-        (voice.name.toLowerCase().includes('english') && voice.name.toLowerCase().includes('united states') && voice.gender && voice.gender.toLowerCase() === 'female')
+        voice.name.toLowerCase().includes('english')
       ) || voices.find(voice => voice.lang.startsWith('en') && voice.name.includes('Female'));
       
       if (femaleVoice) {
@@ -151,9 +151,9 @@ export default function AIChatWidget() {
       <CardHeader className="border-b">
         <CardTitle className="flex items-center">
           <Icons.chat className="mr-2 h-5 w-5 text-primary-500" />
-          AI Assistant
+          ☀️ Sunshine
         </CardTitle>
-        <p className="text-gray-600 text-sm">Ask me anything about your music business</p>
+        <p className="text-gray-600 text-sm">Ask Sunshine anything about your music business</p>
       </CardHeader>
       
       <CardContent className="p-6">
@@ -167,11 +167,11 @@ export default function AIChatWidget() {
           ) : messages.length === 0 ? (
             <div className="flex items-start space-x-3">
               <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                AI
+                ☀️
               </div>
               <div className="flex-1 bg-gray-100 rounded-lg p-3">
                 <p className="text-sm text-gray-900">
-                  Hello! I can help you with email outreach, finding radio stations, grant research, and more. What would you like to work on today?
+                  Hello! I'm Sunshine, your AI assistant. I can help you with email outreach, finding radio stations, grant research, and more. What would you like to work on today?
                 </p>
               </div>
             </div>
@@ -192,7 +192,7 @@ export default function AIChatWidget() {
                 {msg.response && (
                   <div className="flex items-start space-x-3">
                     <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                      AI
+                      ☀️
                     </div>
                     <div className="flex-1 bg-gray-100 rounded-lg p-3">
                       <p className="text-sm text-gray-900">{msg.response}</p>
