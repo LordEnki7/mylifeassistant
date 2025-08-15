@@ -1,5 +1,5 @@
 // Rate Limiting and Email Queue Management
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import slowDown from 'express-slow-down';
 import type { Request, Response } from 'express';
 

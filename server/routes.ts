@@ -1,16 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import {
-  insertContactSchema,
-  insertRadioStationSchema,
-  insertGrantSchema,
-  insertInvoiceSchema,
-  insertTaskSchema,
-  insertEmailCampaignSchema,
-  insertKnowledgeDocSchema,
-  insertChatMessageSchema,
-} from "@shared/schema";
+// Note: Using validation schemas from middleware instead of Drizzle-generated ones
+// The middleware schemas are designed for request validation (no userId required)
+// while Drizzle schemas are for database operations (userId required)
 
 // Security Middleware Imports
 import { requireAuth, getUserId, generateToken, loginHardwiredUser } from "./middleware/auth";
