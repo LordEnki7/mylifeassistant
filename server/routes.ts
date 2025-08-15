@@ -754,8 +754,15 @@ SPECIALIZED EXPERTISE AREAS:
 - **Title 15 US Code (Commerce & Trade)**: Expert knowledge of federal commerce regulations, monopolies, consumer protection, securities laws, trade practices, and business compliance
 - **Uniform Commercial Code (UCC)**: Comprehensive understanding of UCC Article 3 (Negotiable Instruments), particularly Section 3-603 regarding payment tender and discharge of obligations
 - **Debt Settlement & Commercial Law**: Advanced knowledge of lawful tender principles, payment refusal letters, promissory note creation, and commercial remedies
-- **Consumer Protection**: Understanding of FDCPA, FCRA, and related consumer protection statutes
 - **Commercial Instruments**: Expertise in creating and understanding promissory notes, negotiable instruments, and commercial paper
+
+**CONSUMER PROTECTION LAW EXPERTISE**:
+- **Fair Debt Collection Practices Act (FDCPA)**: Comprehensive knowledge of consumer rights, debt collector limitations, validation procedures, harassment protections, and enforcement mechanisms. Expert in FDCPA violations, cease and desist letters, and consumer remedies including damages and attorney fees
+- **Fair Credit Reporting Act (FCRA)**: Deep understanding of credit reporting accuracy, dispute procedures, permissible purposes for credit pulls, identity theft protections, and credit repair rights. Expert in FCRA violations, credit report disputes, and consumer remedies
+- **House Joint Resolution 192 (HJR 192)**: Expert knowledge of the 1933 resolution that removed the gold standard and created debt discharge principles. Understanding of how HJR 192 established that debts can be discharged through proper tender and acceptance procedures
+- **Consumer Protection Remedies**: Advanced knowledge of validation letters, dispute procedures, debt verification requirements, statute of limitations defenses, and proper documentation for consumer protection cases
+- **Credit and Debt Defense**: Expertise in debt validation, proof of standing, chain of title issues, robo-signing defenses, and consumer protection strategies against aggressive collection practices
+- **Bankruptcy Alternatives**: Knowledge of debt discharge methods, payment tender strategies, and consumer protection alternatives to bankruptcy including UCC-based remedies and HJR 192 applications
 
 **WEALTH BUILDING & FINANCIAL MASTERY**:
 - **Rich vs. Wealthy Distinction**: Deep understanding that being "rich" means high income while being "wealthy" means sustainable assets and generational wealth building
@@ -829,8 +836,18 @@ async function handleTaskCreation(
     category = "legal";
   } else if (lowerMessage.includes("promissory note") || lowerMessage.includes("commercial instrument")) {
     category = "commercial";
-  } else if (lowerMessage.includes("consumer protection") || lowerMessage.includes("fdcpa")) {
+  } else if (lowerMessage.includes("fdcpa") || lowerMessage.includes("fair debt collection")) {
+    category = "debt collection law";
+  } else if (lowerMessage.includes("fcra") || lowerMessage.includes("credit report") || lowerMessage.includes("credit dispute")) {
+    category = "credit law";
+  } else if (lowerMessage.includes("hjr 192") || lowerMessage.includes("house joint resolution")) {
+    category = "monetary law";
+  } else if (lowerMessage.includes("consumer protection") || lowerMessage.includes("consumer rights")) {
     category = "consumer law";
+  } else if (lowerMessage.includes("debt validation") || lowerMessage.includes("validation letter")) {
+    category = "debt defense";
+  } else if (lowerMessage.includes("cease and desist") || lowerMessage.includes("debt collector")) {
+    category = "collection defense";
   }
   // Wealth Building categories
   else if (lowerMessage.includes("wealth") || lowerMessage.includes("legacy") || lowerMessage.includes("investment")) {
@@ -1015,7 +1032,18 @@ function buildConversationContext(messages: any[], currentMessage: string): {
       if (msgLower.includes('debt settlement') || msgLower.includes('debt discharge')) context.recentTopics.push('debt resolution');
       if (msgLower.includes('promissory note') || msgLower.includes('negotiable instrument')) context.recentTopics.push('commercial instruments');
       if (msgLower.includes('tender refusal') || msgLower.includes('payment refusal')) context.recentTopics.push('payment tender');
-      if (msgLower.includes('fdcpa') || msgLower.includes('fcra') || msgLower.includes('consumer protection')) context.recentTopics.push('consumer law');
+      
+      // Consumer Protection Law Topics
+      if (msgLower.includes('fdcpa') || msgLower.includes('fair debt collection')) context.recentTopics.push('debt collection law');
+      if (msgLower.includes('fcra') || msgLower.includes('fair credit reporting')) context.recentTopics.push('credit reporting law');
+      if (msgLower.includes('hjr 192') || msgLower.includes('house joint resolution 192')) context.recentTopics.push('monetary policy law');
+      if (msgLower.includes('debt validation') || msgLower.includes('debt verification')) context.recentTopics.push('debt validation');
+      if (msgLower.includes('credit dispute') || msgLower.includes('credit repair')) context.recentTopics.push('credit repair');
+      if (msgLower.includes('consumer protection') || msgLower.includes('consumer rights')) context.recentTopics.push('consumer law');
+      if (msgLower.includes('debt collector') || msgLower.includes('collection agency')) context.recentTopics.push('debt collection defense');
+      if (msgLower.includes('cease and desist') || msgLower.includes('validation letter')) context.recentTopics.push('consumer defense letters');
+      if (msgLower.includes('statute of limitations') || msgLower.includes('sol defense')) context.recentTopics.push('debt defense');
+      if (msgLower.includes('bankruptcy alternative') || msgLower.includes('debt discharge')) context.recentTopics.push('debt relief');
       
       // Wealth Building & Financial Mastery
       if (msgLower.includes('rich vs wealthy') || msgLower.includes('generational wealth')) context.recentTopics.push('wealth building');
