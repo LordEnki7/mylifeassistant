@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Icons } from "@/lib/icons";
 import { useNavigation } from "@/hooks/use-navigation";
 import logoImage from "@assets/My Life Assistant_1755255862503.png";
+import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 
 export default function MobileHeader() {
   const { toggleMobileMenu } = useNavigation();
@@ -21,13 +22,16 @@ export default function MobileHeader() {
           <img src={logoImage} alt="My Life Assistant" className="h-8 w-8" />
           <h1 className="text-lg font-semibold">My Life Assistant</h1>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-white hover:bg-primary-600 p-2"
-        >
-          <Icons.bell className="h-6 w-6" />
-        </Button>
+        <div className="flex items-center space-x-2">
+          <ThemeSwitcher />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white hover:bg-primary-600 p-2"
+          >
+            <Icons.bell className="h-6 w-6" />
+          </Button>
+        </div>
       </div>
     </header>
   );

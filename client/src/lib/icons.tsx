@@ -32,6 +32,10 @@ import {
   Users,
   BarChart,
   Edit,
+  Sun,
+  Moon,
+  Sunrise,
+  Sunset,
 } from "lucide-react";
 
 export const Icons = {
@@ -69,4 +73,8 @@ export const Icons = {
   barChart: BarChart,
   edit: Edit,
   mail: Mail,
+  sun: Sun,
+  moon: Moon,
+  sunrise: Sunrise,
+  sunset: Sunset,
 };

@@ -4,6 +4,7 @@ import { Icons } from "@/lib/icons";
 import { useNavigation } from "@/hooks/use-navigation";
 import { Button } from "@/components/ui/button";
 import logoImage from "@assets/My Life Assistant_1755255862503.png";
+import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Icons.dashboard },
@@ -66,6 +67,7 @@ export default function DesktopSidebar() {
             <p className="text-sm font-medium text-gray-900 truncate">User</p>
             <p className="text-xs text-gray-500 truncate">user@mylifeassistant.com</p>
           </div>
+          <ThemeSwitcher />
           <Button variant="ghost" size="sm">
             <Icons.more className="h-4 w-4" />
           </Button>
