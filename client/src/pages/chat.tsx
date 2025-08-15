@@ -112,8 +112,28 @@ export default function Chat() {
   const speakText = (text: string) => {
     if (synthRef.current && !isSpeaking) {
       const utterance = new SpeechSynthesisUtterance(text);
+      
+      // Set up female voice
+      const voices = synthRef.current.getVoices();
+      const femaleVoice = voices.find(voice => 
+        voice.name.toLowerCase().includes('female') ||
+        voice.name.toLowerCase().includes('woman') ||
+        voice.name.toLowerCase().includes('samantha') ||
+        voice.name.toLowerCase().includes('karen') ||
+        voice.name.toLowerCase().includes('susan') ||
+        voice.name.toLowerCase().includes('allison') ||
+        voice.name.toLowerCase().includes('zira') ||
+        voice.name.toLowerCase().includes('hazel') ||
+        voice.name.toLowerCase().includes('tessa') ||
+        (voice.name.toLowerCase().includes('english') && voice.name.toLowerCase().includes('united states') && voice.gender && voice.gender.toLowerCase() === 'female')
+      ) || voices.find(voice => voice.lang.startsWith('en') && voice.name.includes('Female'));
+      
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+      }
+      
       utterance.rate = 0.9;
-      utterance.pitch = 1;
+      utterance.pitch = 1.1; // Slightly higher pitch for more feminine sound
       utterance.volume = 0.8;
       
       utterance.onstart = () => setIsSpeaking(true);
