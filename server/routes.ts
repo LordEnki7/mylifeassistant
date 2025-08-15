@@ -570,7 +570,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   return httpServer;
 }
 
-// AI Task Management Functions
+// Import OpenAI for intelligent conversations
+import OpenAI from 'openai';
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+// Comprehensive Life Assistant powered by GPT-4o
 async function processAIMessage(
   message: string, 
   userId: string, 
@@ -582,128 +590,181 @@ async function processAIMessage(
   confidence: number;
   suggestions?: string[];
 }> {
-  const lowerMessage = message.toLowerCase();
-  
-  // Get conversation history for context and memory
-  const recentMessages = await storage.getChatMessages(userId);
-  const conversationContext = buildConversationContext(recentMessages, message);
-  
-  // Personal information/name handling
-  if (lowerMessage.includes("my name") || lowerMessage.includes("name is") || lowerMessage.includes("i'm") || lowerMessage.includes("i am")) {
-    // Store name if introduced, recall if asked
-    const nameMatch = message.match(/(my name is|i'm|i am)\s+([a-zA-Z]+)/i);
-    if (nameMatch) {
-      const name = nameMatch[2];
-      return {
-        message: `Nice to meet you, ${name}! I'll remember your name for our future conversations. How can I assist you with your music career and daily tasks?`,
-        confidence: 0.95,
-        suggestions: [
-          "Schedule a task",
-          "Research grants",
-          "Add radio stations",
-          "Create an invoice"
-        ]
-      };
-    } else if (lowerMessage.includes("what is my name") || lowerMessage.includes("what's my name")) {
-      if (conversationContext.userName) {
-        return {
-          message: `Your name is ${conversationContext.userName}! How can I help you today?`,
-          confidence: 0.95,
-          suggestions: [
-            "Schedule a task",
-            "Research grants",
-            "Add radio stations",
-            "Create an invoice"
-          ]
-        };
-      } else {
-        return {
-          message: "I don't know your name yet. Could you tell me your name so I can remember it for future conversations?",
-          confidence: 0.9,
-          suggestions: ["My name is..."]
-        };
+  try {
+    // Get conversation history for context and memory
+    const recentMessages = await storage.getChatMessages(userId);
+    const conversationContext = buildConversationContext(recentMessages, message);
+    
+    // Get user data for personalization
+    const user = await storage.getUser(userId);
+    const tasks = await storage.getTasks(userId);
+    const contacts = await storage.getContacts(userId);
+    const grants = await storage.getGrants(userId);
+    const invoices = await storage.getInvoices(userId);
+    
+    // Build comprehensive context for the AI
+    const systemPrompt = buildLifeAssistantPrompt(conversationContext, {
+      user,
+      tasks,
+      contacts,
+      grants,
+      invoices,
+      recentMessages: recentMessages.slice(-10) // Last 10 messages for context
+    });
+    
+    // Create conversation history for OpenAI
+    const conversationHistory = [
+      { role: 'system' as const, content: systemPrompt },
+      ...recentMessages.slice(-8).map(msg => ([
+        { role: 'user' as const, content: msg.message },
+        ...(msg.response ? [{ role: 'assistant' as const, content: msg.response }] : [])
+      ])).flat(),
+      { role: 'user' as const, content: message }
+    ];
+    
+    // Call OpenAI GPT-4o for intelligent response
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o", // Latest and most capable model
+      messages: conversationHistory,
+      max_tokens: 1000,
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "create_task",
+            description: "Create a task for the user",
+            parameters: {
+              type: "object",
+              properties: {
+                title: { type: "string" },
+                description: { type: "string" },
+                priority: { type: "string", enum: ["low", "medium", "high"] },
+                category: { type: "string" },
+                dueDate: { type: "string" }
+              },
+              required: ["title"]
+            }
+          }
+        },
+        {
+          type: "function",
+          function: {
+            name: "create_contact",
+            description: "Add a new contact",
+            parameters: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                email: { type: "string" },
+                company: { type: "string" },
+                type: { type: "string" },
+                notes: { type: "string" }
+              },
+              required: ["name"]
+            }
+          }
+        }
+      ]
+    });
+    
+    const responseText = completion.choices[0].message.content || '{"message": "I apologize, but I encountered an issue processing your request. Please try again."}';
+    const parsedResponse = JSON.parse(responseText);
+    
+    // Handle any tool calls
+    const actions: Array<{type: string; data: any}> = [];
+    if (completion.choices[0].message.tool_calls) {
+      for (const toolCall of completion.choices[0].message.tool_calls) {
+        if (toolCall.type === 'function') {
+          const functionCall = toolCall.function;
+          if (functionCall.name === 'create_task') {
+            const taskData = JSON.parse(functionCall.arguments);
+            actions.push({ type: 'create_task', data: taskData });
+          } else if (functionCall.name === 'create_contact') {
+            const contactData = JSON.parse(functionCall.arguments);
+            actions.push({ type: 'create_contact', data: contactData });
+          }
+        }
       }
     }
-  }
-  
-  // Task creation detection
-  const taskKeywords = [
-    "remind me", "schedule", "add task", "create task", 
-    "need to", "have to", "should", "must", "todo", "deadline"
-  ];
-  
-  const hasTaskIntent = taskKeywords.some(keyword => lowerMessage.includes(keyword));
-  
-  if (hasTaskIntent) {
-    return await handleTaskCreation(message, userId);
-  }
-  
-  // Grant research
-  if (lowerMessage.includes("grant") || lowerMessage.includes("c.a.r.e.n") || lowerMessage.includes("funding")) {
+    
     return {
-      message: "I can help you research grants for your C.A.R.E.N. project. Would you like me to add any specific grant opportunities to track? I can also help you organize application deadlines and requirements.",
-      confidence: 0.9,
+      message: parsedResponse.message || 'I\'m here to help! What would you like assistance with?',
+      actions,
+      confidence: 0.95,
+      suggestions: parsedResponse.suggestions || [
+        "Ask me anything!",
+        "Create a task",
+        "Plan something",
+        "Get advice"
+      ]
+    };
+    
+  } catch (error) {
+    console.error('OpenAI processing error:', error);
+    
+    // Fallback to basic processing if OpenAI fails
+    return {
+      message: `I apologize, but I encountered a technical issue. However, I'm still here to help! You can ask me about tasks, scheduling, music career advice, general planning, or anything else you need assistance with.`,
+      confidence: 0.6,
       suggestions: [
-        "Add a new grant opportunity",
-        "Check upcoming grant deadlines",
-        "Review C.A.R.E.N. project grants"
+        "Create a task",
+        "Ask for advice",
+        "Plan something",
+        "Get help with work"
       ]
     };
   }
+}
+
+// Build comprehensive system prompt for Life Assistant
+function buildLifeAssistantPrompt(conversationContext: any, userData: any): string {
+  const userName = conversationContext.userName || 'there';
+  const recentTopics = conversationContext.recentTopics.join(', ') || 'general assistance';
   
-  // Radio submission
-  if (lowerMessage.includes("radio") || lowerMessage.includes("submit") || lowerMessage.includes("music promotion")) {
-    return {
-      message: "I can help you manage radio station submissions for your music. Would you like me to help you find new stations, track submission status, or schedule follow-ups?",
-      confidence: 0.9,
-      suggestions: [
-        "Add new radio stations",
-        "Check submission status",
-        "Schedule follow-up emails"
-      ]
-    };
-  }
-  
-  // Sync licensing
-  if (lowerMessage.includes("sync") || lowerMessage.includes("licensing") || lowerMessage.includes("tv") || lowerMessage.includes("movie") || lowerMessage.includes("commercial")) {
-    return {
-      message: "I can assist with sync licensing opportunities for movies, TV shows, games, and commercials. Would you like me to help you track submissions or research new opportunities?",
-      confidence: 0.9,
-      suggestions: [
-        "Research new sync opportunities",
-        "Track licensing submissions",
-        "Organize music library for sync"
-      ]
-    };
-  }
-  
-  // Invoice management
-  if (lowerMessage.includes("invoice") || lowerMessage.includes("payment") || lowerMessage.includes("bill")) {
-    return {
-      message: "I can help you manage invoices and track payments. Would you like me to create a new invoice, check payment status, or send reminders?",
-      confidence: 0.9,
-      suggestions: [
-        "Create new invoice",
-        "Check overdue payments",
-        "Send payment reminders"
-      ]
-    };
-  }
-  
-  // General assistance with personalization
-  const greeting = conversationContext.userName ? `Hi ${conversationContext.userName}! ` : 'Hello! ';
-  const welcomeBack = recentMessages.length > 0 ? 'Welcome back to ' : 'Welcome to ';
-  
-  return {
-    message: `${greeting}${welcomeBack}your Life Assistant. I'm here to help you manage your music career and daily tasks. I can help you with:\n\n• **Grant Research** - Track C.A.R.E.N. funding opportunities\n• **Radio Promotion** - Manage station submissions and follow-ups\n• **Sync Licensing** - Track opportunities for movies, TV, games\n• **Task Management** - Create reminders and schedule activities\n• **Invoicing** - Manage payments and track income\n• **Knowledge Base** - Store important information and contacts\n\nWhat would you like help with today?`,
-    confidence: 0.8,
-    suggestions: [
-      "Schedule a task",
-      "Research grants",
-      "Add radio stations",
-      "Create an invoice"
-    ]
-  };
+  return `You are a comprehensive Life Assistant for ${userName}. You help with ALL aspects of life - not just music, but work, personal tasks, planning, research, decision-making, relationships, health, finances, learning, and anything else they need.
+
+ABOUT THE USER:
+- Name: ${userName}
+- Recent topics discussed: ${recentTopics}
+- Current tasks: ${userData.tasks?.length || 0}
+- Contacts: ${userData.contacts?.length || 0}
+- Projects: Music career including C.A.R.E.N. project, but also any other life projects
+
+YOUR CAPABILITIES:
+- **Intelligent Conversations**: Understand context, remember details, provide thoughtful responses
+- **Task & Project Management**: Create, organize, prioritize tasks for any area of life
+- **Planning & Organization**: Help plan events, trips, career moves, life changes
+- **Research & Analysis**: Research any topic, analyze options, provide insights
+- **Decision Support**: Help think through decisions big and small
+- **Creative Assistance**: Brainstorming, writing, problem-solving
+- **Learning Support**: Explain concepts, recommend resources, create study plans
+- **Personal Growth**: Goal setting, habit formation, motivation
+- **Work & Career**: Job searching, skill development, networking, productivity
+- **Health & Wellness**: Exercise planning, meal ideas, mental health support
+- **Relationships**: Communication advice, social planning, conflict resolution
+- **Financial Guidance**: Budgeting, saving strategies, investment basics
+- **Technical Help**: Explain technology, troubleshoot issues, recommend tools
+- **Entertainment**: Recommend books, movies, activities, games
+
+CONVERSATION STYLE:
+- Be warm, helpful, and genuinely interested
+- Remember and reference previous conversations
+- Ask clarifying questions when needed
+- Provide specific, actionable advice
+- Be encouraging and supportive
+- Adapt your tone to the user's mood and needs
+- Use the user's name naturally in conversation
+
+RESPONSE FORMAT:
+Respond in JSON format with:
+{
+  "message": "Your response message here",
+  "suggestions": ["actionable suggestion 1", "suggestion 2", "suggestion 3"]
+}
+
+REMEMBER: You're not just a music assistant - you're a comprehensive life companion that can help with absolutely anything. Be proactive in offering help across all areas of life.`;
 }
 
 async function handleTaskCreation(
@@ -855,35 +916,82 @@ async function monitorUserTasks(userId: string): Promise<{
   };
 }
 
-// Build conversation context for memory and personalization
+// Enhanced conversation context for comprehensive Life Assistant
 function buildConversationContext(messages: any[], currentMessage: string): {
   userName?: string;
   recentTopics: string[];
   lastInteraction?: Date;
+  interests: string[];
+  preferences: Record<string, any>;
 } {
   const context: {
     userName?: string;
     recentTopics: string[];
     lastInteraction?: Date;
+    interests: string[];
+    preferences: Record<string, any>;
   } = {
-    recentTopics: []
+    recentTopics: [],
+    interests: [],
+    preferences: {}
   };
   
-  // Extract user's name from conversation history
+  // Extract user's name and preferences from conversation history
   for (const msg of messages) {
     if (msg.message) {
-      const nameMatch = msg.message.match(/(my name is|i'm|i am)\s+([a-zA-Z]+)/i);
+      const nameMatch = msg.message.match(/(my name is|i'm|i am|call me)\s+([a-zA-Z]+)/i);
       if (nameMatch) {
         context.userName = nameMatch[2];
       }
       
-      // Track recent topics
+      // Track comprehensive topics across all life areas
       const msgLower = msg.message.toLowerCase();
-      if (msgLower.includes('grant')) context.recentTopics.push('grants');
-      if (msgLower.includes('radio')) context.recentTopics.push('radio');
-      if (msgLower.includes('sync') || msgLower.includes('licensing')) context.recentTopics.push('licensing');
-      if (msgLower.includes('task') || msgLower.includes('remind')) context.recentTopics.push('tasks');
-      if (msgLower.includes('invoice') || msgLower.includes('payment')) context.recentTopics.push('invoices');
+      
+      // Work & Career
+      if (msgLower.includes('job') || msgLower.includes('work') || msgLower.includes('career')) context.recentTopics.push('career');
+      if (msgLower.includes('interview') || msgLower.includes('resume')) context.recentTopics.push('job search');
+      if (msgLower.includes('meeting') || msgLower.includes('presentation')) context.recentTopics.push('work tasks');
+      
+      // Personal & Life
+      if (msgLower.includes('family') || msgLower.includes('relationship')) context.recentTopics.push('relationships');
+      if (msgLower.includes('health') || msgLower.includes('exercise') || msgLower.includes('diet')) context.recentTopics.push('health');
+      if (msgLower.includes('money') || msgLower.includes('budget') || msgLower.includes('finance')) context.recentTopics.push('finances');
+      if (msgLower.includes('travel') || msgLower.includes('vacation') || msgLower.includes('trip')) context.recentTopics.push('travel');
+      if (msgLower.includes('learn') || msgLower.includes('study') || msgLower.includes('course')) context.recentTopics.push('learning');
+      
+      // Projects & Goals
+      if (msgLower.includes('goal') || msgLower.includes('plan') || msgLower.includes('project')) context.recentTopics.push('planning');
+      if (msgLower.includes('habit') || msgLower.includes('routine')) context.recentTopics.push('habits');
+      
+      // Entertainment & Hobbies
+      if (msgLower.includes('book') || msgLower.includes('read')) context.recentTopics.push('reading');
+      if (msgLower.includes('movie') || msgLower.includes('tv') || msgLower.includes('show')) context.recentTopics.push('entertainment');
+      if (msgLower.includes('game') || msgLower.includes('hobby')) context.recentTopics.push('hobbies');
+      
+      // Music-specific (still supported)
+      if (msgLower.includes('grant') || msgLower.includes('c.a.r.e.n')) context.recentTopics.push('grants');
+      if (msgLower.includes('radio') || msgLower.includes('station')) context.recentTopics.push('radio promotion');
+      if (msgLower.includes('sync') || msgLower.includes('licensing')) context.recentTopics.push('sync licensing');
+      if (msgLower.includes('music') || msgLower.includes('song') || msgLower.includes('album')) context.recentTopics.push('music');
+      
+      // General productivity
+      if (msgLower.includes('task') || msgLower.includes('remind') || msgLower.includes('todo')) context.recentTopics.push('tasks');
+      if (msgLower.includes('schedule') || msgLower.includes('calendar')) context.recentTopics.push('scheduling');
+      if (msgLower.includes('invoice') || msgLower.includes('payment')) context.recentTopics.push('invoicing');
+      
+      // Extract interests and preferences
+      const interestPatterns = [
+        /i (love|like|enjoy|prefer) ([^.!?]+)/gi,
+        /my favorite ([^.!?]+) is ([^.!?]+)/gi,
+        /i'm interested in ([^.!?]+)/gi
+      ];
+      
+      interestPatterns.forEach(pattern => {
+        const matches = msg.message.matchAll(pattern);
+        for (const match of matches) {
+          context.interests.push(match[2] || match[1]);
+        }
+      });
     }
     
     if (msg.createdAt) {
@@ -891,8 +999,9 @@ function buildConversationContext(messages: any[], currentMessage: string): {
     }
   }
   
-  // Remove duplicates from recent topics
-  context.recentTopics = [...new Set(context.recentTopics)];
+  // Remove duplicates
+  context.recentTopics = Array.from(new Set(context.recentTopics));
+  context.interests = Array.from(new Set(context.interests));
   
   return context;
 }
