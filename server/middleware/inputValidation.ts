@@ -65,6 +65,21 @@ export const schemas = {
     // userId is extracted from JWT token
   }),
 
+  // Music contract validation
+  musicContract: z.object({
+    name: z.string().min(1, 'Contract name is required').max(200, 'Name too long').trim(),
+    type: z.string().min(1, 'Contract type is required').max(50, 'Type too long'),
+    description: z.string().max(2000, 'Description too long').optional().nullable(),
+    template: z.string().min(1, 'Template is required'),
+    variables: z.record(z.string(), z.any()).optional().nullable(),
+    status: z.enum(['template', 'draft', 'active', 'completed', 'cancelled']).default('template'),
+    parties: z.record(z.string(), z.any()).optional().nullable(),
+    terms: z.record(z.string(), z.any()).optional().nullable(),
+    tags: z.array(z.string().max(50)).optional().nullable(),
+    isActive: z.boolean().default(true)
+    // userId is extracted from JWT token
+  }),
+
   // Chat message validation with content filtering
   chatMessage: z.object({
     message: z.string()

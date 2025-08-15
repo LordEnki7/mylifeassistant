@@ -12,6 +12,7 @@ const navigation = [
   { name: "Email Outreach", href: "/outreach", icon: Icons.email },
   { name: "Radio Stations", href: "/radio", icon: Icons.radio },
   { name: "Sync Licensing", href: "/licensing", icon: Icons.movie },
+  { name: "Music Contracts", href: "/contracts", icon: Icons.fileText },
   { name: "Grants (C.A.R.E.N.)", href: "/grants", icon: Icons.building },
   { name: "Calendar", href: "/calendar", icon: Icons.calendar },
   { name: "Invoices", href: "/invoices", icon: Icons.receipt },
@@ -40,9 +41,9 @@ export default function DesktopSidebar() {
             return (
               <li key={item.name}>
                 <Link href={item.href}>
-                  <a
+                  <div
                     className={cn(
-                      "flex items-center p-3 rounded-lg transition-all-300",
+                      "flex items-center p-3 rounded-lg transition-all-300 cursor-pointer",
                       isActive
                         ? "bg-primary-50 text-primary-600"
                         : "text-gray-700 hover:bg-gray-100"
@@ -50,7 +51,7 @@ export default function DesktopSidebar() {
                   >
                     <item.icon className="mr-3 h-5 w-5" />
                     {item.name}
-                  </a>
+                  </div>
                 </Link>
               </li>
             );

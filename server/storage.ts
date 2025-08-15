@@ -16,6 +16,7 @@ import {
   type SyncCampaign, type InsertSyncCampaign,
   type PlatformSubmission, type InsertPlatformSubmission,
   type ActionItem, type InsertActionItem,
+  type MusicContract, type InsertMusicContract,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -134,6 +135,15 @@ export interface IStorage {
   updateActionItem(id: string, item: Partial<ActionItem>): Promise<ActionItem | undefined>;
   deleteActionItem(id: string): Promise<boolean>;
 
+  // Music Contracts
+  getMusicContracts(userId: string): Promise<MusicContract[]>;
+  getMusicContract(id: string): Promise<MusicContract | undefined>;
+  createMusicContract(contract: InsertMusicContract): Promise<MusicContract>;
+  updateMusicContract(id: string, contract: Partial<MusicContract>): Promise<MusicContract | undefined>;
+  deleteMusicContract(id: string): Promise<boolean>;
+  getMusicContractsByType(userId: string, type: string): Promise<MusicContract[]>;
+  generateContractFromTemplate(templateId: string, variables: Record<string, any>): Promise<string>;
+
   // Dashboard stats
   getDashboardStats(userId: string): Promise<{
     emailsSent: number;
@@ -161,6 +171,7 @@ export class MemStorage implements IStorage {
   private syncCampaigns: Map<string, SyncCampaign>;
   private platformSubmissions: Map<string, PlatformSubmission>;
   private actionItems: Map<string, ActionItem>;
+  private musicContracts: Map<string, MusicContract>;
 
   constructor() {
     this.users = new Map();
@@ -180,6 +191,7 @@ export class MemStorage implements IStorage {
     this.syncCampaigns = new Map();
     this.platformSubmissions = new Map();
     this.actionItems = new Map();
+    this.musicContracts = new Map();
 
     // Initialize with demo user
     this.initializeDemoData();
@@ -322,6 +334,9 @@ export class MemStorage implements IStorage {
     
     // Initialize immediate action items for sync licensing
     this.initializeActionItems(userId);
+    
+    // Initialize music contract templates
+    this.initializeMusicContractTemplates(userId);
   }
 
   // Users
@@ -1738,6 +1753,332 @@ Kind regards,
         }
       });
     });
+  }
+
+  private initializeMusicContractTemplates(userId: string) {
+    const contractTemplates = [
+      {
+        name: "Artist-Master Producer Contract",
+        type: "artist_producer",
+        description: "Comprehensive contract between artist and producer for master recording creation",
+        template: `ARTIST-MASTER PRODUCER AGREEMENT
+
+This Agreement is entered into on {{contract_date}} between {{artist_name}} ("Artist") and {{producer_name}} ("Producer").
+
+1. SERVICES
+Producer agrees to produce {{number_of_tracks}} master recordings for Artist according to the specifications outlined in Schedule A.
+
+2. COMPENSATION
+Artist agrees to pay Producer {{producer_fee}} plus {{percentage}}% of net receipts from the master recordings.
+
+3. CREDITS
+Producer shall receive appropriate credit as "Produced by {{producer_name}}" on all copies and promotional materials.
+
+4. DELIVERY
+Master recordings shall be delivered by {{delivery_date}} in {{format}} format.
+
+5. OWNERSHIP
+Copyright in the master recordings shall be owned by {{copyright_owner}}.
+
+Artist: {{artist_signature}} Date: {{date}}
+Producer: {{producer_signature}} Date: {{date}}`,
+        variables: {
+          artist_name: "Artist Name",
+          producer_name: "Producer Name",
+          contract_date: "Contract Date",
+          number_of_tracks: "Number of Tracks",
+          producer_fee: "Producer Fee",
+          percentage: "Percentage Points",
+          delivery_date: "Delivery Date",
+          format: "Audio Format",
+          copyright_owner: "Copyright Owner",
+          artist_signature: "Artist Signature",
+          producer_signature: "Producer Signature",
+          date: "Date"
+        },
+        parties: ["artist", "producer"],
+        terms: { payment: "fee_plus_points", rights: "negotiable", duration: "project_based" },
+        tags: ["production", "master_recording", "royalties"]
+      },
+      {
+        name: "Booking Contract",
+        type: "booking",
+        description: "Performance booking agreement for live shows and events",
+        template: `PERFORMANCE AGREEMENT
+
+This Agreement is made between {{venue_name}} ("Venue") and {{artist_name}} ("Artist") for a performance on {{performance_date}}.
+
+1. PERFORMANCE DETAILS
+Date: {{performance_date}}
+Time: {{performance_time}}
+Venue: {{venue_name}}
+Address: {{venue_address}}
+
+2. COMPENSATION
+Artist fee: {{performance_fee}}
+Payment terms: {{payment_terms}}
+
+3. TECHNICAL REQUIREMENTS
+{{technical_requirements}}
+
+4. CANCELLATION
+Cancellation policy: {{cancellation_policy}}
+
+5. ADDITIONAL TERMS
+{{additional_terms}}
+
+Venue: {{venue_signature}} Date: {{date}}
+Artist: {{artist_signature}} Date: {{date}}`,
+        variables: {
+          venue_name: "Venue Name",
+          artist_name: "Artist Name",
+          performance_date: "Performance Date",
+          performance_time: "Performance Time",
+          venue_address: "Venue Address",
+          performance_fee: "Performance Fee",
+          payment_terms: "Payment Terms",
+          technical_requirements: "Technical Requirements",
+          cancellation_policy: "Cancellation Policy",
+          additional_terms: "Additional Terms",
+          venue_signature: "Venue Signature",
+          artist_signature: "Artist Signature",
+          date: "Date"
+        },
+        parties: ["artist", "venue"],
+        terms: { payment: "flat_fee", duration: "single_event" },
+        tags: ["live_performance", "booking", "venue"]
+      },
+      {
+        name: "Film Synchronization Contract",
+        type: "sync_licensing",
+        description: "Music synchronization license for film and video projects",
+        template: `SYNCHRONIZATION LICENSE AGREEMENT
+
+License granted from {{licensor_name}} ("Licensor") to {{licensee_name}} ("Licensee") for the musical composition "{{song_title}}".
+
+1. GRANT OF RIGHTS
+Licensor grants Licensee the right to synchronize the musical composition with visual images in the production titled "{{production_title}}".
+
+2. TERRITORY
+Territory: {{territory}}
+
+3. TERM
+Term: {{license_term}}
+
+4. MEDIA
+Authorized media: {{authorized_media}}
+
+5. FEE
+Sync fee: {{sync_fee}}
+Payment due: {{payment_due_date}}
+
+6. CREDITS
+Music credit: {{music_credit}}
+
+7. RESTRICTIONS
+{{restrictions}}
+
+Licensor: {{licensor_signature}} Date: {{date}}
+Licensee: {{licensee_signature}} Date: {{date}}`,
+        variables: {
+          licensor_name: "Licensor Name",
+          licensee_name: "Licensee Name",
+          song_title: "Song Title",
+          production_title: "Production Title",
+          territory: "Territory",
+          license_term: "License Term",
+          authorized_media: "Authorized Media",
+          sync_fee: "Synchronization Fee",
+          payment_due_date: "Payment Due Date",
+          music_credit: "Music Credit",
+          restrictions: "License Restrictions",
+          licensor_signature: "Licensor Signature",
+          licensee_signature: "Licensee Signature",
+          date: "Date"
+        },
+        parties: ["licensor", "licensee"],
+        terms: { payment: "one_time_fee", rights: "sync_only", duration: "term_based" },
+        tags: ["sync", "film", "tv", "licensing"]
+      },
+      {
+        name: "Distribution Agreement",
+        type: "distribution",
+        description: "Music distribution contract for digital and physical release",
+        template: `DISTRIBUTION AGREEMENT
+
+Agreement between {{artist_name}} ("Artist") and {{distributor_name}} ("Distributor") for distribution of musical recordings.
+
+1. GRANT OF RIGHTS
+Artist grants Distributor the exclusive right to distribute the recordings listed in Schedule A.
+
+2. TERRITORY
+Distribution territory: {{territory}}
+
+3. TERM
+Initial term: {{initial_term}}
+Renewal terms: {{renewal_terms}}
+
+4. REVENUE SPLIT
+Artist receives: {{artist_percentage}}%
+Distributor receives: {{distributor_percentage}}%
+
+5. DELIVERY REQUIREMENTS
+{{delivery_requirements}}
+
+6. MARKETING
+{{marketing_commitments}}
+
+7. ACCOUNTING
+Statements provided: {{accounting_frequency}}
+Payment terms: {{payment_terms}}
+
+Artist: {{artist_signature}} Date: {{date}}
+Distributor: {{distributor_signature}} Date: {{date}}`,
+        variables: {
+          artist_name: "Artist Name",
+          distributor_name: "Distributor Name",
+          territory: "Distribution Territory",
+          initial_term: "Initial Term",
+          renewal_terms: "Renewal Terms",
+          artist_percentage: "Artist Percentage",
+          distributor_percentage: "Distributor Percentage",
+          delivery_requirements: "Delivery Requirements",
+          marketing_commitments: "Marketing Commitments",
+          accounting_frequency: "Accounting Frequency",
+          payment_terms: "Payment Terms",
+          artist_signature: "Artist Signature",
+          distributor_signature: "Distributor Signature",
+          date: "Date"
+        },
+        parties: ["artist", "distributor"],
+        terms: { payment: "revenue_split", rights: "distribution", duration: "term_based" },
+        tags: ["distribution", "digital", "revenue_split"]
+      },
+      {
+        name: "Copyright Assignment",
+        type: "copyright",
+        description: "Transfer of copyright ownership for musical works",
+        template: `COPYRIGHT ASSIGNMENT AGREEMENT
+
+Assignment of copyright from {{assignor_name}} ("Assignor") to {{assignee_name}} ("Assignee") for the musical work "{{work_title}}".
+
+1. ASSIGNMENT
+Assignor hereby assigns all right, title, and interest in the copyright of the musical work to Assignee.
+
+2. WORK DETAILS
+Title: {{work_title}}
+Composer(s): {{composers}}
+Date of creation: {{creation_date}}
+
+3. CONSIDERATION
+Consideration for assignment: {{consideration}}
+
+4. REPRESENTATIONS
+Assignor represents that they are the sole owner of the copyright and have full authority to make this assignment.
+
+5. FURTHER ASSURANCES
+Assignor agrees to execute any additional documents necessary to perfect this assignment.
+
+Assignor: {{assignor_signature}} Date: {{date}}
+Assignee: {{assignee_signature}} Date: {{date}}`,
+        variables: {
+          assignor_name: "Assignor Name",
+          assignee_name: "Assignee Name",
+          work_title: "Work Title",
+          composers: "Composer Names",
+          creation_date: "Creation Date",
+          consideration: "Payment/Consideration",
+          assignor_signature: "Assignor Signature",
+          assignee_signature: "Assignee Signature",
+          date: "Date"
+        },
+        parties: ["assignor", "assignee"],
+        terms: { payment: "one_time", rights: "full_transfer", duration: "permanent" },
+        tags: ["copyright", "assignment", "ownership"]
+      }
+    ];
+
+    contractTemplates.forEach(contractData => {
+      const contract: MusicContract = {
+        id: randomUUID(),
+        userId,
+        name: contractData.name,
+        type: contractData.type,
+        description: contractData.description,
+        template: contractData.template,
+        variables: contractData.variables,
+        status: "template",
+        parties: contractData.parties,
+        terms: contractData.terms,
+        tags: contractData.tags,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      this.musicContracts.set(contract.id, contract);
+    });
+  }
+
+  // Music Contracts
+  async getMusicContracts(userId: string): Promise<MusicContract[]> {
+    return Array.from(this.musicContracts.values()).filter(contract => contract.userId === userId);
+  }
+
+  async getMusicContract(id: string): Promise<MusicContract | undefined> {
+    return this.musicContracts.get(id);
+  }
+
+  async createMusicContract(insertContract: InsertMusicContract): Promise<MusicContract> {
+    const id = randomUUID();
+    const contract: MusicContract = {
+      ...insertContract,
+      id,
+      description: insertContract.description || null,
+      variables: insertContract.variables || null,
+      status: insertContract.status || "template",
+      parties: insertContract.parties || null,
+      terms: insertContract.terms || null,
+      tags: insertContract.tags || null,
+      isActive: insertContract.isActive ?? true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.musicContracts.set(id, contract);
+    return contract;
+  }
+
+  async updateMusicContract(id: string, contractUpdate: Partial<MusicContract>): Promise<MusicContract | undefined> {
+    const contract = this.musicContracts.get(id);
+    if (!contract) return undefined;
+    const updated = { ...contract, ...contractUpdate, updatedAt: new Date() };
+    this.musicContracts.set(id, updated);
+    return updated;
+  }
+
+  async deleteMusicContract(id: string): Promise<boolean> {
+    return this.musicContracts.delete(id);
+  }
+
+  async getMusicContractsByType(userId: string, type: string): Promise<MusicContract[]> {
+    return Array.from(this.musicContracts.values())
+      .filter(contract => contract.userId === userId && contract.type === type);
+  }
+
+  async generateContractFromTemplate(templateId: string, variables: Record<string, any>): Promise<string> {
+    const template = await this.getMusicContract(templateId);
+    if (!template) {
+      throw new Error("Contract template not found");
+    }
+
+    let contractText = template.template;
+    
+    // Replace all variables in the template
+    Object.entries(variables).forEach(([key, value]) => {
+      const placeholder = new RegExp(`{{${key}}}`, 'g');
+      contractText = contractText.replace(placeholder, value || `[${key}]`);
+    });
+    
+    return contractText;
   }
 }
 

@@ -244,6 +244,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Music Contracts (all protected)
+  app.get("/api/music-contracts", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const contracts = await storage.getMusicContracts(userId);
+      await auditLogger.logDataAccess(req, 'read', 'music_contracts', userId);
+      res.json(contracts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch music contracts" });
+    }
+  });
+
+  app.post("/api/music-contracts", requireAuth, validateRequest(schemas.musicContract), async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const contractData = { ...req.body, userId };
+      const contract = await storage.createMusicContract(contractData);
+      await auditLogger.logDataAccess(req, 'create', 'music_contract', contract.id, true);
+      res.json(contract);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'music_contract', undefined, false);
+      res.status(400).json({ error: "Invalid music contract data" });
+    }
+  });
+
+  app.put("/api/music-contracts/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const contract = await storage.updateMusicContract(id, req.body);
+      if (!contract) {
+        await auditLogger.logDataAccess(req, 'update', 'music_contract', id, false);
+        return res.status(404).json({ error: "Music contract not found" });
+      }
+      await auditLogger.logDataAccess(req, 'update', 'music_contract', id, true);
+      res.json(contract);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'update', 'music_contract', req.params.id, false);
+      res.status(400).json({ error: "Failed to update music contract" });
+    }
+  });
+
+  app.delete("/api/music-contracts/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteMusicContract(id);
+      if (!deleted) {
+        await auditLogger.logDataAccess(req, 'delete', 'music_contract', id, false);
+        return res.status(404).json({ error: "Music contract not found" });
+      }
+      await auditLogger.logDataAccess(req, 'delete', 'music_contract', id, true);
+      res.json({ success: true });
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'delete', 'music_contract', req.params.id, false);
+      res.status(500).json({ error: "Failed to delete music contract" });
+    }
+  });
+
+  // Contract generation endpoint
+  app.post("/api/music-contracts/:id/generate", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { variables } = req.body;
+      const userId = getUserId(req);
+      
+      const contract = await storage.getMusicContract(id);
+      if (!contract) {
+        await auditLogger.logDataAccess(req, 'read', 'music_contract', id, false);
+        return res.status(404).json({ error: "Music contract not found" });
+      }
+
+      // Verify the contract belongs to the user (security check)
+      if (contract.userId !== userId) {
+        await auditLogger.logDataAccess(req, 'read', 'music_contract', id, false);
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      // Generate the contract by replacing variables in the template
+      let generatedContract = contract.template;
+      if (variables && typeof variables === 'object') {
+        Object.entries(variables).forEach(([key, value]) => {
+          const placeholder = `{{${key}}}`;
+          generatedContract = generatedContract.replace(new RegExp(placeholder, 'g'), String(value));
+        });
+      }
+
+      await auditLogger.logDataAccess(req, 'generate', 'music_contract', id, true);
+      res.json({ generatedContract, contract });
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'generate', 'music_contract', req.params.id, false);
+      res.status(500).json({ error: "Failed to generate contract" });
+    }
+  });
+
   // Invoices (all protected)
   app.get("/api/invoices", requireAuth, async (req, res) => {
     try {

@@ -239,6 +239,23 @@ export const actionItems = pgTable("action_items", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const musicContracts = pgTable("music_contracts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // artist_producer, booking, sync_licensing, distribution, etc.
+  description: text("description"),
+  template: text("template").notNull(), // The contract template content
+  variables: jsonb("variables"), // Placeholder variables for the contract
+  status: text("status").default("template"), // template, draft, completed, signed
+  parties: jsonb("parties"), // Array of contract parties with their details
+  terms: jsonb("terms"), // Key contract terms (payment, rights, duration, etc.)
+  tags: text("tags").array(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -328,6 +345,12 @@ export const insertActionItemSchema = createInsertSchema(actionItems).omit({
   createdAt: true,
 });
 
+export const insertMusicContractSchema = createInsertSchema(musicContracts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -379,3 +402,6 @@ export type InsertPlatformSubmission = z.infer<typeof insertPlatformSubmissionSc
 
 export type ActionItem = typeof actionItems.$inferSelect;
 export type InsertActionItem = z.infer<typeof insertActionItemSchema>;
+
+export type MusicContract = typeof musicContracts.$inferSelect;
+export type InsertMusicContract = z.infer<typeof insertMusicContractSchema>;

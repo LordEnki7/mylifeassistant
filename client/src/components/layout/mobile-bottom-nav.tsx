@@ -6,7 +6,7 @@ import { useNavigation } from "@/hooks/use-navigation";
 const bottomNavigation = [
   { name: "Home", href: "/dashboard", icon: Icons.dashboard },
   { name: "AI Chat", href: "/chat", icon: Icons.chat },
-  { name: "Email", href: "/outreach", icon: Icons.email },
+  { name: "Contracts", href: "/contracts", icon: Icons.fileText },
   { name: "Calendar", href: "/calendar", icon: Icons.calendar },
   { name: "More", href: "/more", icon: Icons.more },
 ];
@@ -21,9 +21,9 @@ export default function MobileBottomNav() {
           const isActive = isActiveRoute(item.href);
           return (
             <Link key={item.name} href={item.href}>
-              <a
+              <div
                 className={cn(
-                  "flex flex-col items-center justify-center transition-all-300",
+                  "flex flex-col items-center justify-center transition-all-300 cursor-pointer h-full",
                   isActive
                     ? "text-primary-500 bg-primary-50"
                     : "text-gray-500 hover:text-primary-500"
@@ -31,7 +31,7 @@ export default function MobileBottomNav() {
               >
                 <item.icon className="h-5 w-5" />
                 <span className="text-xs mt-1">{item.name}</span>
-              </a>
+              </div>
             </Link>
           );
         })}
