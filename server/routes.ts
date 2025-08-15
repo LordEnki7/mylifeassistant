@@ -748,6 +748,30 @@ YOUR CAPABILITIES:
 - **Technical Help**: Explain technology, troubleshoot issues, recommend tools
 - **Entertainment**: Recommend books, movies, activities, games
 
+SPECIALIZED EXPERTISE AREAS:
+
+**LEGAL & COMMERCIAL LAW KNOWLEDGE**:
+- **Title 15 US Code (Commerce & Trade)**: Expert knowledge of federal commerce regulations, monopolies, consumer protection, securities laws, trade practices, and business compliance
+- **Uniform Commercial Code (UCC)**: Comprehensive understanding of UCC Article 3 (Negotiable Instruments), particularly Section 3-603 regarding payment tender and discharge of obligations
+- **Debt Settlement & Commercial Law**: Advanced knowledge of lawful tender principles, payment refusal letters, promissory note creation, and commercial remedies
+- **Consumer Protection**: Understanding of FDCPA, FCRA, and related consumer protection statutes
+- **Commercial Instruments**: Expertise in creating and understanding promissory notes, negotiable instruments, and commercial paper
+
+**WEALTH BUILDING & FINANCIAL MASTERY**:
+- **Rich vs. Wealthy Distinction**: Deep understanding that being "rich" means high income while being "wealthy" means sustainable assets and generational wealth building
+- **Spiritual + Physical Money Principles**: Knowledge that wealth creation requires both spiritual understanding (vision, purpose, generational thinking) and physical action (planning, investment, execution)
+- **Family Wealth Building**: Expertise in creating generational wealth that "grows on the family tree" through proper planning, vision, and legacy creation
+- **Wealth Psychology**: Understanding that money mindset, generational patterns, and spiritual approaches to abundance are crucial for lasting wealth
+- **Investment Philosophy**: Knowledge that true wealth comes from assets that generate income, not just high-paying jobs
+- **Legacy Planning**: Expertise in creating financial legacies that impact future generations and create lasting change
+
+**PRACTICAL FINANCIAL TOOLS & STRATEGIES**:
+- **Debt Discharge Methods**: Knowledge of UCC 3-603 payment tender strategies, proper documentation, and legal frameworks
+- **Commercial Remedies**: Understanding of how to properly execute payment refusal letters, tender notices, and debt settlement instruments
+- **Financial Documentation**: Expertise in creating properly formatted promissory notes, payment tender letters, and commercial correspondence
+- **Asset Protection**: Knowledge of legal strategies for protecting wealth and assets
+- **Credit and Debt Management**: Advanced understanding of credit laws, debt collection limitations, and consumer rights
+
 CONVERSATION STYLE:
 - Be warm, helpful, and genuinely interested
 - Remember and reference previous conversations
@@ -799,7 +823,23 @@ async function handleTaskCreation(
   
   // Determine category
   let category = "general";
-  if (lowerMessage.includes("grant") || lowerMessage.includes("c.a.r.e.n")) {
+  
+  // Legal & Commercial categories
+  if (lowerMessage.includes("ucc") || lowerMessage.includes("payment tender") || lowerMessage.includes("debt settlement")) {
+    category = "legal";
+  } else if (lowerMessage.includes("promissory note") || lowerMessage.includes("commercial instrument")) {
+    category = "commercial";
+  } else if (lowerMessage.includes("consumer protection") || lowerMessage.includes("fdcpa")) {
+    category = "consumer law";
+  }
+  // Wealth Building categories
+  else if (lowerMessage.includes("wealth") || lowerMessage.includes("legacy") || lowerMessage.includes("investment")) {
+    category = "wealth building";
+  } else if (lowerMessage.includes("asset protection") || lowerMessage.includes("financial planning")) {
+    category = "financial planning";
+  }
+  // Music & Business categories
+  else if (lowerMessage.includes("grant") || lowerMessage.includes("c.a.r.e.n")) {
     category = "grants";
   } else if (lowerMessage.includes("radio") || lowerMessage.includes("submission")) {
     category = "radio";
@@ -967,6 +1007,23 @@ function buildConversationContext(messages: any[], currentMessage: string): {
       if (msgLower.includes('book') || msgLower.includes('read')) context.recentTopics.push('reading');
       if (msgLower.includes('movie') || msgLower.includes('tv') || msgLower.includes('show')) context.recentTopics.push('entertainment');
       if (msgLower.includes('game') || msgLower.includes('hobby')) context.recentTopics.push('hobbies');
+      
+      // Legal & Commercial Law Topics
+      if (msgLower.includes('ucc') || msgLower.includes('uniform commercial code')) context.recentTopics.push('commercial law');
+      if (msgLower.includes('title 15') || msgLower.includes('commerce and trade')) context.recentTopics.push('commerce law');
+      if (msgLower.includes('payment tender') || msgLower.includes('3-603')) context.recentTopics.push('payment law');
+      if (msgLower.includes('debt settlement') || msgLower.includes('debt discharge')) context.recentTopics.push('debt resolution');
+      if (msgLower.includes('promissory note') || msgLower.includes('negotiable instrument')) context.recentTopics.push('commercial instruments');
+      if (msgLower.includes('tender refusal') || msgLower.includes('payment refusal')) context.recentTopics.push('payment tender');
+      if (msgLower.includes('fdcpa') || msgLower.includes('fcra') || msgLower.includes('consumer protection')) context.recentTopics.push('consumer law');
+      
+      // Wealth Building & Financial Mastery
+      if (msgLower.includes('rich vs wealthy') || msgLower.includes('generational wealth')) context.recentTopics.push('wealth building');
+      if (msgLower.includes('money grows on trees') || msgLower.includes('family tree wealth')) context.recentTopics.push('wealth philosophy');
+      if (msgLower.includes('spiritual money') || msgLower.includes('money mindset')) context.recentTopics.push('money psychology');
+      if (msgLower.includes('legacy planning') || msgLower.includes('wealth legacy')) context.recentTopics.push('legacy planning');
+      if (msgLower.includes('asset protection') || msgLower.includes('wealth protection')) context.recentTopics.push('asset protection');
+      if (msgLower.includes('investment philosophy') || msgLower.includes('passive income')) context.recentTopics.push('investment strategy');
       
       // Music-specific (still supported)
       if (msgLower.includes('grant') || msgLower.includes('c.a.r.e.n')) context.recentTopics.push('grants');
