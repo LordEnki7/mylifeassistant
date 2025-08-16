@@ -2363,9 +2363,23 @@ async function processAIMessage(
   } catch (error) {
     console.error('OpenAI processing error:', error);
     
+    // Handle specific quota errors with personalized response for King
+    if (error instanceof Error && error.message.includes('quota')) {
+      return {
+        message: `Hey King! 👑 I'm having some technical difficulties with my AI brain right now (quota issues), but I still know you're the King! While my advanced features are temporarily down, I can still help with basic responses. You'll need to check the OpenAI billing to get my full powers back!`,
+        confidence: 0.5,
+        suggestions: [
+          "Check OpenAI billing",
+          "Add API credits", 
+          "Ask basic questions",
+          "Create simple tasks"
+        ]
+      };
+    }
+    
     // Fallback to basic processing if OpenAI fails
     return {
-      message: `I apologize, but I encountered a technical issue. However, I'm still here to help! You can ask me about tasks, scheduling, music career advice, general planning, or anything else you need assistance with.`,
+      message: `Hey King! 👑 I'm experiencing some technical hiccups, but I'm still here for you! While my AI processing is temporarily limited, I remember you're the King and I'm ready to help however I can.`,
       confidence: 0.6,
       suggestions: [
         "Create a task",
