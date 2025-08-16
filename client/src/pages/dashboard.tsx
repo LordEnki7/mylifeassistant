@@ -4,6 +4,7 @@ import RecentActivity from "@/components/dashboard/recent-activity";
 import UpcomingTasks from "@/components/dashboard/upcoming-tasks";
 import QuickActions from "@/components/dashboard/quick-actions";
 import BackupExport from "@/components/dashboard/backup-export";
+import AIMarketingCommandCenter from "@/components/dashboard/ai-marketing-command-center";
 
 export default function Dashboard() {
   return (
@@ -16,6 +17,9 @@ export default function Dashboard() {
 
       {/* Quick Stats Grid */}
       <StatsGrid />
+
+      {/* AI Marketing Command Center */}
+      <AIMarketingCommandCenter />
 
       {/* AI Chat Widget */}
       <AIChatWidget />

@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { BackupService } from "./backupService";
+import { aiAutomationService } from "./aiAutomationService";
 // Note: Using validation schemas from middleware instead of Drizzle-generated ones
 // The middleware schemas are designed for request validation (no userId required)
 // while Drizzle schemas are for database operations (userId required)
@@ -60,6 +61,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!res.headersSent) {
         res.status(500).json({ error: "Failed to create backup", message: error instanceof Error ? error.message : "Unknown error" });
       }
+    }
+  });
+
+  // AI Automation endpoints
+  app.get("/api/automation/jobs", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const jobs = await storage.getAiAutomationJobs(userId);
+      await auditLogger.logDataAccess(req, 'read', 'automation_jobs', userId);
+      res.json(jobs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch automation jobs" });
+    }
+  });
+
+  app.post("/api/automation/jobs", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { name, type, config } = req.body;
+      
+      const job = await aiAutomationService.createAutomationJob(userId, name, type, config);
+      await auditLogger.logDataAccess(req, 'create', 'automation_job', job.id, true);
+      res.json(job);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'automation_job', undefined, false);
+      res.status(400).json({ error: "Failed to create automation job" });
+    }
+  });
+
+  app.put("/api/automation/jobs/:id/pause", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await aiAutomationService.pauseJob(id);
+      await auditLogger.logDataAccess(req, 'update', 'automation_job', id, true);
+      res.json({ success: true });
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'update', 'automation_job', req.params.id, false);
+      res.status(400).json({ error: "Failed to pause job" });
+    }
+  });
+
+  app.put("/api/automation/jobs/:id/resume", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await aiAutomationService.resumeJob(id);
+      await auditLogger.logDataAccess(req, 'update', 'automation_job', id, true);
+      res.json({ success: true });
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'update', 'automation_job', req.params.id, false);
+      res.status(400).json({ error: "Failed to resume job" });
+    }
+  });
+
+  app.get("/api/automation/jobs/:id/status", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const status = await aiAutomationService.getJobStatus(id);
+      await auditLogger.logDataAccess(req, 'read', 'automation_job_status', id);
+      res.json(status);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get job status" });
+    }
+  });
+
+  app.post("/api/automation/jobs/:id/execute", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      // Execute job asynchronously
+      aiAutomationService.executeJob(id).catch(error => {
+        console.error(`Job execution failed for ${id}:`, error);
+      });
+      await auditLogger.logDataAccess(req, 'execute', 'automation_job', id, true);
+      res.json({ message: "Job execution started" });
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'execute', 'automation_job', req.params.id, false);
+      res.status(400).json({ error: "Failed to execute job" });
+    }
+  });
+
+  app.get("/api/automation/campaigns", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const campaigns = await storage.getAutomationCampaigns(userId);
+      await auditLogger.logDataAccess(req, 'read', 'automation_campaigns', userId);
+      res.json(campaigns);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch automation campaigns" });
+    }
+  });
+
+  app.get("/api/automation/tasks", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const tasks = await storage.getAutomatedTasks(userId);
+      await auditLogger.logDataAccess(req, 'read', 'automated_tasks', userId);
+      res.json(tasks);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch automated tasks" });
+    }
+  });
+
+  app.get("/api/content-analysis", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const analysis = await storage.getContentAnalysis(userId);
+      await auditLogger.logDataAccess(req, 'read', 'content_analysis', userId);
+      res.json(analysis);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch content analysis" });
     }
   });
 

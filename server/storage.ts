@@ -23,6 +23,11 @@ import {
   type AudiobookPromotionalCampaign, type InsertAudiobookPromotionalCampaign,
   type AudiobookPromotionalActivity, type InsertAudiobookPromotionalActivity,
   type AudiobookPromotionalContent, type InsertAudiobookPromotionalContent,
+  type AiAutomationJob, type InsertAiAutomationJob,
+  type AiAutomationRun, type InsertAiAutomationRun,
+  type ContentAnalysis, type InsertContentAnalysis,
+  type AutomationCampaign, type InsertAutomationCampaign,
+  type AutomatedTask, type InsertAutomatedTask,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -194,6 +199,42 @@ export interface IStorage {
   updateAudiobookPromotionalContent(id: string, content: Partial<AudiobookPromotionalContent>): Promise<AudiobookPromotionalContent | undefined>;
   deleteAudiobookPromotionalContent(id: string): Promise<boolean>;
 
+  // AI Automation Jobs
+  getAiAutomationJobs(userId: string): Promise<AiAutomationJob[]>;
+  getAiAutomationJob(id: string): Promise<AiAutomationJob | undefined>;
+  createAiAutomationJob(job: InsertAiAutomationJob): Promise<AiAutomationJob>;
+  updateAiAutomationJob(id: string, job: Partial<AiAutomationJob>): Promise<AiAutomationJob | undefined>;
+  deleteAiAutomationJob(id: string): Promise<boolean>;
+
+  // AI Automation Runs
+  getAiAutomationRuns(jobId: string): Promise<AiAutomationRun[]>;
+  getAiAutomationRun(id: string): Promise<AiAutomationRun | undefined>;
+  createAiAutomationRun(run: InsertAiAutomationRun): Promise<AiAutomationRun>;
+  updateAiAutomationRun(id: string, run: Partial<AiAutomationRun>): Promise<AiAutomationRun | undefined>;
+  deleteAiAutomationRun(id: string): Promise<boolean>;
+
+  // Content Analysis
+  getContentAnalysis(userId: string): Promise<ContentAnalysis[]>;
+  getContentAnalysisByContent(contentType: string, contentId: string): Promise<ContentAnalysis[]>;
+  createContentAnalysis(analysis: InsertContentAnalysis): Promise<ContentAnalysis>;
+  updateContentAnalysis(id: string, analysis: Partial<ContentAnalysis>): Promise<ContentAnalysis | undefined>;
+  deleteContentAnalysis(id: string): Promise<boolean>;
+
+  // Automation Campaigns
+  getAutomationCampaigns(userId: string): Promise<AutomationCampaign[]>;
+  getAutomationCampaign(id: string): Promise<AutomationCampaign | undefined>;
+  createAutomationCampaign(campaign: InsertAutomationCampaign): Promise<AutomationCampaign>;
+  updateAutomationCampaign(id: string, campaign: Partial<AutomationCampaign>): Promise<AutomationCampaign | undefined>;
+  deleteAutomationCampaign(id: string): Promise<boolean>;
+
+  // Automated Tasks
+  getAutomatedTasks(userId: string): Promise<AutomatedTask[]>;
+  getAutomatedTasksByCampaign(campaignId: string): Promise<AutomatedTask[]>;
+  getAutomatedTask(id: string): Promise<AutomatedTask | undefined>;
+  createAutomatedTask(task: InsertAutomatedTask): Promise<AutomatedTask>;
+  updateAutomatedTask(id: string, task: Partial<AutomatedTask>): Promise<AutomatedTask | undefined>;
+  deleteAutomatedTask(id: string): Promise<boolean>;
+
   // Dashboard stats
   getDashboardStats(userId: string): Promise<{
     emailsSent: number;
@@ -228,6 +269,11 @@ export class MemStorage implements IStorage {
   private audiobookPromotionalCampaigns: Map<string, AudiobookPromotionalCampaign>;
   private audiobookPromotionalActivities: Map<string, AudiobookPromotionalActivity>;
   private audiobookPromotionalContent: Map<string, AudiobookPromotionalContent>;
+  private aiAutomationJobs: Map<string, AiAutomationJob>;
+  private aiAutomationRuns: Map<string, AiAutomationRun>;
+  private contentAnalysis: Map<string, ContentAnalysis>;
+  private automationCampaigns: Map<string, AutomationCampaign>;
+  private automatedTasks: Map<string, AutomatedTask>;
 
   constructor() {
     this.users = new Map();
@@ -254,6 +300,11 @@ export class MemStorage implements IStorage {
     this.audiobookPromotionalCampaigns = new Map();
     this.audiobookPromotionalActivities = new Map();
     this.audiobookPromotionalContent = new Map();
+    this.aiAutomationJobs = new Map();
+    this.aiAutomationRuns = new Map();
+    this.contentAnalysis = new Map();
+    this.automationCampaigns = new Map();
+    this.automatedTasks = new Map();
 
     // Initialize with demo user
     this.initializeDemoData();
@@ -2663,6 +2714,228 @@ PHONE #: {{witness_phone}}`,
 
   async deleteAudiobookPromotionalContent(id: string): Promise<boolean> {
     return this.audiobookPromotionalContent.delete(id);
+  }
+
+  // Dashboard stats
+  async getDashboardStats(userId: string): Promise<{
+    emailsSent: number;
+    radioStations: number;
+    grantOpportunities: number;
+    revenue: number;
+  }> {
+    const campaigns = await this.getEmailCampaigns(userId);
+    const stations = await this.getRadioStations(userId);
+    const grants = await this.getGrants(userId);
+    const invoices = await this.getInvoices(userId);
+
+    const emailsSent = campaigns.reduce((sum, campaign) => sum + (campaign.sentCount || 0), 0);
+    const radioStationsCount = stations.length;
+    const grantOpportunities = grants.filter(g => g.status === 'discovered').length;
+    const totalRevenue = invoices
+      .filter(inv => inv.status === 'paid')
+      .reduce((sum, inv) => sum + parseFloat(inv.amount || '0'), 0);
+
+    return {
+      emailsSent,
+      radioStations: radioStationsCount,
+      grantOpportunities,
+      revenue: totalRevenue,
+    };
+  }
+
+  // AI Automation Jobs
+  async getAiAutomationJobs(userId: string): Promise<AiAutomationJob[]> {
+    return Array.from(this.aiAutomationJobs.values()).filter(job => job.userId === userId);
+  }
+
+  async getAiAutomationJob(id: string): Promise<AiAutomationJob | undefined> {
+    return this.aiAutomationJobs.get(id);
+  }
+
+  async createAiAutomationJob(job: InsertAiAutomationJob): Promise<AiAutomationJob> {
+    const newJob: AiAutomationJob = {
+      id: randomUUID(),
+      ...job,
+      status: job.status ?? 'active',
+      schedule: job.schedule ?? null,
+      lastRun: job.lastRun ?? null,
+      nextRun: job.nextRun ?? null,
+      runCount: 0,
+      successCount: 0,
+      failureCount: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.aiAutomationJobs.set(newJob.id, newJob);
+    return newJob;
+  }
+
+  async updateAiAutomationJob(id: string, job: Partial<AiAutomationJob>): Promise<AiAutomationJob | undefined> {
+    const existing = this.aiAutomationJobs.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { ...existing, ...job, updatedAt: new Date() };
+    this.aiAutomationJobs.set(id, updated);
+    return updated;
+  }
+
+  async deleteAiAutomationJob(id: string): Promise<boolean> {
+    return this.aiAutomationJobs.delete(id);
+  }
+
+  // AI Automation Runs
+  async getAiAutomationRuns(jobId: string): Promise<AiAutomationRun[]> {
+    return Array.from(this.aiAutomationRuns.values()).filter(run => run.jobId === jobId);
+  }
+
+  async getAiAutomationRun(id: string): Promise<AiAutomationRun | undefined> {
+    return this.aiAutomationRuns.get(id);
+  }
+
+  async createAiAutomationRun(run: InsertAiAutomationRun): Promise<AiAutomationRun> {
+    const newRun: AiAutomationRun = {
+      id: randomUUID(),
+      ...run,
+      startedAt: run.startedAt ?? new Date(),
+      completedAt: run.completedAt ?? null,
+      results: run.results ?? null,
+      errors: run.errors ?? null,
+      logs: run.logs ?? null,
+      createdAt: new Date(),
+    };
+    this.aiAutomationRuns.set(newRun.id, newRun);
+    return newRun;
+  }
+
+  async updateAiAutomationRun(id: string, run: Partial<AiAutomationRun>): Promise<AiAutomationRun | undefined> {
+    const existing = this.aiAutomationRuns.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { ...existing, ...run };
+    this.aiAutomationRuns.set(id, updated);
+    return updated;
+  }
+
+  async deleteAiAutomationRun(id: string): Promise<boolean> {
+    return this.aiAutomationRuns.delete(id);
+  }
+
+  // Content Analysis
+  async getContentAnalysis(userId: string): Promise<ContentAnalysis[]> {
+    return Array.from(this.contentAnalysis.values()).filter(analysis => analysis.userId === userId);
+  }
+
+  async getContentAnalysisByContent(contentType: string, contentId: string): Promise<ContentAnalysis[]> {
+    return Array.from(this.contentAnalysis.values()).filter(analysis => 
+      analysis.contentType === contentType && analysis.contentId === contentId
+    );
+  }
+
+  async createContentAnalysis(analysis: InsertContentAnalysis): Promise<ContentAnalysis> {
+    const newAnalysis: ContentAnalysis = {
+      id: randomUUID(),
+      ...analysis,
+      recommendations: analysis.recommendations ?? null,
+      confidence: analysis.confidence ?? null,
+      processed: analysis.processed ?? false,
+      createdAt: new Date(),
+    };
+    this.contentAnalysis.set(newAnalysis.id, newAnalysis);
+    return newAnalysis;
+  }
+
+  async updateContentAnalysis(id: string, analysis: Partial<ContentAnalysis>): Promise<ContentAnalysis | undefined> {
+    const existing = this.contentAnalysis.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { ...existing, ...analysis };
+    this.contentAnalysis.set(id, updated);
+    return updated;
+  }
+
+  async deleteContentAnalysis(id: string): Promise<boolean> {
+    return this.contentAnalysis.delete(id);
+  }
+
+  // Automation Campaigns
+  async getAutomationCampaigns(userId: string): Promise<AutomationCampaign[]> {
+    return Array.from(this.automationCampaigns.values()).filter(campaign => campaign.userId === userId);
+  }
+
+  async getAutomationCampaign(id: string): Promise<AutomationCampaign | undefined> {
+    return this.automationCampaigns.get(id);
+  }
+
+  async createAutomationCampaign(campaign: InsertAutomationCampaign): Promise<AutomationCampaign> {
+    const newCampaign: AutomationCampaign = {
+      id: randomUUID(),
+      ...campaign,
+      status: campaign.status ?? 'draft',
+      targetAudience: campaign.targetAudience ?? null,
+      contentStrategy: campaign.contentStrategy ?? null,
+      timeline: campaign.timeline ?? null,
+      budget: campaign.budget ?? null,
+      metrics: campaign.metrics ?? null,
+      aiGenerated: campaign.aiGenerated ?? true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.automationCampaigns.set(newCampaign.id, newCampaign);
+    return newCampaign;
+  }
+
+  async updateAutomationCampaign(id: string, campaign: Partial<AutomationCampaign>): Promise<AutomationCampaign | undefined> {
+    const existing = this.automationCampaigns.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { ...existing, ...campaign, updatedAt: new Date() };
+    this.automationCampaigns.set(id, updated);
+    return updated;
+  }
+
+  async deleteAutomationCampaign(id: string): Promise<boolean> {
+    return this.automationCampaigns.delete(id);
+  }
+
+  // Automated Tasks
+  async getAutomatedTasks(userId: string): Promise<AutomatedTask[]> {
+    return Array.from(this.automatedTasks.values()).filter(task => task.userId === userId);
+  }
+
+  async getAutomatedTasksByCampaign(campaignId: string): Promise<AutomatedTask[]> {
+    return Array.from(this.automatedTasks.values()).filter(task => task.campaignId === campaignId);
+  }
+
+  async getAutomatedTask(id: string): Promise<AutomatedTask | undefined> {
+    return this.automatedTasks.get(id);
+  }
+
+  async createAutomatedTask(task: InsertAutomatedTask): Promise<AutomatedTask> {
+    const newTask: AutomatedTask = {
+      id: randomUUID(),
+      ...task,
+      campaignId: task.campaignId ?? null,
+      status: task.status ?? 'scheduled',
+      executedAt: task.executedAt ?? null,
+      results: task.results ?? null,
+      aiGenerated: task.aiGenerated ?? true,
+      createdAt: new Date(),
+    };
+    this.automatedTasks.set(newTask.id, newTask);
+    return newTask;
+  }
+
+  async updateAutomatedTask(id: string, task: Partial<AutomatedTask>): Promise<AutomatedTask | undefined> {
+    const existing = this.automatedTasks.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { ...existing, ...task };
+    this.automatedTasks.set(id, updated);
+    return updated;
+  }
+
+  async deleteAutomatedTask(id: string): Promise<boolean> {
+    return this.automatedTasks.delete(id);
   }
 }
 

@@ -371,6 +371,80 @@ export const audiobookPromotionalContent = pgTable("audiobook_promotional_conten
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// AI Automation Tables
+export const aiAutomationJobs = pgTable("ai_automation_jobs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // marketing_schedule, radio_outreach, sync_licensing, grant_search, content_calendar
+  status: text("status").default("active"), // active, paused, completed, failed
+  schedule: jsonb("schedule"), // Cron-like schedule or specific dates
+  config: jsonb("config").notNull(), // Job-specific configuration
+  lastRun: timestamp("last_run"),
+  nextRun: timestamp("next_run"),
+  runCount: integer("run_count").default(0),
+  successCount: integer("success_count").default(0),
+  failureCount: integer("failure_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const aiAutomationRuns = pgTable("ai_automation_runs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  jobId: varchar("job_id").references(() => aiAutomationJobs.id).notNull(),
+  status: text("status").notNull(), // running, completed, failed
+  startedAt: timestamp("started_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+  results: jsonb("results"), // Results of the automation run
+  errors: text("errors"),
+  logs: text("logs").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const contentAnalysis = pgTable("content_analysis", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  contentType: text("content_type").notNull(), // song, audiobook, project
+  contentId: varchar("content_id").notNull(), // References the actual content
+  analysisType: text("analysis_type").notNull(), // marketing_potential, sync_opportunities, target_audience, genre_analysis
+  aiResults: jsonb("ai_results").notNull(), // AI analysis results
+  recommendations: jsonb("recommendations"), // AI-generated recommendations
+  confidence: decimal("confidence"), // AI confidence score 0-1
+  processed: boolean("processed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const automationCampaigns = pgTable("automation_campaigns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // radio_promotion, sync_licensing, grant_application, content_marketing
+  status: text("status").default("draft"), // draft, active, paused, completed
+  targetAudience: jsonb("target_audience"), // AI-defined target audience
+  contentStrategy: jsonb("content_strategy"), // AI-generated content strategy
+  timeline: jsonb("timeline"), // Automated timeline and milestones
+  budget: decimal("budget"),
+  metrics: jsonb("metrics"), // Performance tracking
+  aiGenerated: boolean("ai_generated").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const automatedTasks = pgTable("automated_tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  campaignId: varchar("campaign_id").references(() => automationCampaigns.id),
+  title: text("title").notNull(),
+  type: text("type").notNull(), // email_send, content_post, follow_up, analysis
+  status: text("status").default("scheduled"), // scheduled, running, completed, failed
+  scheduledFor: timestamp("scheduled_for").notNull(),
+  executedAt: timestamp("executed_at"),
+  config: jsonb("config").notNull(), // Task-specific configuration
+  results: jsonb("results"), // Execution results
+  aiGenerated: boolean("ai_generated").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -499,6 +573,36 @@ export const insertAudiobookPromotionalContentSchema = createInsertSchema(audiob
   updatedAt: true,
 });
 
+export const insertAiAutomationJobSchema = createInsertSchema(aiAutomationJobs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  runCount: true,
+  successCount: true,
+  failureCount: true,
+});
+
+export const insertAiAutomationRunSchema = createInsertSchema(aiAutomationRuns).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertContentAnalysisSchema = createInsertSchema(contentAnalysis).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAutomationCampaignSchema = createInsertSchema(automationCampaigns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAutomatedTaskSchema = createInsertSchema(automatedTasks).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -571,3 +675,18 @@ export type InsertAudiobookPromotionalActivity = z.infer<typeof insertAudiobookP
 
 export type AudiobookPromotionalContent = typeof audiobookPromotionalContent.$inferSelect;
 export type InsertAudiobookPromotionalContent = z.infer<typeof insertAudiobookPromotionalContentSchema>;
+
+export type AiAutomationJob = typeof aiAutomationJobs.$inferSelect;
+export type InsertAiAutomationJob = z.infer<typeof insertAiAutomationJobSchema>;
+
+export type AiAutomationRun = typeof aiAutomationRuns.$inferSelect;
+export type InsertAiAutomationRun = z.infer<typeof insertAiAutomationRunSchema>;
+
+export type ContentAnalysis = typeof contentAnalysis.$inferSelect;
+export type InsertContentAnalysis = z.infer<typeof insertContentAnalysisSchema>;
+
+export type AutomationCampaign = typeof automationCampaigns.$inferSelect;
+export type InsertAutomationCampaign = z.infer<typeof insertAutomationCampaignSchema>;
+
+export type AutomatedTask = typeof automatedTasks.$inferSelect;
+export type InsertAutomatedTask = z.infer<typeof insertAutomatedTaskSchema>;
