@@ -15,13 +15,15 @@ export default function BackupExport() {
     
     try {
       // Get auth headers using the proper auth service
-      const authHeaders = authService.getAuthHeader() ? {
-        'Authorization': authService.getAuthHeader()
-      } : {};
+      const authHeader = authService.getAuthHeader();
+      const headers: Record<string, string> = {};
+      if (authHeader) {
+        headers['Authorization'] = authHeader;
+      }
       
       const response = await fetch('/api/backup/download', {
         method: 'GET',
-        headers: authHeaders,
+        headers,
       });
 
       if (!response.ok) {
