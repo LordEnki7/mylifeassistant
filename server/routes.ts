@@ -2378,22 +2378,25 @@ async function processAIMessage(
           }
         },
         {
-          name: "show_grant_results",
-          description: "Show detailed results from previous grant searches",
-          parameters: {
-            type: "object",
-            properties: {
-              filter_type: {
-                type: "string",
-                enum: ["all", "recent", "high_priority", "federal", "private", "foundation"],
-                description: "Type of grants to show from previous searches"
+          type: "function",
+          function: {
+            name: "show_grant_results",
+            description: "Show detailed results from previous grant searches",
+            parameters: {
+              type: "object",
+              properties: {
+                filter_type: {
+                  type: "string",
+                  enum: ["all", "recent", "high_priority", "federal", "private", "foundation"],
+                  description: "Type of grants to show from previous searches"
+                },
+                limit: {
+                  type: "number",
+                  description: "Maximum number of grants to show (default 10)"
+                }
               },
-              limit: {
-                type: "number",
-                description: "Maximum number of grants to show (default 10)"
-              }
-            },
-            required: ["filter_type"]
+              required: ["filter_type"]
+            }
           }
         }
       ]
