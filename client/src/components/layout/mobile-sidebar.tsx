@@ -11,6 +11,9 @@ const navigation = [
   { name: "Email Outreach", href: "/outreach", icon: Icons.email },
   { name: "Radio Stations", href: "/radio", icon: Icons.radio },
   { name: "Sync Licensing", href: "/licensing", icon: Icons.movie },
+  { name: "Music Contracts", href: "/contracts", icon: Icons.fileText },
+  { name: "My Audiobooks", href: "/audiobooks", icon: Icons.music },
+  { name: "Book Promotion", href: "/audiobook-promotion", icon: Icons.trending },
   { name: "Grants (C.A.R.E.N.)", href: "/grants", icon: Icons.building },
   { name: "Calendar", href: "/calendar", icon: Icons.calendar },
   { name: "Invoices", href: "/invoices", icon: Icons.receipt },
@@ -40,7 +43,7 @@ export default function MobileSidebar() {
               <img src={logoImage} alt="My Life Assistant" className="h-10 w-10" />
               <div>
                 <h2 className="text-lg font-semibold">My Life Assistant</h2>
-                <p className="text-primary-100 text-xs">AI-Powered Music Management</p>
+                <p className="text-primary-100 text-xs">AI-Powered Life Management</p>
               </div>
             </div>
             <Button

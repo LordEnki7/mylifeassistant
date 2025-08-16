@@ -6,8 +6,8 @@ import { useNavigation } from "@/hooks/use-navigation";
 const bottomNavigation = [
   { name: "Home", href: "/dashboard", icon: Icons.dashboard },
   { name: "AI Chat", href: "/chat", icon: Icons.chat },
-  { name: "Contracts", href: "/contracts", icon: Icons.fileText },
-  { name: "Calendar", href: "/calendar", icon: Icons.calendar },
+  { name: "Audiobooks", href: "/audiobooks", icon: Icons.music },
+  { name: "Promotion", href: "/audiobook-promotion", icon: Icons.trending },
   { name: "More", href: "/more", icon: Icons.more },
 ];
 

@@ -13,6 +13,8 @@ const navigation = [
   { name: "Radio Stations", href: "/radio", icon: Icons.radio },
   { name: "Sync Licensing", href: "/licensing", icon: Icons.movie },
   { name: "Music Contracts", href: "/contracts", icon: Icons.fileText },
+  { name: "My Audiobooks", href: "/audiobooks", icon: Icons.music },
+  { name: "Book Promotion", href: "/audiobook-promotion", icon: Icons.trending },
   { name: "Grants (C.A.R.E.N.)", href: "/grants", icon: Icons.building },
   { name: "Calendar", href: "/calendar", icon: Icons.calendar },
   { name: "Invoices", href: "/invoices", icon: Icons.receipt },
@@ -29,7 +31,7 @@ export default function DesktopSidebar() {
           <img src={logoImage} alt="My Life Assistant" className="h-12 w-12" />
           <div>
             <h1 className="text-xl font-bold text-primary-500">My Life Assistant</h1>
-            <p className="text-xs text-gray-600">AI-Powered Music Management</p>
+            <p className="text-xs text-gray-600">AI-Powered Life Management</p>
           </div>
         </div>
       </div>
