@@ -289,21 +289,26 @@ export default function Chat() {
             
             {(sendMessageMutation.isPending || isProcessing) && (
               <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-medium animate-pulse">
                   ☀️
                 </div>
-                <div className="flex-1 bg-gray-100 rounded-lg p-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }} />
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
-                    {workingStatus && (
-                      <span className="text-sm text-gray-700 ml-2">{workingStatus}</span>
-                    )}
+                <div className="flex-1 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }} />
+                      <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
+                    </div>
+                    <div className="flex-1">
+                      {workingStatus ? (
+                        <div className="bg-white/80 rounded-md px-3 py-2 shadow-sm">
+                          <span className="text-sm font-medium text-gray-800">{workingStatus}</span>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-700 font-medium">Sunshine is working on your request...</p>
+                      )}
+                    </div>
                   </div>
-                  {!workingStatus && (
-                    <p className="text-sm text-gray-600 mt-2">Sunshine is thinking...</p>
-                  )}
                 </div>
               </div>
             )}

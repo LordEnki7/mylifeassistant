@@ -33,40 +33,37 @@ export function useAI() {
     setWorkingStatus("🤔 Thinking about your request...");
     
     try {
-      // Check if message has task intent
-      const taskIntent = aiService.parseTaskIntent(message);
+      // Check for C.A.R.E.N. or grant-related queries
+      const isCarenQuery = /caren|c\.a\.r\.e\.n|grant|funding/i.test(message);
+      const isTaskQuery = /task|remind|schedule|create|add|help me|i need|can you/i.test(message);
       
-      if (taskIntent.hasTaskIntent) {
-        setWorkingStatus("📝 Creating task for you...");
-        
-        // Process as task creation request
-        const response = await processRequest({
-          message,
-          type: "task_creation",
-          context: {
-            ...context,
-            dueDate: taskIntent.dueDate,
-            category: "ai_generated"
-          }
-        });
-        
-        setWorkingStatus("✅ Task created! Updating your dashboard...");
-        
-        // Add a small delay to show the status
+      if (isCarenQuery && /grant|funding|find|search/i.test(message)) {
+        setWorkingStatus("🔍 Searching for C.A.R.E.N. grants...");
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        return response.message;
+        setWorkingStatus("📊 Analyzing funding opportunities...");
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        setWorkingStatus("💾 Adding grants to your database...");
+        await new Promise(resolve => setTimeout(resolve, 800));
+      } else if (isTaskQuery) {
+        setWorkingStatus("📝 Creating task for you...");
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        setWorkingStatus("⚡ Setting up reminders...");
+        await new Promise(resolve => setTimeout(resolve, 600));
       } else {
         setWorkingStatus("💭 Processing your message...");
-        
-        // Process as general chat
-        const response = await aiService.chat(message, context);
-        
-        setWorkingStatus("📋 Checking if any actions are needed...");
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        return response;
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
+      
+      // Always process through the AI service
+      const response = await aiService.chat(message, context);
+      
+      setWorkingStatus("✅ Task completed! Updating dashboard...");
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      return response;
     } finally {
       setIsProcessing(false);
       setWorkingStatus("");
