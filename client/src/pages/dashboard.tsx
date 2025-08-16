@@ -3,6 +3,7 @@ import AIChatWidget from "@/components/dashboard/ai-chat-widget";
 import RecentActivity from "@/components/dashboard/recent-activity";
 import UpcomingTasks from "@/components/dashboard/upcoming-tasks";
 import QuickActions from "@/components/dashboard/quick-actions";
+import BackupExport from "@/components/dashboard/backup-export";
 
 export default function Dashboard() {
   return (
@@ -27,6 +28,11 @@ export default function Dashboard() {
 
       {/* Quick Actions */}
       <QuickActions />
+
+      {/* Backup & Export */}
+      <div className="mt-8">
+        <BackupExport />
+      </div>
     </div>
   );
 }

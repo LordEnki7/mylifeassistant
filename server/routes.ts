@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { BackupService } from "./backupService";
 // Note: Using validation schemas from middleware instead of Drizzle-generated ones
 // The middleware schemas are designed for request validation (no userId required)
 // while Drizzle schemas are for database operations (userId required)
@@ -44,6 +45,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       await auditLogger.logAuth(req, 'login', false, error instanceof Error ? error.message : 'Login failed');
       res.status(401).json({ error: "Authentication failed", message: error instanceof Error ? error.message : "Login failed" });
+    }
+  });
+
+  // Backup endpoint (authenticated)
+  app.get("/api/backup/download", requireAuth, async (req, res) => {
+    try {
+      await auditLogger.logData(req, 'backup_download', 'system', true);
+      const backupService = new BackupService();
+      await backupService.createBackup(res);
+    } catch (error) {
+      console.error('Backup failed:', error);
+      await auditLogger.logData(req, 'backup_download', 'system', false, error instanceof Error ? error.message : 'Backup failed');
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Failed to create backup", message: error instanceof Error ? error.message : "Unknown error" });
+      }
     }
   });
 
