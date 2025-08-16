@@ -1275,7 +1275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const messageWithResponse = await storage.createChatMessage({
         ...messageData,
-        response: filteredResponse.filtered + (filteredResponse.disclaimer || ''),
+        response: filteredResponse.filteredContent + (filteredResponse.disclaimer || ''),
         context: { 
           citations: [],
           sources: [],
@@ -1288,7 +1288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await auditLogger.logAIInteraction(req, {
         id: messageWithResponse.id,
         message: messageData.message,
-        response: filteredResponse.filtered,
+        response: filteredResponse.filteredContent,
         confidence: aiResponse.confidence,
         actions: aiResponse.actions
       }, true);
@@ -1336,14 +1336,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await auditLogger.logAIInteraction(req, {
         message: message,
-        response: filteredResponse.filtered,
+        response: filteredResponse.filteredContent,
         confidence: response.confidence,
         type: type
       }, true);
       
       res.json({
         ...response,
-        message: filteredResponse.filtered + (filteredResponse.disclaimer || '')
+        message: filteredResponse.filteredContent + (filteredResponse.disclaimer || '')
       });
     } catch (error) {
       await auditLogger.logAIInteraction(req, {
@@ -2380,11 +2380,10 @@ async function processAIMessage(
       ]
     });
     
-    const responseText = completion.choices[0].message.content || '{"message": "I apologize, but I encountered an issue processing your request. Please try again."}';
-    const parsedResponse = JSON.parse(responseText);
-    
-    // Handle any tool calls and execute them immediately
+    // Handle tool calls first, then parse the response
     const actions: Array<{type: string; data: any}> = [];
+    let responseMessage = "I'm here to help! What would you like assistance with?";
+    
     if (completion.choices[0].message.tool_calls) {
       for (const toolCall of completion.choices[0].message.tool_calls) {
         if (toolCall.type === 'function') {
@@ -2489,10 +2488,34 @@ async function processAIMessage(
           }
         }
       }
+      
+      // Generate response message based on tool calls
+      if (actions.length > 0) {
+        if (actions.some(a => a.type === 'create_task' && a.data.success)) {
+          responseMessage = "Task created! I've added it to your task list and you'll be able to track its progress.";
+        } else if (actions.some(a => a.type === 'create_contact' && a.data.success)) {
+          responseMessage = "Contact added! I've saved their information to your contacts.";
+        } else if (actions.some(a => a.type === 'search_grants' && a.data.success)) {
+          const grantAction = actions.find(a => a.type === 'search_grants' && a.data.success);
+          responseMessage = `Found ${grantAction?.data.count || 0} relevant grants for C.A.R.E.N! Added ${grantAction?.data.addedCount || 0} new opportunities to your grants list.`;
+        }
+      }
+    }
+    
+    // Parse response content if available
+    let parsedResponse: any = {};
+    if (completion.choices[0].message.content) {
+      try {
+        parsedResponse = JSON.parse(completion.choices[0].message.content);
+        responseMessage = parsedResponse.message || responseMessage;
+      } catch (parseError) {
+        // If parsing fails, use the content directly
+        responseMessage = completion.choices[0].message.content || responseMessage;
+      }
     }
     
     return {
-      message: parsedResponse.message || 'I\'m here to help! What would you like assistance with?',
+      message: responseMessage,
       actions,
       confidence: 0.95,
       suggestions: parsedResponse.suggestions || [
