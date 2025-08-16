@@ -12,6 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import RealTimeMonitoring from "./real-time-monitoring";
+import ABTesting from "./ab-testing";
+import ContentOptimization from "./content-optimization";
 
 interface AutomationJob {
   id: string;
@@ -257,10 +260,13 @@ export default function AIMarketingCommandCenter() {
       </div>
 
       <Tabs defaultValue="automations" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="automations">Automations</TabsTrigger>
           <TabsTrigger value="campaigns">AI Campaigns</TabsTrigger>
           <TabsTrigger value="tasks">Scheduled Tasks</TabsTrigger>
+          <TabsTrigger value="monitoring">Real-Time</TabsTrigger>
+          <TabsTrigger value="testing">A/B Testing</TabsTrigger>
+          <TabsTrigger value="optimization">Content AI</TabsTrigger>
           <TabsTrigger value="create">Create New</TabsTrigger>
         </TabsList>
 
@@ -548,6 +554,18 @@ export default function AIMarketingCommandCenter() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="monitoring">
+          <RealTimeMonitoring />
+        </TabsContent>
+
+        <TabsContent value="testing">
+          <ABTesting />
+        </TabsContent>
+
+        <TabsContent value="optimization">
+          <ContentOptimization />
         </TabsContent>
       </Tabs>
     </div>
