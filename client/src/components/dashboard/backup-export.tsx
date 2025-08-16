@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Icons } from "@/lib/icons";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { authService } from "@/lib/auth";
 
 export default function BackupExport() {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -13,11 +14,14 @@ export default function BackupExport() {
     setIsDownloading(true);
     
     try {
+      // Get auth headers using the proper auth service
+      const authHeaders = authService.getAuthHeader() ? {
+        'Authorization': authService.getAuthHeader()
+      } : {};
+      
       const response = await fetch('/api/backup/download', {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
+        headers: authHeaders,
       });
 
       if (!response.ok) {
