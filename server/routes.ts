@@ -37,6 +37,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
+  // OpenAI API key test endpoint
+  app.get("/api/test-openai", async (req, res) => {
+    try {
+      const testOpenAI = new (await import('openai')).default({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+      
+      const completion = await testOpenAI.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: "Say 'API key working' and nothing else." }],
+        max_tokens: 10,
+        temperature: 0
+      });
+      
+      res.json({ 
+        success: true, 
+        keyWorking: true,
+        response: completion.choices[0].message.content,
+        apiKey: process.env.OPENAI_API_KEY ? `${process.env.OPENAI_API_KEY.substring(0, 10)}...` : 'not found'
+      });
+    } catch (error) {
+      res.json({ 
+        success: false, 
+        keyWorking: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        apiKey: process.env.OPENAI_API_KEY ? `${process.env.OPENAI_API_KEY.substring(0, 10)}...` : 'not found'
+      });
+    }
+  });
+
   // Authentication endpoints (no auth required)
   app.post("/api/auth/login", async (req, res) => {
     try {
