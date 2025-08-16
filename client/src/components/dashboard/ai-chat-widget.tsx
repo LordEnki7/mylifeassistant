@@ -101,27 +101,30 @@ export default function AIChatWidget() {
     if (synthRef.current && !isSpeaking) {
       const utterance = new SpeechSynthesisUtterance(text);
       
-      // Set up female voice
+      // Set up young female voice - prioritize voices that sound like a 23-year-old girl
       const voices = synthRef.current.getVoices();
-      const femaleVoice = voices.find(voice => 
-        voice.name.toLowerCase().includes('female') ||
-        voice.name.toLowerCase().includes('woman') ||
+      const youngFemaleVoice = voices.find(voice => 
         voice.name.toLowerCase().includes('samantha') ||
-        voice.name.toLowerCase().includes('karen') ||
-        voice.name.toLowerCase().includes('susan') ||
         voice.name.toLowerCase().includes('allison') ||
-        voice.name.toLowerCase().includes('zira') ||
-        voice.name.toLowerCase().includes('hazel') ||
-        voice.name.toLowerCase().includes('tessa') ||
-        voice.name.toLowerCase().includes('english')
-      ) || voices.find(voice => voice.lang.startsWith('en') && voice.name.includes('Female'));
+        voice.name.toLowerCase().includes('ava') ||
+        voice.name.toLowerCase().includes('emma') ||
+        voice.name.toLowerCase().includes('olivia') ||
+        voice.name.toLowerCase().includes('sophia') ||
+        voice.name.toLowerCase().includes('zoe') ||
+        voice.name.toLowerCase().includes('chloe') ||
+        voice.name.toLowerCase().includes('aria') ||
+        voice.name.toLowerCase().includes('female')
+      ) || voices.find(voice => 
+        voice.lang.startsWith('en') && 
+        (voice.name.includes('Female') || voice.name.includes('Woman'))
+      ) || voices.find(voice => voice.lang.startsWith('en'));
       
-      if (femaleVoice) {
-        utterance.voice = femaleVoice;
+      if (youngFemaleVoice) {
+        utterance.voice = youngFemaleVoice;
       }
       
-      utterance.rate = 0.9;
-      utterance.pitch = 1.1; // Slightly higher pitch for more feminine sound
+      utterance.rate = 1.0; // Slightly faster for youthful energy
+      utterance.pitch = 1.3; // Higher pitch for young female voice
       utterance.volume = 0.8;
       
       utterance.onstart = () => setIsSpeaking(true);

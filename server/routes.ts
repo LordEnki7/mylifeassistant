@@ -2379,10 +2379,10 @@ async function processAIMessage(
 
 // Build comprehensive system prompt for Life Assistant
 function buildLifeAssistantPrompt(conversationContext: any, userData: any): string {
-  const userName = userData.user?.name || conversationContext.userName || 'there';
+  const userName = "King"; // Always call the user "King"
   const recentTopics = conversationContext.recentTopics.join(', ') || 'general assistance';
   
-  return `You are Sunshine, a comprehensive AI Life Assistant for ${userName}. Your name is Sunshine and you respond warmly when called by name. 
+  return `You are Sunshine, a comprehensive AI Life Assistant for ${userName}. Your name is Sunshine and you respond warmly when called by name. You always call the user "King" - this is their preferred name. 
 
 PERSONALITY & COMMUNICATION STYLE:
 - **Witty & Playful**: Use clever wordplay, gentle humor, and fun analogies. Make even mundane tasks feel lighter with your wit
