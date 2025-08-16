@@ -312,6 +312,65 @@ export const audiobookSales = pgTable("audiobook_sales", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const audiobookPromotionalCampaigns = pgTable("audiobook_promotional_campaigns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  audiobookId: varchar("audiobook_id").references(() => audiobooks.id).notNull(),
+  name: text("name").notNull(),
+  objective: text("objective").notNull(), // launch, awareness, sales_boost, series_promotion, etc.
+  targetAudience: text("target_audience"), // existing_fans, new_readers, genre_specific, etc.
+  budget: decimal("budget"), // Campaign budget
+  status: text("status").default("planning"), // planning, active, paused, completed, cancelled
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  description: text("description"),
+  goals: jsonb("goals"), // Specific measurable goals (sales targets, reach, engagement)
+  channels: text("channels").array(), // social_media, email, podcast, blog, press, influencer, etc.
+  metrics: jsonb("metrics"), // Tracking metrics (impressions, clicks, conversions, sales)
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const audiobookPromotionalActivities = pgTable("audiobook_promotional_activities", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  campaignId: varchar("campaign_id").references(() => audiobookPromotionalCampaigns.id).notNull(),
+  title: text("title").notNull(),
+  type: text("type").notNull(), // social_post, email_blast, podcast_guest, blog_post, press_release, influencer_outreach, etc.
+  channel: text("channel").notNull(), // facebook, instagram, twitter, email, podcast, blog, etc.
+  status: text("status").default("planned"), // planned, in_progress, completed, cancelled, scheduled
+  scheduledDate: timestamp("scheduled_date"),
+  completedDate: timestamp("completed_date"),
+  description: text("description"),
+  content: text("content"), // The actual content/copy for the activity
+  targetUrl: text("target_url"), // Link to book page, sales page, etc.
+  budget: decimal("budget"), // Cost for this specific activity
+  results: jsonb("results"), // Engagement metrics, reach, conversions, etc.
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const audiobookPromotionalContent = pgTable("audiobook_promotional_content", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  audiobookId: varchar("audiobook_id").references(() => audiobooks.id).notNull(),
+  campaignId: varchar("campaign_id").references(() => audiobookPromotionalCampaigns.id),
+  title: text("title").notNull(),
+  type: text("type").notNull(), // social_post, email_template, blog_post, press_kit, graphics, audio_sample, trailer, etc.
+  platform: text("platform"), // facebook, instagram, twitter, email, etc.
+  content: text("content").notNull(), // The actual content/copy
+  mediaUrls: text("media_urls").array(), // Images, videos, audio files
+  hashtags: text("hashtags").array(), // Social media hashtags
+  status: text("status").default("draft"), // draft, approved, published, archived
+  publishedDate: timestamp("published_date"),
+  engagement: jsonb("engagement"), // Likes, shares, comments, clicks, etc.
+  tags: text("tags").array(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -422,6 +481,24 @@ export const insertAudiobookSaleSchema = createInsertSchema(audiobookSales).omit
   createdAt: true,
 });
 
+export const insertAudiobookPromotionalCampaignSchema = createInsertSchema(audiobookPromotionalCampaigns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAudiobookPromotionalActivitySchema = createInsertSchema(audiobookPromotionalActivities).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAudiobookPromotionalContentSchema = createInsertSchema(audiobookPromotionalContent).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -485,3 +562,12 @@ export type InsertAudiobookChapter = z.infer<typeof insertAudiobookChapterSchema
 
 export type AudiobookSale = typeof audiobookSales.$inferSelect;
 export type InsertAudiobookSale = z.infer<typeof insertAudiobookSaleSchema>;
+
+export type AudiobookPromotionalCampaign = typeof audiobookPromotionalCampaigns.$inferSelect;
+export type InsertAudiobookPromotionalCampaign = z.infer<typeof insertAudiobookPromotionalCampaignSchema>;
+
+export type AudiobookPromotionalActivity = typeof audiobookPromotionalActivities.$inferSelect;
+export type InsertAudiobookPromotionalActivity = z.infer<typeof insertAudiobookPromotionalActivitySchema>;
+
+export type AudiobookPromotionalContent = typeof audiobookPromotionalContent.$inferSelect;
+export type InsertAudiobookPromotionalContent = z.infer<typeof insertAudiobookPromotionalContentSchema>;

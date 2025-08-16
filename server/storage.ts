@@ -20,6 +20,9 @@ import {
   type Audiobook, type InsertAudiobook,
   type AudiobookChapter, type InsertAudiobookChapter,
   type AudiobookSale, type InsertAudiobookSale,
+  type AudiobookPromotionalCampaign, type InsertAudiobookPromotionalCampaign,
+  type AudiobookPromotionalActivity, type InsertAudiobookPromotionalActivity,
+  type AudiobookPromotionalContent, type InsertAudiobookPromotionalContent,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -168,6 +171,29 @@ export interface IStorage {
   updateAudiobookSale(id: string, sale: Partial<AudiobookSale>): Promise<AudiobookSale | undefined>;
   deleteAudiobookSale(id: string): Promise<boolean>;
 
+  // Audiobook Promotional Campaigns
+  getAudiobookPromotionalCampaigns(userId: string): Promise<AudiobookPromotionalCampaign[]>;
+  getAudiobookPromotionalCampaignsByBook(audiobookId: string): Promise<AudiobookPromotionalCampaign[]>;
+  getAudiobookPromotionalCampaign(id: string): Promise<AudiobookPromotionalCampaign | undefined>;
+  createAudiobookPromotionalCampaign(campaign: InsertAudiobookPromotionalCampaign): Promise<AudiobookPromotionalCampaign>;
+  updateAudiobookPromotionalCampaign(id: string, campaign: Partial<AudiobookPromotionalCampaign>): Promise<AudiobookPromotionalCampaign | undefined>;
+  deleteAudiobookPromotionalCampaign(id: string): Promise<boolean>;
+
+  // Audiobook Promotional Activities
+  getAudiobookPromotionalActivities(campaignId: string): Promise<AudiobookPromotionalActivity[]>;
+  getAudiobookPromotionalActivity(id: string): Promise<AudiobookPromotionalActivity | undefined>;
+  createAudiobookPromotionalActivity(activity: InsertAudiobookPromotionalActivity): Promise<AudiobookPromotionalActivity>;
+  updateAudiobookPromotionalActivity(id: string, activity: Partial<AudiobookPromotionalActivity>): Promise<AudiobookPromotionalActivity | undefined>;
+  deleteAudiobookPromotionalActivity(id: string): Promise<boolean>;
+
+  // Audiobook Promotional Content
+  getAudiobookPromotionalContent(userId: string): Promise<AudiobookPromotionalContent[]>;
+  getAudiobookPromotionalContentByBook(audiobookId: string): Promise<AudiobookPromotionalContent[]>;
+  getAudiobookPromotionalContentByCampaign(campaignId: string): Promise<AudiobookPromotionalContent[]>;
+  createAudiobookPromotionalContent(content: InsertAudiobookPromotionalContent): Promise<AudiobookPromotionalContent>;
+  updateAudiobookPromotionalContent(id: string, content: Partial<AudiobookPromotionalContent>): Promise<AudiobookPromotionalContent | undefined>;
+  deleteAudiobookPromotionalContent(id: string): Promise<boolean>;
+
   // Dashboard stats
   getDashboardStats(userId: string): Promise<{
     emailsSent: number;
@@ -199,6 +225,9 @@ export class MemStorage implements IStorage {
   private audiobooks: Map<string, Audiobook>;
   private audiobookChapters: Map<string, AudiobookChapter>;
   private audiobookSales: Map<string, AudiobookSale>;
+  private audiobookPromotionalCampaigns: Map<string, AudiobookPromotionalCampaign>;
+  private audiobookPromotionalActivities: Map<string, AudiobookPromotionalActivity>;
+  private audiobookPromotionalContent: Map<string, AudiobookPromotionalContent>;
 
   constructor() {
     this.users = new Map();
@@ -222,6 +251,9 @@ export class MemStorage implements IStorage {
     this.audiobooks = new Map();
     this.audiobookChapters = new Map();
     this.audiobookSales = new Map();
+    this.audiobookPromotionalCampaigns = new Map();
+    this.audiobookPromotionalActivities = new Map();
+    this.audiobookPromotionalContent = new Map();
 
     // Initialize with demo user
     this.initializeDemoData();
@@ -2489,6 +2521,148 @@ PHONE #: {{witness_phone}}`,
 
   async deleteAudiobookSale(id: string): Promise<boolean> {
     return this.audiobookSales.delete(id);
+  }
+
+  // Audiobook Promotional Campaigns
+  async getAudiobookPromotionalCampaigns(userId: string): Promise<AudiobookPromotionalCampaign[]> {
+    return Array.from(this.audiobookPromotionalCampaigns.values()).filter(campaign => campaign.userId === userId);
+  }
+
+  async getAudiobookPromotionalCampaignsByBook(audiobookId: string): Promise<AudiobookPromotionalCampaign[]> {
+    return Array.from(this.audiobookPromotionalCampaigns.values()).filter(campaign => campaign.audiobookId === audiobookId);
+  }
+
+  async getAudiobookPromotionalCampaign(id: string): Promise<AudiobookPromotionalCampaign | undefined> {
+    return this.audiobookPromotionalCampaigns.get(id);
+  }
+
+  async createAudiobookPromotionalCampaign(campaign: InsertAudiobookPromotionalCampaign): Promise<AudiobookPromotionalCampaign> {
+    const newCampaign: AudiobookPromotionalCampaign = {
+      id: randomUUID(),
+      ...campaign,
+      notes: campaign.notes ?? null,
+      status: campaign.status ?? 'planning',
+      description: campaign.description ?? null,
+      targetAudience: campaign.targetAudience ?? null,
+      budget: campaign.budget ?? null,
+      startDate: campaign.startDate ? new Date(campaign.startDate) : null,
+      endDate: campaign.endDate ? new Date(campaign.endDate) : null,
+      goals: campaign.goals ?? null,
+      channels: campaign.channels ?? null,
+      metrics: campaign.metrics ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.audiobookPromotionalCampaigns.set(newCampaign.id, newCampaign);
+    return newCampaign;
+  }
+
+  async updateAudiobookPromotionalCampaign(id: string, campaign: Partial<AudiobookPromotionalCampaign>): Promise<AudiobookPromotionalCampaign | undefined> {
+    const existing = this.audiobookPromotionalCampaigns.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { ...existing, ...campaign, updatedAt: new Date() };
+    this.audiobookPromotionalCampaigns.set(id, updated);
+    return updated;
+  }
+
+  async deleteAudiobookPromotionalCampaign(id: string): Promise<boolean> {
+    // Also delete associated activities and content
+    const activities = Array.from(this.audiobookPromotionalActivities.values()).filter(activity => activity.campaignId === id);
+    const content = Array.from(this.audiobookPromotionalContent.values()).filter(content => content.campaignId === id);
+    
+    activities.forEach(activity => this.audiobookPromotionalActivities.delete(activity.id));
+    content.forEach(content => this.audiobookPromotionalContent.delete(content.id));
+    
+    return this.audiobookPromotionalCampaigns.delete(id);
+  }
+
+  // Audiobook Promotional Activities
+  async getAudiobookPromotionalActivities(campaignId: string): Promise<AudiobookPromotionalActivity[]> {
+    return Array.from(this.audiobookPromotionalActivities.values()).filter(activity => activity.campaignId === campaignId);
+  }
+
+  async getAudiobookPromotionalActivity(id: string): Promise<AudiobookPromotionalActivity | undefined> {
+    return this.audiobookPromotionalActivities.get(id);
+  }
+
+  async createAudiobookPromotionalActivity(activity: InsertAudiobookPromotionalActivity): Promise<AudiobookPromotionalActivity> {
+    const newActivity: AudiobookPromotionalActivity = {
+      id: randomUUID(),
+      ...activity,
+      notes: activity.notes ?? null,
+      status: activity.status ?? 'planned',
+      description: activity.description ?? null,
+      content: activity.content ?? null,
+      targetUrl: activity.targetUrl ?? null,
+      budget: activity.budget ?? null,
+      scheduledDate: activity.scheduledDate ? new Date(activity.scheduledDate) : null,
+      completedDate: activity.completedDate ? new Date(activity.completedDate) : null,
+      results: activity.results ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.audiobookPromotionalActivities.set(newActivity.id, newActivity);
+    return newActivity;
+  }
+
+  async updateAudiobookPromotionalActivity(id: string, activity: Partial<AudiobookPromotionalActivity>): Promise<AudiobookPromotionalActivity | undefined> {
+    const existing = this.audiobookPromotionalActivities.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { ...existing, ...activity, updatedAt: new Date() };
+    this.audiobookPromotionalActivities.set(id, updated);
+    return updated;
+  }
+
+  async deleteAudiobookPromotionalActivity(id: string): Promise<boolean> {
+    return this.audiobookPromotionalActivities.delete(id);
+  }
+
+  // Audiobook Promotional Content
+  async getAudiobookPromotionalContent(userId: string): Promise<AudiobookPromotionalContent[]> {
+    return Array.from(this.audiobookPromotionalContent.values()).filter(content => content.userId === userId);
+  }
+
+  async getAudiobookPromotionalContentByBook(audiobookId: string): Promise<AudiobookPromotionalContent[]> {
+    return Array.from(this.audiobookPromotionalContent.values()).filter(content => content.audiobookId === audiobookId);
+  }
+
+  async getAudiobookPromotionalContentByCampaign(campaignId: string): Promise<AudiobookPromotionalContent[]> {
+    return Array.from(this.audiobookPromotionalContent.values()).filter(content => content.campaignId === campaignId);
+  }
+
+  async createAudiobookPromotionalContent(content: InsertAudiobookPromotionalContent): Promise<AudiobookPromotionalContent> {
+    const newContent: AudiobookPromotionalContent = {
+      id: randomUUID(),
+      ...content,
+      campaignId: content.campaignId ?? null,
+      platform: content.platform ?? null,
+      mediaUrls: content.mediaUrls ?? null,
+      hashtags: content.hashtags ?? null,
+      status: content.status ?? 'draft',
+      publishedDate: content.publishedDate ? new Date(content.publishedDate) : null,
+      engagement: content.engagement ?? null,
+      tags: content.tags ?? null,
+      notes: content.notes ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.audiobookPromotionalContent.set(newContent.id, newContent);
+    return newContent;
+  }
+
+  async updateAudiobookPromotionalContent(id: string, content: Partial<AudiobookPromotionalContent>): Promise<AudiobookPromotionalContent | undefined> {
+    const existing = this.audiobookPromotionalContent.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { ...existing, ...content, updatedAt: new Date() };
+    this.audiobookPromotionalContent.set(id, updated);
+    return updated;
+  }
+
+  async deleteAudiobookPromotionalContent(id: string): Promise<boolean> {
+    return this.audiobookPromotionalContent.delete(id);
   }
 }
 

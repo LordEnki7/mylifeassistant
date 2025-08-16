@@ -1303,6 +1303,342 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Audiobook Promotional Campaigns
+  app.get("/api/audiobook-promotional-campaigns", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const campaigns = await storage.getAudiobookPromotionalCampaigns(userId);
+      await auditLogger.logDataAccess(req, 'read', 'promotional_campaigns', userId);
+      res.json(campaigns);
+    } catch (error) {
+      console.error("Error fetching promotional campaigns:", error);
+      res.status(500).json({ error: "Failed to fetch promotional campaigns" });
+    }
+  });
+
+  app.get("/api/audiobook-promotional-campaigns/book/:audiobookId", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { audiobookId } = req.params;
+      const campaigns = await storage.getAudiobookPromotionalCampaignsByBook(audiobookId);
+      
+      // Verify user owns the audiobook
+      const audiobook = await storage.getAudiobook(audiobookId);
+      if (!audiobook || audiobook.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      await auditLogger.logDataAccess(req, 'read', 'promotional_campaigns', userId);
+      res.json(campaigns);
+    } catch (error) {
+      console.error("Error fetching promotional campaigns for book:", error);
+      res.status(500).json({ error: "Failed to fetch promotional campaigns" });
+    }
+  });
+
+  app.get("/api/audiobook-promotional-campaigns/:id", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { id } = req.params;
+      const campaign = await storage.getAudiobookPromotionalCampaign(id);
+      
+      if (!campaign) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
+      if (campaign.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      await auditLogger.logDataAccess(req, 'read', 'promotional_campaigns', userId);
+      res.json(campaign);
+    } catch (error) {
+      console.error("Error fetching promotional campaign:", error);
+      res.status(500).json({ error: "Failed to fetch promotional campaign" });
+    }
+  });
+
+  app.post("/api/audiobook-promotional-campaigns", requireAuth, validateRequest(schemas.audiobookPromotionalCampaign), async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      
+      // Verify user owns the audiobook
+      const audiobook = await storage.getAudiobook(req.body.audiobookId);
+      if (!audiobook || audiobook.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const campaignData = { ...req.body, userId };
+      const campaign = await storage.createAudiobookPromotionalCampaign(campaignData);
+      await auditLogger.logDataAccess(req, 'create', 'promotional_campaigns', userId);
+      res.status(201).json(campaign);
+    } catch (error) {
+      console.error("Error creating promotional campaign:", error);
+      res.status(500).json({ error: "Failed to create promotional campaign" });
+    }
+  });
+
+  app.put("/api/audiobook-promotional-campaigns/:id", requireAuth, validateRequest(schemas.audiobookPromotionalCampaign), async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { id } = req.params;
+      
+      // Verify user owns the campaign
+      const existingCampaign = await storage.getAudiobookPromotionalCampaign(id);
+      if (!existingCampaign || existingCampaign.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const updatedCampaign = await storage.updateAudiobookPromotionalCampaign(id, req.body);
+      if (!updatedCampaign) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
+      await auditLogger.logDataAccess(req, 'update', 'promotional_campaigns', userId);
+      res.json(updatedCampaign);
+    } catch (error) {
+      console.error("Error updating promotional campaign:", error);
+      res.status(500).json({ error: "Failed to update promotional campaign" });
+    }
+  });
+
+  app.delete("/api/audiobook-promotional-campaigns/:id", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { id } = req.params;
+      
+      // Verify user owns the campaign
+      const campaign = await storage.getAudiobookPromotionalCampaign(id);
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const deleted = await storage.deleteAudiobookPromotionalCampaign(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
+      await auditLogger.logDataAccess(req, 'delete', 'promotional_campaigns', userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting promotional campaign:", error);
+      res.status(500).json({ error: "Failed to delete promotional campaign" });
+    }
+  });
+
+  // Audiobook Promotional Activities
+  app.get("/api/audiobook-promotional-activities/:campaignId", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { campaignId } = req.params;
+      
+      // Verify user owns the campaign
+      const campaign = await storage.getAudiobookPromotionalCampaign(campaignId);
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const activities = await storage.getAudiobookPromotionalActivities(campaignId);
+      await auditLogger.logDataAccess(req, 'read', 'promotional_activities', userId);
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching promotional activities:", error);
+      res.status(500).json({ error: "Failed to fetch promotional activities" });
+    }
+  });
+
+  app.post("/api/audiobook-promotional-activities", requireAuth, validateRequest(schemas.audiobookPromotionalActivity), async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      
+      // Verify user owns the campaign
+      const campaign = await storage.getAudiobookPromotionalCampaign(req.body.campaignId);
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const activity = await storage.createAudiobookPromotionalActivity(req.body);
+      await auditLogger.logDataAccess(req, 'create', 'promotional_activities', userId);
+      res.status(201).json(activity);
+    } catch (error) {
+      console.error("Error creating promotional activity:", error);
+      res.status(500).json({ error: "Failed to create promotional activity" });
+    }
+  });
+
+  app.put("/api/audiobook-promotional-activities/:id", requireAuth, validateRequest(schemas.audiobookPromotionalActivity), async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { id } = req.params;
+      
+      // Verify user owns the activity through campaign ownership
+      const existingActivity = await storage.getAudiobookPromotionalActivity(id);
+      if (!existingActivity) {
+        return res.status(404).json({ error: "Activity not found" });
+      }
+      
+      const campaign = await storage.getAudiobookPromotionalCampaign(existingActivity.campaignId);
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const updatedActivity = await storage.updateAudiobookPromotionalActivity(id, req.body);
+      await auditLogger.logDataAccess(req, 'update', 'promotional_activities', userId);
+      res.json(updatedActivity);
+    } catch (error) {
+      console.error("Error updating promotional activity:", error);
+      res.status(500).json({ error: "Failed to update promotional activity" });
+    }
+  });
+
+  app.delete("/api/audiobook-promotional-activities/:id", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { id } = req.params;
+      
+      // Verify user owns the activity through campaign ownership
+      const activity = await storage.getAudiobookPromotionalActivity(id);
+      if (!activity) {
+        return res.status(404).json({ error: "Activity not found" });
+      }
+      
+      const campaign = await storage.getAudiobookPromotionalCampaign(activity.campaignId);
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const deleted = await storage.deleteAudiobookPromotionalActivity(id);
+      await auditLogger.logDataAccess(req, 'delete', 'promotional_activities', userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting promotional activity:", error);
+      res.status(500).json({ error: "Failed to delete promotional activity" });
+    }
+  });
+
+  // Audiobook Promotional Content
+  app.get("/api/audiobook-promotional-content", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const content = await storage.getAudiobookPromotionalContent(userId);
+      await auditLogger.logDataAccess(req, 'read', 'promotional_content', userId);
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching promotional content:", error);
+      res.status(500).json({ error: "Failed to fetch promotional content" });
+    }
+  });
+
+  app.get("/api/audiobook-promotional-content/book/:audiobookId", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { audiobookId } = req.params;
+      
+      // Verify user owns the audiobook
+      const audiobook = await storage.getAudiobook(audiobookId);
+      if (!audiobook || audiobook.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const content = await storage.getAudiobookPromotionalContentByBook(audiobookId);
+      await auditLogger.logDataAccess(req, 'read', 'promotional_content', userId);
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching promotional content for book:", error);
+      res.status(500).json({ error: "Failed to fetch promotional content" });
+    }
+  });
+
+  app.get("/api/audiobook-promotional-content/campaign/:campaignId", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { campaignId } = req.params;
+      
+      // Verify user owns the campaign
+      const campaign = await storage.getAudiobookPromotionalCampaign(campaignId);
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const content = await storage.getAudiobookPromotionalContentByCampaign(campaignId);
+      await auditLogger.logDataAccess(req, 'read', 'promotional_content', userId);
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching promotional content for campaign:", error);
+      res.status(500).json({ error: "Failed to fetch promotional content" });
+    }
+  });
+
+  app.post("/api/audiobook-promotional-content", requireAuth, validateRequest(schemas.audiobookPromotionalContent), async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      
+      // Verify user owns the audiobook
+      const audiobook = await storage.getAudiobook(req.body.audiobookId);
+      if (!audiobook || audiobook.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      // If campaign is specified, verify user owns it
+      if (req.body.campaignId) {
+        const campaign = await storage.getAudiobookPromotionalCampaign(req.body.campaignId);
+        if (!campaign || campaign.userId !== userId) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+      }
+      
+      const contentData = { ...req.body, userId };
+      const content = await storage.createAudiobookPromotionalContent(contentData);
+      await auditLogger.logDataAccess(req, 'create', 'promotional_content', userId);
+      res.status(201).json(content);
+    } catch (error) {
+      console.error("Error creating promotional content:", error);
+      res.status(500).json({ error: "Failed to create promotional content" });
+    }
+  });
+
+  app.put("/api/audiobook-promotional-content/:id", requireAuth, validateRequest(schemas.audiobookPromotionalContent), async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { id } = req.params;
+      
+      // Verify user owns the content
+      const existingContent = await storage.getAudiobookPromotionalContent(userId);
+      const content = existingContent.find(c => c.id === id);
+      if (!content) {
+        return res.status(404).json({ error: "Content not found" });
+      }
+      
+      const updatedContent = await storage.updateAudiobookPromotionalContent(id, req.body);
+      await auditLogger.logDataAccess(req, 'update', 'promotional_content', userId);
+      res.json(updatedContent);
+    } catch (error) {
+      console.error("Error updating promotional content:", error);
+      res.status(500).json({ error: "Failed to update promotional content" });
+    }
+  });
+
+  app.delete("/api/audiobook-promotional-content/:id", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { id } = req.params;
+      
+      // Verify user owns the content
+      const existingContent = await storage.getAudiobookPromotionalContent(userId);
+      const content = existingContent.find(c => c.id === id);
+      if (!content) {
+        return res.status(404).json({ error: "Content not found" });
+      }
+      
+      const deleted = await storage.deleteAudiobookPromotionalContent(id);
+      await auditLogger.logDataAccess(req, 'delete', 'promotional_content', userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting promotional content:", error);
+      res.status(500).json({ error: "Failed to delete promotional content" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

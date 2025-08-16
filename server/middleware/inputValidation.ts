@@ -189,6 +189,59 @@ export const schemas = {
     // userId is extracted from JWT token
   }),
 
+  // Audiobook promotional campaign validation
+  audiobookPromotionalCampaign: z.object({
+    audiobookId: z.string().min(1, 'Audiobook ID is required'),
+    name: z.string().min(1, 'Campaign name is required').max(200, 'Campaign name too long').trim(),
+    objective: z.string().min(1, 'Objective is required').max(100, 'Objective too long').trim(),
+    targetAudience: z.string().max(100, 'Target audience too long').optional().nullable(),
+    budget: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid budget format').optional().nullable(),
+    status: z.enum(['planning', 'active', 'paused', 'completed', 'cancelled']).default('planning'),
+    startDate: z.string().datetime('Invalid start date').optional().nullable(),
+    endDate: z.string().datetime('Invalid end date').optional().nullable(),
+    description: z.string().max(2000, 'Description too long').optional().nullable(),
+    goals: z.record(z.any()).optional().nullable(),
+    channels: z.array(z.enum(['social_media', 'email', 'podcast', 'blog', 'press', 'influencer', 'other'])).optional().nullable(),
+    metrics: z.record(z.any()).optional().nullable(),
+    notes: z.string().max(2000, 'Notes too long').optional().nullable()
+    // userId is extracted from JWT token
+  }),
+
+  // Audiobook promotional activity validation
+  audiobookPromotionalActivity: z.object({
+    campaignId: z.string().min(1, 'Campaign ID is required'),
+    title: z.string().min(1, 'Activity title is required').max(200, 'Title too long').trim(),
+    type: z.string().min(1, 'Activity type is required').max(50, 'Type too long').trim(),
+    channel: z.string().min(1, 'Channel is required').max(50, 'Channel too long').trim(),
+    status: z.enum(['planned', 'in_progress', 'completed', 'cancelled', 'scheduled']).default('planned'),
+    scheduledDate: z.string().datetime('Invalid scheduled date').optional().nullable(),
+    completedDate: z.string().datetime('Invalid completed date').optional().nullable(),
+    description: z.string().max(2000, 'Description too long').optional().nullable(),
+    content: z.string().max(10000, 'Content too long').optional().nullable(),
+    targetUrl: z.string().url('Invalid target URL').optional().nullable(),
+    budget: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid budget format').optional().nullable(),
+    results: z.record(z.any()).optional().nullable(),
+    notes: z.string().max(2000, 'Notes too long').optional().nullable()
+  }),
+
+  // Audiobook promotional content validation
+  audiobookPromotionalContent: z.object({
+    audiobookId: z.string().min(1, 'Audiobook ID is required'),
+    campaignId: z.string().min(1, 'Campaign ID is required').optional().nullable(),
+    title: z.string().min(1, 'Content title is required').max(200, 'Title too long').trim(),
+    type: z.string().min(1, 'Content type is required').max(50, 'Type too long').trim(),
+    platform: z.string().max(50, 'Platform too long').optional().nullable(),
+    content: z.string().min(1, 'Content is required').max(10000, 'Content too long'),
+    mediaUrls: z.array(z.string().url('Invalid media URL')).optional().nullable(),
+    hashtags: z.array(z.string().max(50, 'Hashtag too long')).optional().nullable(),
+    status: z.enum(['draft', 'approved', 'published', 'archived']).default('draft'),
+    publishedDate: z.string().datetime('Invalid published date').optional().nullable(),
+    engagement: z.record(z.any()).optional().nullable(),
+    tags: z.array(z.string().max(30, 'Tag too long')).optional().nullable(),
+    notes: z.string().max(2000, 'Notes too long').optional().nullable()
+    // userId is extracted from JWT token
+  }),
+
   // Auth validation
   login: z.object({
     email: z.string().email('Invalid email format'),
