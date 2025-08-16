@@ -128,6 +128,12 @@ Preferred communication style: Simple, everyday language.
     - Funding Landscape: $750K seed round targeting LegalTech Fund, Arch Grants, Ohio Angel Collective, federal SBIR programs
     - Social Impact: Addressing systemic inequality, protecting BIPOC/immigrant motorists, multilingual support
     - Current Status: Prototypes complete, seeking hardware development and beta testing
+- **Enhanced Sunshine Result Display (Today)**:
+  * **Detailed Grant Search Results**: When Sunshine finds grants, she now displays comprehensive information including organization, title, amount, deadline, focus areas, description, and application URLs
+  * **Show Results Function**: Added new `show_grant_results` AI function allowing users to request detailed views of previous findings with filtering options (all, recent, high priority, federal, private, foundation)
+  * **Proactive Work Display**: Enhanced AI instructions to automatically show detailed work when users ask "show me what you found", "let me see the list", or similar requests
+  * **Comprehensive List Formatting**: Improved response formatting to display numbered lists with complete grant details rather than just summaries
+  * **Interactive Result Viewing**: Users can now ask Sunshine to show specific types of grants from their database with detailed breakdowns
 - **Asterisk Formatting Issue Fixed (Today)**:
   * **Root Cause Resolution**: Identified asterisk formatting was coming from double asterisks in the AI system prompt (e.g., **Witty & Playful**)
   * **System Prompt Cleanup**: Removed all double asterisk formatting from buildLifeAssistantPrompt function across personality, capabilities, and expertise sections

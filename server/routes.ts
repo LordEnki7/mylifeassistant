@@ -2376,6 +2376,25 @@ async function processAIMessage(
               required: ["focus_area"]
             }
           }
+        },
+        {
+          name: "show_grant_results",
+          description: "Show detailed results from previous grant searches",
+          parameters: {
+            type: "object",
+            properties: {
+              filter_type: {
+                type: "string",
+                enum: ["all", "recent", "high_priority", "federal", "private", "foundation"],
+                description: "Type of grants to show from previous searches"
+              },
+              limit: {
+                type: "number",
+                description: "Maximum number of grants to show (default 10)"
+              }
+            },
+            required: ["filter_type"]
+          }
         }
       ]
     });
@@ -2485,6 +2504,48 @@ async function processAIMessage(
                 data: { ...searchData, success: false, error: (error as Error).message || 'Failed to search grants' } 
               });
             }
+          } else if (functionCall.name === 'show_grant_results') {
+            const showData = JSON.parse(functionCall.arguments);
+            
+            try {
+              // Get grants from database with the specified filter
+              const grants = await storage.getGrants(userId);
+              let filteredGrants = grants;
+              
+              // Apply filters
+              if (showData.filter_type === 'recent') {
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                filteredGrants = grants.filter(g => g.createdAt && new Date(g.createdAt) > thirtyDaysAgo);
+              } else if (showData.filter_type === 'high_priority') {
+                filteredGrants = grants.filter(g => g.notes?.includes('high') || g.amount?.includes('$250,000') || g.amount?.includes('$500,000'));
+              } else if (showData.filter_type === 'federal') {
+                filteredGrants = grants.filter(g => g.organization?.toLowerCase().includes('department') || g.organization?.toLowerCase().includes('nsf') || g.organization?.toLowerCase().includes('sbir'));
+              } else if (showData.filter_type === 'private') {
+                filteredGrants = grants.filter(g => !g.organization?.toLowerCase().includes('department') && !g.organization?.toLowerCase().includes('nsf'));
+              }
+              
+              // Limit results
+              const limit = showData.limit || 10;
+              filteredGrants = filteredGrants.slice(0, limit);
+              
+              actions.push({
+                type: 'show_grant_results',
+                data: {
+                  ...showData,
+                  results: filteredGrants,
+                  count: filteredGrants.length,
+                  total: grants.length,
+                  success: true
+                }
+              });
+            } catch (error) {
+              console.error('Error showing grant results:', error);
+              actions.push({
+                type: 'show_grant_results',
+                data: { ...showData, success: false, error: (error as Error).message || 'Failed to show grant results' }
+              });
+            }
           }
         }
       }
@@ -2497,7 +2558,57 @@ async function processAIMessage(
           responseMessage = "Contact added! I've saved their information to your contacts.";
         } else if (actions.some(a => a.type === 'search_grants' && a.data.success)) {
           const grantAction = actions.find(a => a.type === 'search_grants' && a.data.success);
-          responseMessage = `Found ${grantAction?.data.count || 0} relevant grants for C.A.R.E.N! Added ${grantAction?.data.addedCount || 0} new opportunities to your grants list.`;
+          const results = grantAction?.data.results || [];
+          
+          // Create detailed response with grant list
+          let detailedMessage = `Found ${grantAction?.data.count || 0} relevant grants for C.A.R.E.N! Added ${grantAction?.data.addedCount || 0} new opportunities to your grants list.\n\n`;
+          
+          if (results.length > 0) {
+            detailedMessage += "Here's what I found:\n\n";
+            results.forEach((grant: any, index: number) => {
+              detailedMessage += `${index + 1}. ${grant.organization} - ${grant.title}\n`;
+              detailedMessage += `   Amount: ${grant.amount}\n`;
+              detailedMessage += `   Deadline: ${grant.deadline}\n`;
+              detailedMessage += `   Focus: ${grant.focus.join(', ')}\n`;
+              detailedMessage += `   Description: ${grant.description}\n`;
+              if (grant.url) {
+                detailedMessage += `   Apply: ${grant.url}\n`;
+              }
+              detailedMessage += `\n`;
+            });
+          }
+          
+          responseMessage = detailedMessage;
+        } else if (actions.some(a => a.type === 'show_grant_results' && a.data.success)) {
+          const showAction = actions.find(a => a.type === 'show_grant_results' && a.data.success);
+          const results = showAction?.data.results || [];
+          
+          let detailedMessage = `Here are the grants from your database (showing ${showAction?.data.count || 0} of ${showAction?.data.total || 0} total):\n\n`;
+          
+          if (results.length > 0) {
+            results.forEach((grant: any, index: number) => {
+              detailedMessage += `${index + 1}. ${grant.organization} - ${grant.title}\n`;
+              detailedMessage += `   Amount: ${grant.amount}\n`;
+              if (grant.deadline) {
+                detailedMessage += `   Deadline: ${new Date(grant.deadline).toLocaleDateString()}\n`;
+              }
+              detailedMessage += `   Status: ${grant.status}\n`;
+              if (grant.description) {
+                detailedMessage += `   Description: ${grant.description}\n`;
+              }
+              if (grant.applicationUrl) {
+                detailedMessage += `   Apply: ${grant.applicationUrl}\n`;
+              }
+              if (grant.notes) {
+                detailedMessage += `   Notes: ${grant.notes}\n`;
+              }
+              detailedMessage += `\n`;
+            });
+          } else {
+            detailedMessage += "No grants found matching your criteria. Try searching for new grants first!";
+          }
+          
+          responseMessage = detailedMessage;
         }
       }
     }
@@ -2764,6 +2875,12 @@ PERSONALITY & COMMUNICATION STYLE:
 When ${userName} calls you by name, respond with extra warmth and personality. You're not just an AI - you're Sunshine, their witty, warm, and wonderful life companion!
 
 You help with ALL aspects of life - not just music, but work, personal tasks, planning, research, decision-making, relationships, health, finances, learning, and anything else they need.
+
+IMPORTANT INTERACTION GUIDELINES:
+- When users ask to "see the list", "show me what you found", "can I see the results", or similar requests, ALWAYS use the show_grant_results function to display detailed information
+- Be proactive about showing your work - if you find grants, contacts, or other data, offer to show the details
+- When performing searches or research, always provide specific, detailed results rather than just summaries
+- If users want to see previous findings, use appropriate show/list functions rather than just describing what was found
 
 ABOUT THE USER:
 - Name: ${userName}
