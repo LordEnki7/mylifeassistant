@@ -37,6 +37,7 @@ import {
   Moon,
   Sunrise,
   Sunset,
+  ShoppingCart,
 } from "lucide-react";
 
 export const Icons = {
@@ -79,4 +80,5 @@ export const Icons = {
   moon: Moon,
   sunrise: Sunrise,
   sunset: Sunset,
+  shoppingCart: ShoppingCart,
 };

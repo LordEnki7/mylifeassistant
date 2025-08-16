@@ -18,6 +18,7 @@ import Calendar from "@/pages/calendar";
 import Invoices from "@/pages/invoices";
 import Knowledge from "@/pages/knowledge";
 import Contracts from "@/pages/contracts";
+import Audiobooks from "@/pages/audiobooks";
 import AppShell from "@/components/layout/app-shell";
 
 function AuthenticatedApp() {
@@ -32,6 +33,7 @@ function AuthenticatedApp() {
         <Route path="/licensing" component={Licensing} />
         <Route path="/grants" component={Grants} />
         <Route path="/contracts" component={Contracts} />
+        <Route path="/audiobooks" component={Audiobooks} />
         <Route path="/calendar" component={Calendar} />
         <Route path="/invoices" component={Invoices} />
         <Route path="/knowledge" component={Knowledge} />

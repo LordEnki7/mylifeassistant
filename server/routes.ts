@@ -1156,6 +1156,153 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Audiobooks (all protected)
+  app.get("/api/audiobooks", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const audiobooks = await storage.getAudiobooks(userId);
+      await auditLogger.logDataAccess(req, 'read', 'audiobooks', userId);
+      res.json(audiobooks);
+    } catch (error) {
+      console.error("Error fetching audiobooks:", error);
+      res.status(500).json({ error: "Failed to fetch audiobooks" });
+    }
+  });
+
+  app.get("/api/audiobooks/:id", requireAuth, async (req, res) => {
+    try {
+      const audiobook = await storage.getAudiobook(req.params.id);
+      if (!audiobook) {
+        return res.status(404).json({ error: "Audiobook not found" });
+      }
+      const userId = getUserId(req);
+      if (audiobook.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      await auditLogger.logDataAccess(req, 'read', 'audiobooks', userId);
+      res.json(audiobook);
+    } catch (error) {
+      console.error("Error fetching audiobook:", error);
+      res.status(500).json({ error: "Failed to fetch audiobook" });
+    }
+  });
+
+  app.post("/api/audiobooks", requireAuth, validateRequest(schemas.audiobook), async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const audiobookData = { ...req.body, userId };
+      const audiobook = await storage.createAudiobook(audiobookData);
+      await auditLogger.logDataAccess(req, 'create', 'audiobooks', userId);
+      res.status(201).json(audiobook);
+    } catch (error) {
+      console.error("Error creating audiobook:", error);
+      res.status(500).json({ error: "Failed to create audiobook" });
+    }
+  });
+
+  app.put("/api/audiobooks/:id", requireAuth, validateRequest(schemas.audiobook), async (req, res) => {
+    try {
+      const audiobook = await storage.getAudiobook(req.params.id);
+      if (!audiobook) {
+        return res.status(404).json({ error: "Audiobook not found" });
+      }
+      const userId = getUserId(req);
+      if (audiobook.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      const updated = await storage.updateAudiobook(req.params.id, req.body);
+      await auditLogger.logDataAccess(req, 'update', 'audiobooks', userId);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating audiobook:", error);
+      res.status(500).json({ error: "Failed to update audiobook" });
+    }
+  });
+
+  app.delete("/api/audiobooks/:id", requireAuth, async (req, res) => {
+    try {
+      const audiobook = await storage.getAudiobook(req.params.id);
+      if (!audiobook) {
+        return res.status(404).json({ error: "Audiobook not found" });
+      }
+      const userId = getUserId(req);
+      if (audiobook.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      await storage.deleteAudiobook(req.params.id);
+      await auditLogger.logDataAccess(req, 'delete', 'audiobooks', userId);
+      res.json({ message: "Audiobook deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting audiobook:", error);
+      res.status(500).json({ error: "Failed to delete audiobook" });
+    }
+  });
+
+  // Audiobook chapters
+  app.get("/api/audiobooks/:id/chapters", requireAuth, async (req, res) => {
+    try {
+      const audiobook = await storage.getAudiobook(req.params.id);
+      if (!audiobook) {
+        return res.status(404).json({ error: "Audiobook not found" });
+      }
+      const userId = getUserId(req);
+      if (audiobook.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      const chapters = await storage.getAudiobookChapters(req.params.id);
+      await auditLogger.logDataAccess(req, 'read', 'audiobook_chapters', userId);
+      res.json(chapters);
+    } catch (error) {
+      console.error("Error fetching audiobook chapters:", error);
+      res.status(500).json({ error: "Failed to fetch audiobook chapters" });
+    }
+  });
+
+  // Audiobook sales
+  app.get("/api/audiobook-sales", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const sales = await storage.getAudiobookSales(userId);
+      await auditLogger.logDataAccess(req, 'read', 'audiobook_sales', userId);
+      res.json(sales);
+    } catch (error) {
+      console.error("Error fetching audiobook sales:", error);
+      res.status(500).json({ error: "Failed to fetch audiobook sales" });
+    }
+  });
+
+  app.get("/api/audiobooks/:id/sales", requireAuth, async (req, res) => {
+    try {
+      const audiobook = await storage.getAudiobook(req.params.id);
+      if (!audiobook) {
+        return res.status(404).json({ error: "Audiobook not found" });
+      }
+      const userId = getUserId(req);
+      if (audiobook.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      const sales = await storage.getAudiobookSalesByBook(req.params.id);
+      await auditLogger.logDataAccess(req, 'read', 'audiobook_sales', userId);
+      res.json(sales);
+    } catch (error) {
+      console.error("Error fetching audiobook sales:", error);
+      res.status(500).json({ error: "Failed to fetch audiobook sales" });
+    }
+  });
+
+  app.post("/api/audiobook-sales", requireAuth, validateRequest(schemas.audiobookSale), async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const saleData = { ...req.body, userId };
+      const sale = await storage.createAudiobookSale(saleData);
+      await auditLogger.logDataAccess(req, 'create', 'audiobook_sales', userId);
+      res.status(201).json(sale);
+    } catch (error) {
+      console.error("Error creating audiobook sale:", error);
+      res.status(500).json({ error: "Failed to create audiobook sale" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

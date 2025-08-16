@@ -148,6 +148,47 @@ export const schemas = {
     // userId is extracted from JWT token
   }),
 
+  // Audiobook validation
+  audiobook: z.object({
+    title: z.string().min(1, 'Title is required').max(200, 'Title too long').trim(),
+    author: z.string().min(1, 'Author is required').max(100, 'Author name too long').trim(),
+    series: z.string().max(100, 'Series name too long').optional().nullable(),
+    seriesBook: z.number().int().positive('Series book number must be positive').optional().nullable(),
+    genre: z.string().min(1, 'Genre is required').max(50, 'Genre too long').trim(),
+    targetAudience: z.enum(['adult', 'young_adult', 'children']).optional().nullable(),
+    narrator: z.string().max(100, 'Narrator name too long').optional().nullable(),
+    duration: z.number().int().positive('Duration must be positive').optional().nullable(),
+    chapters: z.number().int().positive('Chapters must be positive').optional().nullable(),
+    isbn: z.string().max(20, 'ISBN too long').optional().nullable(),
+    publishedDate: z.string().datetime('Invalid published date').optional().nullable(),
+    filePath: z.string().max(500, 'File path too long').optional().nullable(),
+    fileFormat: z.enum(['mp3', 'm4a', 'wav', 'aac']).optional().nullable(),
+    coverImagePath: z.string().max(500, 'Cover image path too long').optional().nullable(),
+    description: z.string().max(2000, 'Description too long').optional().nullable(),
+    website: z.string().url('Invalid website URL').optional().nullable(),
+    price: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid price format').optional().nullable(),
+    promotionStatus: z.enum(['active', 'paused', 'completed']).default('active'),
+    salesPlatforms: z.array(z.enum(['audible', 'spotify', 'apple', 'amazon', 'other'])).optional().nullable(),
+    rightsStatus: z.enum(['owned', 'licensed', 'pending']).default('owned'),
+    totalSales: z.number().int().min(0, 'Total sales cannot be negative').default(0),
+    monthlyRevenue: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid revenue format').default('0')
+    // userId is extracted from JWT token
+  }),
+
+  // Audiobook sale validation
+  audiobookSale: z.object({
+    audiobookId: z.string().min(1, 'Audiobook ID is required'),
+    platform: z.string().min(1, 'Platform is required').max(50, 'Platform name too long').trim(),
+    saleDate: z.string().datetime('Invalid sale date'),
+    amount: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid amount format'),
+    currency: z.string().length(3, 'Currency must be 3 characters').default('USD'),
+    royaltyRate: z.string().regex(/^0(\.\d{1,4})?$|^1(\.0{1,4})?$/, 'Invalid royalty rate').optional().nullable(),
+    netEarnings: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid earnings format').optional().nullable(),
+    transactionId: z.string().max(100, 'Transaction ID too long').optional().nullable(),
+    customerLocation: z.string().max(100, 'Customer location too long').optional().nullable()
+    // userId is extracted from JWT token
+  }),
+
   // Auth validation
   login: z.object({
     email: z.string().email('Invalid email format'),

@@ -17,6 +17,9 @@ import {
   type PlatformSubmission, type InsertPlatformSubmission,
   type ActionItem, type InsertActionItem,
   type MusicContract, type InsertMusicContract,
+  type Audiobook, type InsertAudiobook,
+  type AudiobookChapter, type InsertAudiobookChapter,
+  type AudiobookSale, type InsertAudiobookSale,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -144,6 +147,27 @@ export interface IStorage {
   getMusicContractsByType(userId: string, type: string): Promise<MusicContract[]>;
   generateContractFromTemplate(templateId: string, variables: Record<string, any>): Promise<string>;
 
+  // Audiobooks
+  getAudiobooks(userId: string): Promise<Audiobook[]>;
+  getAudiobook(id: string): Promise<Audiobook | undefined>;
+  createAudiobook(audiobook: InsertAudiobook): Promise<Audiobook>;
+  updateAudiobook(id: string, audiobook: Partial<Audiobook>): Promise<Audiobook | undefined>;
+  deleteAudiobook(id: string): Promise<boolean>;
+  getAudiobooksByGenre(userId: string, genre: string): Promise<Audiobook[]>;
+
+  // Audiobook Chapters
+  getAudiobookChapters(audiobookId: string): Promise<AudiobookChapter[]>;
+  createAudiobookChapter(chapter: InsertAudiobookChapter): Promise<AudiobookChapter>;
+  updateAudiobookChapter(id: string, chapter: Partial<AudiobookChapter>): Promise<AudiobookChapter | undefined>;
+  deleteAudiobookChapter(id: string): Promise<boolean>;
+
+  // Audiobook Sales
+  getAudiobookSales(userId: string): Promise<AudiobookSale[]>;
+  getAudiobookSalesByBook(audiobookId: string): Promise<AudiobookSale[]>;
+  createAudiobookSale(sale: InsertAudiobookSale): Promise<AudiobookSale>;
+  updateAudiobookSale(id: string, sale: Partial<AudiobookSale>): Promise<AudiobookSale | undefined>;
+  deleteAudiobookSale(id: string): Promise<boolean>;
+
   // Dashboard stats
   getDashboardStats(userId: string): Promise<{
     emailsSent: number;
@@ -172,6 +196,9 @@ export class MemStorage implements IStorage {
   private platformSubmissions: Map<string, PlatformSubmission>;
   private actionItems: Map<string, ActionItem>;
   private musicContracts: Map<string, MusicContract>;
+  private audiobooks: Map<string, Audiobook>;
+  private audiobookChapters: Map<string, AudiobookChapter>;
+  private audiobookSales: Map<string, AudiobookSale>;
 
   constructor() {
     this.users = new Map();
@@ -192,6 +219,9 @@ export class MemStorage implements IStorage {
     this.platformSubmissions = new Map();
     this.actionItems = new Map();
     this.musicContracts = new Map();
+    this.audiobooks = new Map();
+    this.audiobookChapters = new Map();
+    this.audiobookSales = new Map();
 
     // Initialize with demo user
     this.initializeDemoData();
@@ -337,6 +367,9 @@ export class MemStorage implements IStorage {
     
     // Initialize music contract templates
     this.initializeMusicContractTemplates(userId);
+    
+    // Initialize audiobooks
+    this.initializeAudiobooks(userId);
   }
 
   // Users
@@ -766,7 +799,20 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const newSong: Song = {
       id,
-      ...song,
+      userId: song.userId,
+      title: song.title,
+      artist: song.artist,
+      album: song.album || null,
+      genre: song.genre || null,
+      duration: song.duration || null,
+      isrc: song.isrc || null,
+      filePath: song.filePath || null,
+      fileFormat: song.fileFormat || null,
+      description: song.description || null,
+      promotionStatus: song.promotionStatus || "active",
+      targetLicenseTypes: song.targetLicenseTypes || null,
+      website: song.website || null,
+      rightsStatus: song.rightsStatus || "100_clear",
       createdAt: new Date(),
     };
     this.songs.set(id, newSong);
@@ -793,8 +839,13 @@ export class MemStorage implements IStorage {
   async createSongVersion(insertVersion: InsertSongVersion): Promise<SongVersion> {
     const id = randomUUID();
     const version: SongVersion = {
-      ...insertVersion,
       id,
+      songId: insertVersion.songId,
+      versionType: insertVersion.versionType,
+      filePath: insertVersion.filePath,
+      fileFormat: insertVersion.fileFormat,
+      duration: insertVersion.duration || null,
+      status: insertVersion.status || "ready",
       createdAt: new Date(),
     };
     this.songVersions.set(id, version);
@@ -2222,6 +2273,222 @@ PHONE #: {{witness_phone}}`,
     });
     
     return contractText;
+  }
+
+  private initializeAudiobooks(userId: string) {
+    const audiobookData = [
+      {
+        title: "Eternal Chase: The Pursuit of Love",
+        author: "Your Name",
+        series: "Eternal Chase",
+        seriesBook: 1,
+        genre: "Romance",
+        targetAudience: "adult",
+        description: "A captivating romance novel exploring the depths of love and the lengths one will go to find their soulmate.",
+        price: "24.99",
+        promotionStatus: "active",
+        salesPlatforms: ["audible", "amazon", "spotify", "apple"],
+        rightsStatus: "owned",
+        duration: 480, // 8 hours
+        chapters: 24
+      },
+      {
+        title: "Coronary Artery Disease and ME",
+        author: "Your Name",
+        series: null,
+        seriesBook: null,
+        genre: "Health",
+        targetAudience: "adult",
+        description: "An informative audiobook about coronary artery disease and personal experiences with the condition.",
+        price: "19.99",
+        promotionStatus: "active",
+        salesPlatforms: ["audible", "amazon", "spotify"],
+        rightsStatus: "owned",
+        duration: 360, // 6 hours
+        chapters: 18
+      },
+      {
+        title: "The Aiyanna Chronicles",
+        author: "Your Name",
+        series: "Aiyanna Chronicles",
+        seriesBook: 1,
+        genre: "Young Adult Fantasy",
+        targetAudience: "young_adult",
+        description: "A thrilling young adult fantasy adventure, a spin-off from the Eternal Chase series with new characters and magical worlds.",
+        price: "22.99",
+        promotionStatus: "active",
+        salesPlatforms: ["audible", "amazon", "spotify", "apple"],
+        rightsStatus: "owned",
+        duration: 420, // 7 hours
+        chapters: 21
+      }
+    ];
+
+    audiobookData.forEach(bookData => {
+      const audiobook: Audiobook = {
+        id: randomUUID(),
+        userId,
+        title: bookData.title,
+        author: bookData.author,
+        series: bookData.series,
+        seriesBook: bookData.seriesBook,
+        genre: bookData.genre,
+        targetAudience: bookData.targetAudience,
+        narrator: null,
+        duration: bookData.duration,
+        chapters: bookData.chapters,
+        isbn: null,
+        publishedDate: null,
+        filePath: null,
+        fileFormat: null,
+        coverImagePath: null,
+        description: bookData.description,
+        website: null,
+        price: bookData.price,
+        promotionStatus: bookData.promotionStatus,
+        salesPlatforms: bookData.salesPlatforms,
+        rightsStatus: bookData.rightsStatus,
+        totalSales: 0,
+        monthlyRevenue: "0",
+        createdAt: new Date(),
+      };
+      this.audiobooks.set(audiobook.id, audiobook);
+    });
+  }
+
+  // Audiobook methods
+  async getAudiobooks(userId: string): Promise<Audiobook[]> {
+    return Array.from(this.audiobooks.values()).filter(book => book.userId === userId);
+  }
+
+  async getAudiobook(id: string): Promise<Audiobook | undefined> {
+    return this.audiobooks.get(id);
+  }
+
+  async createAudiobook(insertAudiobook: InsertAudiobook): Promise<Audiobook> {
+    const id = randomUUID();
+    const audiobook: Audiobook = {
+      id,
+      userId: insertAudiobook.userId,
+      title: insertAudiobook.title,
+      author: insertAudiobook.author,
+      series: insertAudiobook.series || null,
+      seriesBook: insertAudiobook.seriesBook || null,
+      genre: insertAudiobook.genre,
+      targetAudience: insertAudiobook.targetAudience || null,
+      narrator: insertAudiobook.narrator || null,
+      duration: insertAudiobook.duration || null,
+      chapters: insertAudiobook.chapters || null,
+      isbn: insertAudiobook.isbn || null,
+      publishedDate: insertAudiobook.publishedDate || null,
+      filePath: insertAudiobook.filePath || null,
+      fileFormat: insertAudiobook.fileFormat || null,
+      coverImagePath: insertAudiobook.coverImagePath || null,
+      description: insertAudiobook.description || null,
+      website: insertAudiobook.website || null,
+      price: insertAudiobook.price || null,
+      promotionStatus: insertAudiobook.promotionStatus || "active",
+      salesPlatforms: insertAudiobook.salesPlatforms || null,
+      rightsStatus: insertAudiobook.rightsStatus || "owned",
+      totalSales: insertAudiobook.totalSales || 0,
+      monthlyRevenue: insertAudiobook.monthlyRevenue || "0",
+      createdAt: new Date(),
+    };
+    this.audiobooks.set(id, audiobook);
+    return audiobook;
+  }
+
+  async updateAudiobook(id: string, audiobookUpdate: Partial<Audiobook>): Promise<Audiobook | undefined> {
+    const audiobook = this.audiobooks.get(id);
+    if (!audiobook) return undefined;
+    const updated = { ...audiobook, ...audiobookUpdate };
+    this.audiobooks.set(id, updated);
+    return updated;
+  }
+
+  async deleteAudiobook(id: string): Promise<boolean> {
+    return this.audiobooks.delete(id);
+  }
+
+  async getAudiobooksByGenre(userId: string, genre: string): Promise<Audiobook[]> {
+    return Array.from(this.audiobooks.values())
+      .filter(book => book.userId === userId && book.genre === genre);
+  }
+
+  // Audiobook Chapter methods
+  async getAudiobookChapters(audiobookId: string): Promise<AudiobookChapter[]> {
+    return Array.from(this.audiobookChapters.values())
+      .filter(chapter => chapter.audiobookId === audiobookId)
+      .sort((a, b) => a.chapterNumber - b.chapterNumber);
+  }
+
+  async createAudiobookChapter(insertChapter: InsertAudiobookChapter): Promise<AudiobookChapter> {
+    const id = randomUUID();
+    const chapter: AudiobookChapter = {
+      ...insertChapter,
+      id,
+      duration: insertChapter.duration || null,
+      filePath: insertChapter.filePath || null,
+      fileFormat: insertChapter.fileFormat || null,
+      transcript: insertChapter.transcript || null,
+      status: insertChapter.status || "ready",
+      createdAt: new Date(),
+    };
+    this.audiobookChapters.set(id, chapter);
+    return chapter;
+  }
+
+  async updateAudiobookChapter(id: string, chapterUpdate: Partial<AudiobookChapter>): Promise<AudiobookChapter | undefined> {
+    const chapter = this.audiobookChapters.get(id);
+    if (!chapter) return undefined;
+    const updated = { ...chapter, ...chapterUpdate };
+    this.audiobookChapters.set(id, updated);
+    return updated;
+  }
+
+  async deleteAudiobookChapter(id: string): Promise<boolean> {
+    return this.audiobookChapters.delete(id);
+  }
+
+  // Audiobook Sales methods
+  async getAudiobookSales(userId: string): Promise<AudiobookSale[]> {
+    return Array.from(this.audiobookSales.values())
+      .filter(sale => sale.userId === userId)
+      .sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime());
+  }
+
+  async getAudiobookSalesByBook(audiobookId: string): Promise<AudiobookSale[]> {
+    return Array.from(this.audiobookSales.values())
+      .filter(sale => sale.audiobookId === audiobookId)
+      .sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime());
+  }
+
+  async createAudiobookSale(insertSale: InsertAudiobookSale): Promise<AudiobookSale> {
+    const id = randomUUID();
+    const sale: AudiobookSale = {
+      ...insertSale,
+      id,
+      currency: insertSale.currency || "USD",
+      royaltyRate: insertSale.royaltyRate || null,
+      netEarnings: insertSale.netEarnings || null,
+      transactionId: insertSale.transactionId || null,
+      customerLocation: insertSale.customerLocation || null,
+      createdAt: new Date(),
+    };
+    this.audiobookSales.set(id, sale);
+    return sale;
+  }
+
+  async updateAudiobookSale(id: string, saleUpdate: Partial<AudiobookSale>): Promise<AudiobookSale | undefined> {
+    const sale = this.audiobookSales.get(id);
+    if (!sale) return undefined;
+    const updated = { ...sale, ...saleUpdate };
+    this.audiobookSales.set(id, updated);
+    return updated;
+  }
+
+  async deleteAudiobookSale(id: string): Promise<boolean> {
+    return this.audiobookSales.delete(id);
   }
 }
 

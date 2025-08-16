@@ -256,6 +256,62 @@ export const musicContracts = pgTable("music_contracts", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const audiobooks = pgTable("audiobooks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  author: text("author").notNull(),
+  series: text("series"), // Series name if part of a series
+  seriesBook: integer("series_book"), // Book number in series
+  genre: text("genre").notNull(),
+  targetAudience: text("target_audience"), // adult, young_adult, children
+  narrator: text("narrator"), // Voice actor/narrator name
+  duration: integer("duration"), // Total duration in minutes
+  chapters: integer("chapters"), // Number of chapters
+  isbn: text("isbn"), // ISBN if available
+  publishedDate: timestamp("published_date"),
+  filePath: text("file_path"), // Path to audio file
+  fileFormat: text("file_format"), // mp3, m4a, etc.
+  coverImagePath: text("cover_image_path"), // Book cover image
+  description: text("description"),
+  website: text("website"), // Book/author website
+  price: decimal("price"), // Sale price
+  promotionStatus: text("promotion_status").default("active"), // active, paused, completed
+  salesPlatforms: text("sales_platforms").array(), // audible, spotify, apple, amazon, etc.
+  rightsStatus: text("rights_status").default("owned"), // owned, licensed, pending
+  totalSales: integer("total_sales").default(0),
+  monthlyRevenue: decimal("monthly_revenue").default("0"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const audiobookChapters = pgTable("audiobook_chapters", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  audiobookId: varchar("audiobook_id").references(() => audiobooks.id).notNull(),
+  chapterNumber: integer("chapter_number").notNull(),
+  title: text("title").notNull(),
+  duration: integer("duration"), // Duration in minutes
+  filePath: text("file_path"), // Path to chapter audio file
+  fileFormat: text("file_format"),
+  transcript: text("transcript"), // Optional chapter transcript
+  status: text("status").default("ready"), // ready, processing, pending
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const audiobookSales = pgTable("audiobook_sales", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  audiobookId: varchar("audiobook_id").references(() => audiobooks.id).notNull(),
+  platform: text("platform").notNull(), // audible, spotify, apple, amazon, etc.
+  saleDate: timestamp("sale_date").notNull(),
+  amount: decimal("amount").notNull(),
+  currency: text("currency").default("USD"),
+  royaltyRate: decimal("royalty_rate"), // Percentage as decimal
+  netEarnings: decimal("net_earnings"),
+  transactionId: text("transaction_id"),
+  customerLocation: text("customer_location"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -351,6 +407,21 @@ export const insertMusicContractSchema = createInsertSchema(musicContracts).omit
   updatedAt: true,
 });
 
+export const insertAudiobookSchema = createInsertSchema(audiobooks).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAudiobookChapterSchema = createInsertSchema(audiobookChapters).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAudiobookSaleSchema = createInsertSchema(audiobookSales).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -405,3 +476,12 @@ export type InsertActionItem = z.infer<typeof insertActionItemSchema>;
 
 export type MusicContract = typeof musicContracts.$inferSelect;
 export type InsertMusicContract = z.infer<typeof insertMusicContractSchema>;
+
+export type Audiobook = typeof audiobooks.$inferSelect;
+export type InsertAudiobook = z.infer<typeof insertAudiobookSchema>;
+
+export type AudiobookChapter = typeof audiobookChapters.$inferSelect;
+export type InsertAudiobookChapter = z.infer<typeof insertAudiobookChapterSchema>;
+
+export type AudiobookSale = typeof audiobookSales.$inferSelect;
+export type InsertAudiobookSale = z.infer<typeof insertAudiobookSaleSchema>;
