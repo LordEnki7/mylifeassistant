@@ -38,6 +38,9 @@ import {
   Sunrise,
   Sunset,
   ShoppingCart,
+  Mic,
+  MicOff,
+  Volume2,
 } from "lucide-react";
 
 export const Icons = {
@@ -81,4 +84,7 @@ export const Icons = {
   sunrise: Sunrise,
   sunset: Sunset,
   shoppingCart: ShoppingCart,
+  mic: Mic,
+  micOff: MicOff,
+  volume: Volume2,
 };

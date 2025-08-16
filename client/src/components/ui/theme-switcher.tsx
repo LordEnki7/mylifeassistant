@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useTheme, type ThemeMode } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,6 +44,23 @@ const themeOptions: { mode: ThemeMode; label: string; icon: keyof typeof Icons; 
 
 export function ThemeSwitcher() {
   const { mode, actualTheme, setMode } = useTheme();
+
+  // Listen for voice theme commands
+  useEffect(() => {
+    const handleVoiceSystem = (event: CustomEvent) => {
+      const { action } = event.detail;
+      if (action === 'toggle-theme') {
+        // Cycle through themes: auto -> light -> dark -> dawn -> dusk -> auto
+        const themeOrder: typeof mode[] = ['auto', 'light', 'dark', 'dawn', 'dusk'];
+        const currentIndex = themeOrder.indexOf(mode);
+        const nextIndex = (currentIndex + 1) % themeOrder.length;
+        setMode(themeOrder[nextIndex]);
+      }
+    };
+
+    window.addEventListener('voice-system', handleVoiceSystem as EventListener);
+    return () => window.removeEventListener('voice-system', handleVoiceSystem as EventListener);
+  }, [mode, setMode]);
   
   const currentOption = themeOptions.find(option => option.mode === mode) || themeOptions[0];
   const CurrentIcon = Icons[currentOption.icon];

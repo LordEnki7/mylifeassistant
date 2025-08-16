@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,6 +48,19 @@ export default function AudiobooksPage() {
   const [selectedBook, setSelectedBook] = useState<Audiobook | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showSalesDialog, setShowSalesDialog] = useState(false);
+
+  // Listen for voice commands
+  useEffect(() => {
+    const handleVoiceAction = (event: CustomEvent) => {
+      const { action } = event.detail;
+      if (action === 'add-audiobook') {
+        setShowAddDialog(true);
+      }
+    };
+
+    window.addEventListener('voice-action', handleVoiceAction as EventListener);
+    return () => window.removeEventListener('voice-action', handleVoiceAction as EventListener);
+  }, []);
   const [bookData, setBookData] = useState({
     title: "",
     author: "",

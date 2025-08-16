@@ -23,6 +23,27 @@ export default function Chat() {
   const { user, isAuthenticated } = useAuth();
   const { chat, isProcessing } = useAI();
 
+  // Listen for voice AI commands
+  useEffect(() => {
+    const handleVoiceAI = (event: CustomEvent) => {
+      const { action, command } = event.detail;
+      
+      if (action === 'activate') {
+        // Activate AI assistant - just focus the input or show a message
+        const input = document.querySelector('textarea[placeholder="Type your message..."]') as HTMLTextAreaElement;
+        if (input) input.focus();
+      } else if (action === 'create-task' || action === 'process') {
+        // Process voice command with AI
+        setMessage(command);
+        // Message is set, user can submit manually or we could auto-submit
+        // For safety, we'll let the user decide to submit
+      }
+    };
+
+    window.addEventListener('voice-ai', handleVoiceAI as EventListener);
+    return () => window.removeEventListener('voice-ai', handleVoiceAI as EventListener);
+  }, []);
+
   const { data: messages = [], isLoading } = useQuery<ChatMessage[]>({
     queryKey: ["/api/chat-messages"],
   });

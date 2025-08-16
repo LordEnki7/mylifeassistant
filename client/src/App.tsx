@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { VoiceCommandProvider } from "@/contexts/VoiceCommandContext";
 import { useAuth } from "@/hooks/useAuth";
 import logoImage from "@assets/My Life Assistant_1755255862503.png";
 import LoginScreen from "@/components/auth/login-screen";
@@ -21,6 +22,7 @@ import Contracts from "@/pages/contracts";
 import Audiobooks from "@/pages/audiobooks";
 import AudiobookPromotion from "@/pages/audiobook-promotion";
 import AppShell from "@/components/layout/app-shell";
+import { FloatingVoiceButton } from "@/components/ui/voice-command-button";
 
 function AuthenticatedApp() {
   return (
@@ -41,6 +43,7 @@ function AuthenticatedApp() {
         <Route path="/knowledge" component={Knowledge} />
         <Route component={NotFound} />
       </Switch>
+      <FloatingVoiceButton />
     </AppShell>
   );
 }
@@ -81,10 +84,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <VoiceCommandProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </VoiceCommandProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

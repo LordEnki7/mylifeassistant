@@ -3,6 +3,7 @@ import { Icons } from "@/lib/icons";
 import { useNavigation } from "@/hooks/use-navigation";
 import logoImage from "@assets/My Life Assistant_1755255862503.png";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
+import { VoiceCommandButton } from "@/components/ui/voice-command-button";
 
 export default function MobileHeader() {
   const { toggleMobileMenu } = useNavigation();
@@ -23,6 +24,11 @@ export default function MobileHeader() {
           <h1 className="text-lg font-semibold">My Life Assistant</h1>
         </div>
         <div className="flex items-center space-x-2">
+          <VoiceCommandButton 
+            variant="ghost" 
+            size="sm" 
+            className="text-white hover:bg-primary-600 p-2"
+          />
           <ThemeSwitcher />
           <Button
             variant="ghost"

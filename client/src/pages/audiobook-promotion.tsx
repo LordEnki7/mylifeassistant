@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -106,6 +106,19 @@ export default function AudiobookPromotionPage() {
   const [showCampaignDialog, setShowCampaignDialog] = useState(false);
   const [showActivityDialog, setShowActivityDialog] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<AudiobookPromotionalCampaign | null>(null);
+
+  // Listen for voice commands
+  useEffect(() => {
+    const handleVoiceAction = (event: CustomEvent) => {
+      const { action } = event.detail;
+      if (action === 'new-campaign' && selectedAudiobook) {
+        setShowCampaignDialog(true);
+      }
+    };
+
+    window.addEventListener('voice-action', handleVoiceAction as EventListener);
+    return () => window.removeEventListener('voice-action', handleVoiceAction as EventListener);
+  }, [selectedAudiobook]);
   
   const [campaignData, setCampaignData] = useState({
     name: "",
