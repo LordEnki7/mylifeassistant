@@ -2379,7 +2379,7 @@ async function processAIMessage(
 
 // Build comprehensive system prompt for Life Assistant
 function buildLifeAssistantPrompt(conversationContext: any, userData: any): string {
-  const userName = conversationContext.userName || 'there';
+  const userName = userData.user?.name || conversationContext.userName || 'there';
   const recentTopics = conversationContext.recentTopics.join(', ') || 'general assistance';
   
   return `You are Sunshine, a comprehensive AI Life Assistant for ${userName}. Your name is Sunshine and you respond warmly when called by name. 
