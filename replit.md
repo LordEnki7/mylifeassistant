@@ -128,9 +128,9 @@ Preferred communication style: Simple, everyday language.
     - Funding Landscape: $750K seed round targeting LegalTech Fund, Arch Grants, Ohio Angel Collective, federal SBIR programs
     - Social Impact: Addressing systemic inequality, protecting BIPOC/immigrant motorists, multilingual support
     - Current Status: Prototypes complete, seeking hardware development and beta testing
-- **Legal Disclaimer Removed (Today)**: 
-  * **Single User Configuration**: Since user is the only person using the app, removed all legal disclaimers from AI responses
-  * **Direct Assistance**: Sunshine now provides direct help without disclaimer language about consulting professionals
-  * **Fixed Grant Search**: Resolved TypeScript compilation errors preventing proper grant search function execution
-  * **Enhanced Status Display**: Improved working status indicators with beautiful gradient animations and step-by-step progress updates
-  * **Error Resolution**: Fixed database schema mismatches and type safety issues in task creation
+- **Asterisk Formatting Issue Fixed (Today)**:
+  * **Root Cause Resolution**: Identified asterisk formatting was coming from double asterisks in the AI system prompt (e.g., **Witty & Playful**)
+  * **System Prompt Cleanup**: Removed all double asterisk formatting from buildLifeAssistantPrompt function across personality, capabilities, and expertise sections
+  * **Response Post-Processing**: Added cleanAsterisks() function that removes both double asterisks (**text**) and single asterisks (*text*) from all AI responses
+  * **Comprehensive Coverage**: Applied asterisk cleaning to successful responses, error responses, and fallback messages for complete consistency
+  * **Clean Response Format**: Sunshine now provides clean, readable responses without any asterisk formatting artifacts
