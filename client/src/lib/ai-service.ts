@@ -130,7 +130,9 @@ export class AIService {
     // Task creation keywords
     const taskKeywords = [
       "remind me", "schedule", "add task", "create task", 
-      "need to", "have to", "should", "must", "todo"
+      "need to", "have to", "should", "must", "todo",
+      "i need", "can you", "help me", "do this", "work on",
+      "make sure", "don't forget", "remember to", "set a reminder"
     ];
     
     const hasTaskIntent = taskKeywords.some(keyword => 

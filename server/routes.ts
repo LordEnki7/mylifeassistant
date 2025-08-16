@@ -2361,7 +2361,7 @@ async function processAIMessage(
     const responseText = completion.choices[0].message.content || '{"message": "I apologize, but I encountered an issue processing your request. Please try again."}';
     const parsedResponse = JSON.parse(responseText);
     
-    // Handle any tool calls
+    // Handle any tool calls and execute them immediately
     const actions: Array<{type: string; data: any}> = [];
     if (completion.choices[0].message.tool_calls) {
       for (const toolCall of completion.choices[0].message.tool_calls) {
@@ -2369,10 +2369,56 @@ async function processAIMessage(
           const functionCall = toolCall.function;
           if (functionCall.name === 'create_task') {
             const taskData = JSON.parse(functionCall.arguments);
-            actions.push({ type: 'create_task', data: taskData });
+            
+            // Actually create the task in the database
+            try {
+              const newTask = await storage.createTask({
+                userId,
+                title: taskData.title,
+                description: taskData.description || '',
+                priority: taskData.priority || 'medium',
+                category: taskData.category || 'general',
+                dueDate: taskData.dueDate ? new Date(taskData.dueDate) : null,
+                status: 'pending',
+                completed: false
+              });
+              
+              actions.push({ 
+                type: 'create_task', 
+                data: { ...taskData, id: newTask.id, success: true } 
+              });
+            } catch (error) {
+              console.error('Error creating task:', error);
+              actions.push({ 
+                type: 'create_task', 
+                data: { ...taskData, success: false, error: 'Failed to create task' } 
+              });
+            }
           } else if (functionCall.name === 'create_contact') {
             const contactData = JSON.parse(functionCall.arguments);
-            actions.push({ type: 'create_contact', data: contactData });
+            
+            // Actually create the contact in the database
+            try {
+              const newContact = await storage.createContact({
+                userId,
+                name: contactData.name,
+                email: contactData.email || '',
+                company: contactData.company || '',
+                type: contactData.type || 'general',
+                notes: contactData.notes || ''
+              });
+              
+              actions.push({ 
+                type: 'create_contact', 
+                data: { ...contactData, id: newContact.id, success: true } 
+              });
+            } catch (error) {
+              console.error('Error creating contact:', error);
+              actions.push({ 
+                type: 'create_contact', 
+                data: { ...contactData, success: false, error: 'Failed to create contact' } 
+              });
+            }
           }
         }
       }

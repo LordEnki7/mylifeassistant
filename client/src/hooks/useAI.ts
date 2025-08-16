@@ -6,6 +6,7 @@ import type { Task } from "@shared/schema";
 
 export function useAI() {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [workingStatus, setWorkingStatus] = useState<string>("");
   const queryClient = useQueryClient();
 
   // Process AI request with task management capabilities
@@ -29,11 +30,15 @@ export function useAI() {
   // Chat with AI assistant
   const chat = async (message: string, context?: any): Promise<string> => {
     setIsProcessing(true);
+    setWorkingStatus("🤔 Thinking about your request...");
+    
     try {
       // Check if message has task intent
       const taskIntent = aiService.parseTaskIntent(message);
       
       if (taskIntent.hasTaskIntent) {
+        setWorkingStatus("📝 Creating task for you...");
+        
         // Process as task creation request
         const response = await processRequest({
           message,
@@ -44,13 +49,27 @@ export function useAI() {
             category: "ai_generated"
           }
         });
+        
+        setWorkingStatus("✅ Task created! Updating your dashboard...");
+        
+        // Add a small delay to show the status
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         return response.message;
       } else {
+        setWorkingStatus("💭 Processing your message...");
+        
         // Process as general chat
-        return await aiService.chat(message, context);
+        const response = await aiService.chat(message, context);
+        
+        setWorkingStatus("📋 Checking if any actions are needed...");
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        return response;
       }
     } finally {
       setIsProcessing(false);
+      setWorkingStatus("");
     }
   };
 
@@ -93,6 +112,7 @@ export function useAI() {
     processRequest,
     chat,
     monitorTasks,
-    isProcessing
+    isProcessing,
+    workingStatus
   };
 }

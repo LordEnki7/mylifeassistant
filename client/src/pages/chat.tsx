@@ -21,7 +21,7 @@ export default function Chat() {
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
-  const { chat, isProcessing } = useAI();
+  const { chat, isProcessing, workingStatus } = useAI();
 
   // Listen for voice AI commands
   useEffect(() => {
@@ -294,10 +294,16 @@ export default function Chat() {
                 </div>
                 <div className="flex-1 bg-gray-100 rounded-lg p-4">
                   <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }} />
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
+                    {workingStatus && (
+                      <span className="text-sm text-gray-700 ml-2">{workingStatus}</span>
+                    )}
                   </div>
+                  {!workingStatus && (
+                    <p className="text-sm text-gray-600 mt-2">Sunshine is thinking...</p>
+                  )}
                 </div>
               </div>
             )}
