@@ -2354,6 +2354,28 @@ async function processAIMessage(
               required: ["name"]
             }
           }
+        },
+        {
+          type: "function",
+          function: {
+            name: "search_grants_for_caren",
+            description: "Search for grants specifically relevant to C.A.R.E.N. project based on its focus areas (legal technology, roadside assistance, AI safety platforms, consumer protection)",
+            parameters: {
+              type: "object",
+              properties: {
+                focus_area: { 
+                  type: "string",
+                  enum: ["legal_technology", "ai_safety", "public_safety", "civil_rights", "consumer_protection", "transportation_safety", "general"]
+                },
+                grant_type: {
+                  type: "string", 
+                  enum: ["federal", "state", "foundation", "private", "accelerator", "all"]
+                },
+                amount_range: { type: "string" }
+              },
+              required: ["focus_area"]
+            }
+          }
         }
       ]
     });
@@ -2419,6 +2441,49 @@ async function processAIMessage(
                 data: { ...contactData, success: false, error: 'Failed to create contact' } 
               });
             }
+          } else if (functionCall.name === 'search_grants_for_caren') {
+            const searchData = JSON.parse(functionCall.arguments);
+            
+            // Simulate intelligent grant search based on C.A.R.E.N.'s focus areas
+            try {
+              const grantResults = searchCarenGrants(searchData);
+              
+              // Auto-add promising grants to the database
+              for (const grant of grantResults) {
+                try {
+                  await storage.createGrant({
+                    userId,
+                    organization: grant.organization,
+                    title: grant.title,
+                    amount: grant.amount,
+                    deadline: grant.deadline ? new Date(grant.deadline) : null,
+                    status: 'researched',
+                    requirements: grant.requirements,
+                    description: grant.description,
+                    applicationUrl: grant.url || '',
+                    notes: `Auto-discovered by Sunshine AI - Focus: ${searchData.focus_area}`
+                  });
+                } catch (dbError) {
+                  console.log('Grant may already exist or DB error:', dbError);
+                }
+              }
+              
+              actions.push({ 
+                type: 'search_grants', 
+                data: { 
+                  ...searchData, 
+                  results: grantResults,
+                  count: grantResults.length,
+                  success: true 
+                } 
+              });
+            } catch (error) {
+              console.error('Error searching grants:', error);
+              actions.push({ 
+                type: 'search_grants', 
+                data: { ...searchData, success: false, error: 'Failed to search grants' } 
+              });
+            }
           }
         }
       }
@@ -2465,6 +2530,192 @@ async function processAIMessage(
       ]
     };
   }
+}
+
+// Intelligent grant search function specifically for C.A.R.E.N. project
+function searchCarenGrants(searchData: any) {
+  const { focus_area, grant_type = 'all', amount_range = '' } = searchData;
+  
+  // Comprehensive grant database with real opportunities from the PDFs
+  const grantOpportunities = [
+    // Legal Technology Grants
+    {
+      organization: "LegalTech Fund / LegalTech Lab",
+      title: "LegalTech Lab Accelerator Program",
+      amount: "$250,000",
+      deadline: "2025-12-31",
+      focus: ["legal_technology", "ai_safety"],
+      type: "accelerator",
+      requirements: "Early-stage AI-powered legal startups",
+      description: "Accelerator funding plus access to strategic legal and tech advisors, targeted at AI-driven legal startups",
+      url: "https://legaltechfund.com",
+      priority: "high"
+    },
+    {
+      organization: "Legal Services Corporation",
+      title: "Technology Initiative Grant (TIG)",
+      amount: "$100,000 - $500,000",
+      deadline: "2025-06-30",
+      focus: ["legal_technology", "consumer_protection"],
+      type: "federal",
+      requirements: "Tech projects improving access to justice among low-income communities",
+      description: "For mobile, cloud, and legal tech projects serving underserved populations",
+      url: "https://lsc.gov/grants",
+      priority: "high"
+    },
+    
+    // AI Safety & Technology Grants
+    {
+      organization: "Open Philanthropy",
+      title: "Technical AI Safety Research RFP",
+      amount: "$40,000,000+ available",
+      deadline: "2025-09-15",
+      focus: ["ai_safety", "legal_technology"],
+      type: "foundation",
+      requirements: "AI safety research projects with real-world applications",
+      description: "Grant opportunities ranging from API credits to seed funding for AI safety research",
+      url: "https://openphilanthropy.org",
+      priority: "high"
+    },
+    
+    // Public Safety & Civil Rights
+    {
+      organization: "Department of Justice (DOJ)",
+      title: "Bureau of Justice Assistance Public Safety Grants",
+      amount: "$250,000 - $2,000,000",
+      deadline: "2025-08-30",
+      focus: ["public_safety", "civil_rights"],
+      type: "federal",
+      requirements: "Security tech and public safety improvements",
+      description: "Federal funding for security technology and public safety improvements",
+      url: "https://bja.ojp.gov",
+      priority: "high"
+    },
+    
+    // Transportation & Vehicle Safety
+    {
+      organization: "Department of Transportation (DOT)",
+      title: "SBIR Transportation Safety Innovation",
+      amount: "$100,000 - $750,000",
+      deadline: "2025-10-15",
+      focus: ["transportation_safety", "ai_safety"],
+      type: "federal",
+      requirements: "Innovative transportation safety technologies",
+      description: "Small Business Innovation Research grants for transportation safety tech",
+      url: "https://dot.gov/sbir",
+      priority: "medium"
+    },
+    
+    // General Innovation & Startups
+    {
+      organization: "Arch Grants",
+      title: "Startup Competition",
+      amount: "$50,000 - $75,000",
+      deadline: "2025-07-31",
+      focus: ["general", "civil_rights"],
+      type: "private",
+      requirements: "Startups willing to relocate to St. Louis",
+      description: "Non-dilutive grants plus ecosystem support for innovative startups",
+      url: "https://archgrants.org",
+      priority: "medium"
+    },
+    
+    // Angel and VC Opportunities
+    {
+      organization: "Ohio Angel Collective",
+      title: "Early-Stage Angel Investment",
+      amount: "$75,000 - $400,000",
+      deadline: "Ongoing",
+      focus: ["general", "legal_technology"],
+      type: "private",
+      requirements: "Ohio-based founders with early-stage companies",
+      description: "Supports Ohio-based founders with early-stage angel capital",
+      url: "https://ohioangelcollective.com",
+      priority: "medium"
+    },
+    {
+      organization: "JumpStart Ventures",
+      title: "Early-Stage Tech Funding",
+      amount: "$100,000 - $1,000,000",
+      deadline: "Ongoing",
+      focus: ["legal_technology", "ai_safety"],
+      type: "private",
+      requirements: "Ohio-based tech startups",
+      description: "Ohio-based VC focused on early-stage tech startups, offering capital and connections",
+      url: "https://jumpstart.vc",
+      priority: "medium"
+    },
+    {
+      organization: "Forum Ventures",
+      title: "AI & B2B SaaS Pre-Seed",
+      amount: "$100,000",
+      deadline: "Ongoing",
+      focus: ["ai_safety", "legal_technology"],
+      type: "private",
+      requirements: "AI and B2B SaaS startups",
+      description: "AI & B2B SaaS-focused early-stage venture and accelerator programs",
+      url: "https://forumvc.com",
+      priority: "medium"
+    },
+    {
+      organization: "Black Angel Group",
+      title: "Seed to Series A Investment",
+      amount: "$50,000 - $500,000",
+      deadline: "Ongoing",
+      focus: ["civil_rights", "general"],
+      type: "private",
+      requirements: "Underrepresented founders, seed to Series A",
+      description: "Collective specializing in investments for underrepresented founders",
+      url: "https://blackangelgroup.com",
+      priority: "high"
+    },
+    
+    // Additional SBIR Programs
+    {
+      organization: "National Science Foundation (NSF)",
+      title: "SBIR Phase I - Computer and Information Science",
+      amount: "$275,000",
+      deadline: "2025-06-15",
+      focus: ["ai_safety", "legal_technology"],
+      type: "federal",
+      requirements: "Small business research with commercial potential",
+      description: "SBIR funding for computer science and AI research with commercial applications",
+      url: "https://nsf.gov/funding/pgm_summ.jsp?pims_id=5371",
+      priority: "high"
+    },
+    {
+      organization: "Department of Homeland Security (DHS)",
+      title: "SBIR Cybersecurity and Public Safety",
+      amount: "$200,000 - $1,500,000",
+      deadline: "2025-09-30",
+      focus: ["public_safety", "ai_safety"],
+      type: "federal",
+      requirements: "Cybersecurity and public safety innovations",
+      description: "SBIR funding for cybersecurity and public safety technology solutions",
+      url: "https://dhs.gov/science-and-technology/sbir",
+      priority: "medium"
+    }
+  ];
+  
+  // Filter grants based on search criteria
+  let filteredGrants = grantOpportunities.filter(grant => {
+    // Check focus area match
+    const focusMatch = focus_area === 'general' || grant.focus.includes(focus_area);
+    
+    // Check grant type match
+    const typeMatch = grant_type === 'all' || grant.type === grant_type;
+    
+    return focusMatch && typeMatch;
+  });
+  
+  // Sort by priority and relevance
+  filteredGrants = filteredGrants.sort((a, b) => {
+    const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+    return priorityOrder[b.priority] - priorityOrder[a.priority];
+  });
+  
+  // Return top 5 most relevant results
+  return filteredGrants.slice(0, 5);
 }
 
 // Build comprehensive system prompt for Life Assistant
@@ -2523,6 +2774,90 @@ SPECIALIZED EXPERTISE AREAS:
 - **House Joint Resolution 192 (HJR 192)**: Expert knowledge of the 1933 resolution that removed the gold standard and created debt discharge principles. Understanding of how HJR 192 established that debts can be discharged through proper tender and acceptance procedures
 - **Consumer Protection Remedies**: Advanced knowledge of validation letters, dispute procedures, debt verification requirements, statute of limitations defenses, and proper documentation for consumer protection cases
 - **Credit and Debt Defense**: Expertise in debt validation, proof of standing, chain of title issues, robo-signing defenses, and consumer protection strategies against aggressive collection practices
+
+**COMPREHENSIVE C.A.R.E.N. PROJECT KNOWLEDGE**:
+
+**PROJECT OVERVIEW**:
+C.A.R.E.N. (Citizen Assistance for Roadside Emergencies and Navigation) is ${userName}'s revolutionary safety platform that empowers motorists during roadside encounters with police, breakdowns, and emergencies. The app combines mobile technology, real-time recording, multilingual support, and legal connectivity into a powerful ecosystem.
+
+**C.A.R.E.N. MISSION & VISION**:
+- Mission: To protect people with real-time digital witnesses, emergency legal access, and smart technology — because justice shouldn't depend on who's watching, but what's recorded
+- Vision: To become the global standard for citizen roadside protection — combining software, hardware, and legal response systems
+
+**C.A.R.E.N. CORE TECHNOLOGY**:
+- **Mobile App**: React + TypeScript + Tailwind CSS frontend with Node.js + Firebase backend
+- **AI-Driven Roadside Rights Engine**: Real-time, context-specific legal guidance and de-escalation prompts
+- **Hardware Component**: "The C.A.R.E.N. Unit" - BLE dashboard device for voice/button activation
+- **Security**: End-to-end encryption, AES-256, TLS 1.3, tamper detection, CJIS compliance ready
+- **Multilingual Support**: Top 10 languages for accessibility
+
+**C.A.R.E.N. KEY FEATURES**:
+- One-tap "Accident Mode" recording
+- Auto cloud upload to Firebase secure storage
+- Real-time alerts to emergency contacts & attorneys
+- GPS timestamping for admissible evidence
+- Attorney directory & direct call routing
+- Legal chain-of-custody for court-ready evidence
+- BLE pairing with dashboard hardware unit
+- Offline/edge computing capabilities
+
+**C.A.R.E.N. MARKET POSITION**:
+- Target Market: $20B+ global market for civil rights tech, legal aid tech, vehicle safety devices
+- Target Users: BIPOC motorists, immigrants, rural drivers, rideshare/delivery drivers, attorneys, civil rights organizations
+- Competitive Advantage: Built for protection first, multilingual from day one, attorney-connected alerts, BLE hardware with evidence protocols
+
+**C.A.R.E.N. REVENUE MODEL**:
+- Community Guardian: $1.00 one-time (basic features)
+- Standard Plan: $4.99/month (full app, no attorney access)
+- Legal Shield Plan: $9.99/month (includes attorney directory/calls)
+- Family Plan: $29.99/month (up to 5 users)
+- Fleet/Enterprise: $49.99/month (10 drivers, admin dashboard)
+- Projected Year 3 Revenue: $704,107 annually
+
+**C.A.R.E.N. TEAM STRUCTURE**:
+- **Shawn Williams (CEO/Founder)**: ${userName} - Strategic leadership, 20+ years experience across tech, media, music production
+- **Erin Biundo (Consulting CIO)**: Azure Certified, AI Architect, 30+ years enterprise development
+- **Surender Bhagia (Consulting CFO)**: Global business strategist, funding syndication expert
+- **Theodore Moore (Chief Interactive Programmer)**: UI/UX engineering, 15+ years interactive media
+- **Jack Hinton (Legal Advisor)**: 30+ years personal injury law, $150M+ recovered, 98% success rate
+- **Robert "JoJo" Hill (CIIO)**: Innovation strategy, 30+ years media/entertainment, award-winning producer
+
+**C.A.R.E.N. CURRENT STATUS & MILESTONES**:
+- ✅ UI/UX prototypes complete
+- ✅ Firebase/Node.js/React stack implemented  
+- ✅ Multilingual support ready
+- ✅ Attorney onboarding live
+- 🔄 Hardware BOM and BLE protocol in development
+- 🎯 Upcoming: Hardware prototype (Month 3), 500 beta testers (Month 2), First B2B pilot (Month 6)
+
+**C.A.R.E.N. FUNDING & GROWTH STRATEGY**:
+- Seeking $750,000 seed round
+- Allocation: 35% product development, 25% go-to-market, 20% hiring, 10% legal infrastructure, 10% working capital
+- Growth phases: Community/advocacy launch → Digital growth → Strategic B2B partnerships
+- Exit strategy: Position for acquisition by safety tech, legal service, or connected mobility companies within 3-5 years
+
+**C.A.R.E.N. SOCIAL IMPACT**:
+- Addresses systemic inequality and roadside accountability
+- Reduces escalation incidents through real-time evidence
+- Increases legal access in underserved communities
+- Protects non-English-speaking motorists with multilingual support
+- Partnership strategy with NAACP, ACLU, Legal Defense Fund, Innocence Project
+
+**C.A.R.E.N. FUNDING OPPORTUNITIES IDENTIFIED**:
+- **LegalTech Fund/LegalTech Lab**: Up to $250K accelerator funding for AI-powered legal startups
+- **Arch Grants (St. Louis)**: $50K-$75K non-dilutive grants plus ecosystem support
+- **Angel Investors**: Ohio Angel Collective, Black Angel Group, JumpStart Ventures, Forum Ventures
+- **Federal Grants**: DOJ/BJA public safety grants, SBIR programs (NSF, DoD, DOT), LSC Technology Initiative Grant
+- **Accelerators**: LexisNexis Legal Tech Accelerator for mentorship and VC connections
+
+**WHEN DISCUSSING C.A.R.E.N.**:
+- Understand this is ${userName}'s flagship innovation project
+- Recognize the deep social justice mission and civil rights focus  
+- Appreciate the comprehensive technology stack and business model
+- Know the specific team members and their roles
+- Be aware of current development status and upcoming milestones
+- Understand the funding landscape and strategic opportunities
+- Recognize C.A.R.E.N. as both a business venture and social impact initiative
 - **Bankruptcy Alternatives**: Knowledge of debt discharge methods, payment tender strategies, and consumer protection alternatives to bankruptcy including UCC-based remedies and HJR 192 applications
 
 **WEALTH BUILDING & FINANCIAL MASTERY**:
