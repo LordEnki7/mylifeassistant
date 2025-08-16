@@ -28,6 +28,12 @@ import {
   type ContentAnalysis, type InsertContentAnalysis,
   type AutomationCampaign, type InsertAutomationCampaign,
   type AutomatedTask, type InsertAutomatedTask,
+  type CampaignPerformanceMetrics, type InsertCampaignPerformanceMetrics,
+  type AiLearningData, type InsertAiLearningData,
+  type SuccessPredictionScores, type InsertSuccessPredictionScores,
+  type AdaptiveSchedulingData, type InsertAdaptiveSchedulingData,
+  type PerformanceAnalytics, type InsertPerformanceAnalytics,
+  type TrendAnalysis, type InsertTrendAnalysis,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -235,6 +241,36 @@ export interface IStorage {
   updateAutomatedTask(id: string, task: Partial<AutomatedTask>): Promise<AutomatedTask | undefined>;
   deleteAutomatedTask(id: string): Promise<boolean>;
 
+  // Smart Learning & Optimization
+  getCampaignPerformanceMetrics(userId: string, campaignId?: string): Promise<CampaignPerformanceMetrics[]>;
+  createCampaignPerformanceMetric(metric: InsertCampaignPerformanceMetrics): Promise<CampaignPerformanceMetrics>;
+  getPerformanceMetricsByTimeframe(userId: string, startDate: Date, endDate: Date): Promise<CampaignPerformanceMetrics[]>;
+
+  getAiLearningData(userId: string, context?: string): Promise<AiLearningData[]>;
+  createAiLearningData(data: InsertAiLearningData): Promise<AiLearningData>;
+  updateAiLearningData(id: string, data: Partial<AiLearningData>): Promise<AiLearningData | undefined>;
+  getActiveLearningPatterns(userId: string): Promise<AiLearningData[]>;
+
+  getSuccessPredictionScores(userId: string, targetType?: string): Promise<SuccessPredictionScores[]>;
+  createSuccessPredictionScore(score: InsertSuccessPredictionScores): Promise<SuccessPredictionScores>;
+  updateSuccessPredictionScore(id: string, score: Partial<SuccessPredictionScores>): Promise<SuccessPredictionScores | undefined>;
+  getPredictionsForValidation(userId: string): Promise<SuccessPredictionScores[]>;
+
+  getAdaptiveSchedulingData(userId: string, context?: string): Promise<AdaptiveSchedulingData[]>;
+  createAdaptiveSchedulingData(data: InsertAdaptiveSchedulingData): Promise<AdaptiveSchedulingData>;
+  updateAdaptiveSchedulingData(id: string, data: Partial<AdaptiveSchedulingData>): Promise<AdaptiveSchedulingData | undefined>;
+  getOptimalSchedulingTime(userId: string, context: string, targetType?: string): Promise<{ dayOfWeek: number; hourOfDay: number } | null>;
+
+  // Advanced Analytics
+  getPerformanceAnalytics(userId: string, timeframe?: string, category?: string): Promise<PerformanceAnalytics[]>;
+  createPerformanceAnalytics(analytics: InsertPerformanceAnalytics): Promise<PerformanceAnalytics>;
+  getLatestAnalytics(userId: string, category: string): Promise<PerformanceAnalytics | undefined>;
+
+  getTrendAnalysis(userId: string, trendType?: string, isActive?: boolean): Promise<TrendAnalysis[]>;
+  createTrendAnalysis(trend: InsertTrendAnalysis): Promise<TrendAnalysis>;
+  updateTrendAnalysis(id: string, trend: Partial<TrendAnalysis>): Promise<TrendAnalysis | undefined>;
+  getActiveTrends(userId: string): Promise<TrendAnalysis[]>;
+
   // Dashboard stats
   getDashboardStats(userId: string): Promise<{
     emailsSent: number;
@@ -274,6 +310,13 @@ export class MemStorage implements IStorage {
   private contentAnalysis: Map<string, ContentAnalysis>;
   private automationCampaigns: Map<string, AutomationCampaign>;
   private automatedTasks: Map<string, AutomatedTask>;
+  // Smart Learning & Analytics Data
+  private campaignPerformanceMetrics: Map<string, CampaignPerformanceMetrics>;
+  private aiLearningData: Map<string, AiLearningData>;
+  private successPredictionScores: Map<string, SuccessPredictionScores>;
+  private adaptiveSchedulingData: Map<string, AdaptiveSchedulingData>;
+  private performanceAnalytics: Map<string, PerformanceAnalytics>;
+  private trendAnalysis: Map<string, TrendAnalysis>;
 
   constructor() {
     this.users = new Map();
@@ -305,6 +348,13 @@ export class MemStorage implements IStorage {
     this.contentAnalysis = new Map();
     this.automationCampaigns = new Map();
     this.automatedTasks = new Map();
+    // Initialize Smart Learning & Analytics storage
+    this.campaignPerformanceMetrics = new Map();
+    this.aiLearningData = new Map();
+    this.successPredictionScores = new Map();
+    this.adaptiveSchedulingData = new Map();
+    this.performanceAnalytics = new Map();
+    this.trendAnalysis = new Map();
 
     // Initialize with demo user
     this.initializeDemoData();
@@ -2716,33 +2766,6 @@ PHONE #: {{witness_phone}}`,
     return this.audiobookPromotionalContent.delete(id);
   }
 
-  // Dashboard stats
-  async getDashboardStats(userId: string): Promise<{
-    emailsSent: number;
-    radioStations: number;
-    grantOpportunities: number;
-    revenue: number;
-  }> {
-    const campaigns = await this.getEmailCampaigns(userId);
-    const stations = await this.getRadioStations(userId);
-    const grants = await this.getGrants(userId);
-    const invoices = await this.getInvoices(userId);
-
-    const emailsSent = campaigns.reduce((sum, campaign) => sum + (campaign.sentCount || 0), 0);
-    const radioStationsCount = stations.length;
-    const grantOpportunities = grants.filter(g => g.status === 'discovered').length;
-    const totalRevenue = invoices
-      .filter(inv => inv.status === 'paid')
-      .reduce((sum, inv) => sum + parseFloat(inv.amount || '0'), 0);
-
-    return {
-      emailsSent,
-      radioStations: radioStationsCount,
-      grantOpportunities,
-      revenue: totalRevenue,
-    };
-  }
-
   // AI Automation Jobs
   async getAiAutomationJobs(userId: string): Promise<AiAutomationJob[]> {
     return Array.from(this.aiAutomationJobs.values()).filter(job => job.userId === userId);
@@ -2936,6 +2959,212 @@ PHONE #: {{witness_phone}}`,
 
   async deleteAutomatedTask(id: string): Promise<boolean> {
     return this.automatedTasks.delete(id);
+  }
+
+  // Smart Learning & Optimization Implementation
+  async getCampaignPerformanceMetrics(userId: string, campaignId?: string): Promise<CampaignPerformanceMetrics[]> {
+    return Array.from(this.campaignPerformanceMetrics.values()).filter(m => 
+      m.userId === userId && (!campaignId || m.campaignId === campaignId)
+    );
+  }
+
+  async createCampaignPerformanceMetric(metric: InsertCampaignPerformanceMetrics): Promise<CampaignPerformanceMetrics> {
+    const newMetric: CampaignPerformanceMetrics = {
+      id: randomUUID(),
+      ...metric,
+      timestamp: metric.timestamp ?? new Date(),
+      createdAt: new Date(),
+    };
+    this.campaignPerformanceMetrics.set(newMetric.id, newMetric);
+    return newMetric;
+  }
+
+  async getPerformanceMetricsByTimeframe(userId: string, startDate: Date, endDate: Date): Promise<CampaignPerformanceMetrics[]> {
+    return Array.from(this.campaignPerformanceMetrics.values()).filter(m => 
+      m.userId === userId && 
+      m.timestamp && 
+      m.timestamp >= startDate && 
+      m.timestamp <= endDate
+    );
+  }
+
+  async getAiLearningData(userId: string, context?: string): Promise<AiLearningData[]> {
+    return Array.from(this.aiLearningData.values()).filter(d => 
+      d.userId === userId && (!context || d.context === context)
+    );
+  }
+
+  async createAiLearningData(data: InsertAiLearningData): Promise<AiLearningData> {
+    const newData: AiLearningData = {
+      id: randomUUID(),
+      ...data,
+      timesValidated: data.timesValidated ?? 1,
+      lastValidated: data.lastValidated ?? new Date(),
+      isActive: data.isActive ?? true,
+      createdAt: new Date(),
+    };
+    this.aiLearningData.set(newData.id, newData);
+    return newData;
+  }
+
+  async updateAiLearningData(id: string, data: Partial<AiLearningData>): Promise<AiLearningData | undefined> {
+    const existing = this.aiLearningData.get(id);
+    if (!existing) return undefined;
+
+    const updated = { ...existing, ...data };
+    this.aiLearningData.set(id, updated);
+    return updated;
+  }
+
+  async getActiveLearningPatterns(userId: string): Promise<AiLearningData[]> {
+    return Array.from(this.aiLearningData.values()).filter(d => d.userId === userId && d.isActive);
+  }
+
+  async getSuccessPredictionScores(userId: string, targetType?: string): Promise<SuccessPredictionScores[]> {
+    return Array.from(this.successPredictionScores.values()).filter(s => 
+      s.userId === userId && (!targetType || s.targetType === targetType)
+    );
+  }
+
+  async createSuccessPredictionScore(score: InsertSuccessPredictionScores): Promise<SuccessPredictionScores> {
+    const newScore: SuccessPredictionScores = {
+      id: randomUUID(),
+      ...score,
+      actualOutcome: score.actualOutcome ?? null,
+      actualSuccess: score.actualSuccess ?? null,
+      predictionAccuracy: score.predictionAccuracy ?? null,
+      outcomeDate: score.outcomeDate ?? null,
+      createdAt: new Date(),
+    };
+    this.successPredictionScores.set(newScore.id, newScore);
+    return newScore;
+  }
+
+  async updateSuccessPredictionScore(id: string, score: Partial<SuccessPredictionScores>): Promise<SuccessPredictionScores | undefined> {
+    const existing = this.successPredictionScores.get(id);
+    if (!existing) return undefined;
+
+    const updated = { ...existing, ...score };
+    this.successPredictionScores.set(id, updated);
+    return updated;
+  }
+
+  async getPredictionsForValidation(userId: string): Promise<SuccessPredictionScores[]> {
+    return Array.from(this.successPredictionScores.values()).filter(s => 
+      s.userId === userId && s.actualOutcome === null
+    );
+  }
+
+  async getAdaptiveSchedulingData(userId: string, context?: string): Promise<AdaptiveSchedulingData[]> {
+    return Array.from(this.adaptiveSchedulingData.values()).filter(d => 
+      d.userId === userId && (!context || d.context === context)
+    );
+  }
+
+  async createAdaptiveSchedulingData(data: InsertAdaptiveSchedulingData): Promise<AdaptiveSchedulingData> {
+    const newData: AdaptiveSchedulingData = {
+      id: randomUUID(),
+      ...data,
+      sampleSize: data.sampleSize ?? 1,
+      lastUpdated: data.lastUpdated ?? new Date(),
+      createdAt: new Date(),
+    };
+    this.adaptiveSchedulingData.set(newData.id, newData);
+    return newData;
+  }
+
+  async updateAdaptiveSchedulingData(id: string, data: Partial<AdaptiveSchedulingData>): Promise<AdaptiveSchedulingData | undefined> {
+    const existing = this.adaptiveSchedulingData.get(id);
+    if (!existing) return undefined;
+
+    const updated = { ...existing, ...data, lastUpdated: new Date() };
+    this.adaptiveSchedulingData.set(id, updated);
+    return updated;
+  }
+
+  async getOptimalSchedulingTime(userId: string, context: string, targetType?: string): Promise<{ dayOfWeek: number; hourOfDay: number } | null> {
+    const data = Array.from(this.adaptiveSchedulingData.values())
+      .filter(d => 
+        d.userId === userId && 
+        d.context === context && 
+        (!targetType || d.targetType === targetType)
+      )
+      .sort((a, b) => (b.responseRate || 0) - (a.responseRate || 0));
+    
+    return data.length > 0 
+      ? { dayOfWeek: data[0].dayOfWeek || 2, hourOfDay: data[0].hourOfDay || 9 }
+      : null;
+  }
+
+  // Advanced Analytics Implementation
+  async getPerformanceAnalytics(userId: string, timeframe?: string, category?: string): Promise<PerformanceAnalytics[]> {
+    return Array.from(this.performanceAnalytics.values()).filter(a => 
+      a.userId === userId && 
+      (!timeframe || a.timeframe === timeframe) && 
+      (!category || a.category === category)
+    );
+  }
+
+  async createPerformanceAnalytics(analytics: InsertPerformanceAnalytics): Promise<PerformanceAnalytics> {
+    const newAnalytics: PerformanceAnalytics = {
+      id: randomUUID(),
+      ...analytics,
+      trends: analytics.trends ?? null,
+      insights: analytics.insights ?? null,
+      recommendations: analytics.recommendations ?? null,
+      createdAt: new Date(),
+    };
+    this.performanceAnalytics.set(newAnalytics.id, newAnalytics);
+    return newAnalytics;
+  }
+
+  async getLatestAnalytics(userId: string, category: string): Promise<PerformanceAnalytics | undefined> {
+    const analytics = Array.from(this.performanceAnalytics.values())
+      .filter(a => a.userId === userId && a.category === category)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return analytics[0];
+  }
+
+  async getTrendAnalysis(userId: string, trendType?: string, isActive?: boolean): Promise<TrendAnalysis[]> {
+    return Array.from(this.trendAnalysis.values()).filter(t => 
+      t.userId === userId && 
+      (!trendType || t.trendType === trendType) && 
+      (isActive === undefined || t.isActive === isActive)
+    );
+  }
+
+  async createTrendAnalysis(trend: InsertTrendAnalysis): Promise<TrendAnalysis> {
+    const newTrend: TrendAnalysis = {
+      id: randomUUID(),
+      ...trend,
+      impact: trend.impact ?? null,
+      actionableInsights: trend.actionableInsights ?? null,
+      validityPeriod: trend.validityPeriod ?? null,
+      source: trend.source ?? null,
+      isActive: trend.isActive ?? true,
+      expiresAt: trend.expiresAt ?? null,
+      createdAt: new Date(),
+    };
+    this.trendAnalysis.set(newTrend.id, newTrend);
+    return newTrend;
+  }
+
+  async updateTrendAnalysis(id: string, trend: Partial<TrendAnalysis>): Promise<TrendAnalysis | undefined> {
+    const existing = this.trendAnalysis.get(id);
+    if (!existing) return undefined;
+
+    const updated = { ...existing, ...trend };
+    this.trendAnalysis.set(id, updated);
+    return updated;
+  }
+
+  async getActiveTrends(userId: string): Promise<TrendAnalysis[]> {
+    const now = new Date();
+    return Array.from(this.trendAnalysis.values()).filter(t => 
+      t.userId === userId && 
+      t.isActive && 
+      (!t.expiresAt || t.expiresAt > now)
+    );
   }
 }
 

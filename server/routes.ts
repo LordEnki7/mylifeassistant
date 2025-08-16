@@ -52,12 +52,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Backup endpoint (authenticated)
   app.get("/api/backup/download", requireAuth, async (req, res) => {
     try {
-      await auditLogger.logData(req, 'backup_download', 'system', true);
+      await auditLogger.logDataAccess(req, 'read', 'backup', 'system', true);
       const backupService = new BackupService();
       await backupService.createBackup(res);
     } catch (error) {
       console.error('Backup failed:', error);
-      await auditLogger.logData(req, 'backup_download', 'system', false, error instanceof Error ? error.message : 'Backup failed');
+      await auditLogger.logDataAccess(req, 'read', 'backup', 'system', false);
       if (!res.headersSent) {
         res.status(500).json({ error: "Failed to create backup", message: error instanceof Error ? error.message : "Unknown error" });
       }
@@ -132,10 +132,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       aiAutomationService.executeJob(id).catch(error => {
         console.error(`Job execution failed for ${id}:`, error);
       });
-      await auditLogger.logDataAccess(req, 'execute', 'automation_job', id, true);
+      await auditLogger.logDataAccess(req, 'update', 'automation_job', id, true);
       res.json({ message: "Job execution started" });
     } catch (error) {
-      await auditLogger.logDataAccess(req, 'execute', 'automation_job', req.params.id, false);
+      await auditLogger.logDataAccess(req, 'update', 'automation_job', req.params.id, false);
       res.status(400).json({ error: "Failed to execute job" });
     }
   });
@@ -170,6 +170,241 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(analysis);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch content analysis" });
+    }
+  });
+
+  // Smart Learning & Analytics endpoints (for AI automation efficiency enhancement)
+  
+  // Campaign Performance Metrics
+  app.get("/api/analytics/performance-metrics", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { campaignId } = req.query;
+      const metrics = await storage.getCampaignPerformanceMetrics(userId, campaignId as string);
+      await auditLogger.logDataAccess(req, 'read', 'performance_metrics', userId);
+      res.json(metrics);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch performance metrics" });
+    }
+  });
+
+  app.post("/api/analytics/performance-metrics", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const metricData = { ...req.body, userId };
+      const metric = await storage.createCampaignPerformanceMetric(metricData);
+      await auditLogger.logDataAccess(req, 'create', 'performance_metric', metric.id, true);
+      res.json(metric);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'performance_metric', undefined, false);
+      res.status(400).json({ error: "Failed to create performance metric" });
+    }
+  });
+
+  app.get("/api/analytics/performance-metrics/timeframe", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { startDate, endDate } = req.query;
+      const metrics = await storage.getPerformanceMetricsByTimeframe(
+        userId, 
+        new Date(startDate as string), 
+        new Date(endDate as string)
+      );
+      await auditLogger.logDataAccess(req, 'read', 'performance_metrics_timeframe', userId);
+      res.json(metrics);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch performance metrics by timeframe" });
+    }
+  });
+
+  // AI Learning Data
+  app.get("/api/analytics/learning-data", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { context } = req.query;
+      const learningData = await storage.getAiLearningData(userId, context as string);
+      await auditLogger.logDataAccess(req, 'read', 'learning_data', userId);
+      res.json(learningData);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch AI learning data" });
+    }
+  });
+
+  app.post("/api/analytics/learning-data", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const learningData = { ...req.body, userId };
+      const data = await storage.createAiLearningData(learningData);
+      await auditLogger.logDataAccess(req, 'create', 'learning_data', data.id, true);
+      res.json(data);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'learning_data', undefined, false);
+      res.status(400).json({ error: "Failed to create AI learning data" });
+    }
+  });
+
+  app.get("/api/analytics/learning-patterns", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const patterns = await storage.getActiveLearningPatterns(userId);
+      await auditLogger.logDataAccess(req, 'read', 'learning_patterns', userId);
+      res.json(patterns);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch learning patterns" });
+    }
+  });
+
+  // Success Prediction Scores
+  app.get("/api/analytics/success-predictions", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { targetType } = req.query;
+      const predictions = await storage.getSuccessPredictionScores(userId, targetType as string);
+      await auditLogger.logDataAccess(req, 'read', 'success_predictions', userId);
+      res.json(predictions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch success predictions" });
+    }
+  });
+
+  app.post("/api/analytics/success-predictions", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const predictionData = { ...req.body, userId };
+      const prediction = await storage.createSuccessPredictionScore(predictionData);
+      await auditLogger.logDataAccess(req, 'create', 'success_prediction', prediction.id, true);
+      res.json(prediction);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'success_prediction', undefined, false);
+      res.status(400).json({ error: "Failed to create success prediction" });
+    }
+  });
+
+  app.get("/api/analytics/predictions-validation", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const predictions = await storage.getPredictionsForValidation(userId);
+      await auditLogger.logDataAccess(req, 'read', 'predictions_validation', userId);
+      res.json(predictions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch predictions for validation" });
+    }
+  });
+
+  // Adaptive Scheduling Data
+  app.get("/api/analytics/adaptive-scheduling", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { context } = req.query;
+      const schedulingData = await storage.getAdaptiveSchedulingData(userId, context as string);
+      await auditLogger.logDataAccess(req, 'read', 'adaptive_scheduling', userId);
+      res.json(schedulingData);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch adaptive scheduling data" });
+    }
+  });
+
+  app.post("/api/analytics/adaptive-scheduling", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const schedulingData = { ...req.body, userId };
+      const data = await storage.createAdaptiveSchedulingData(schedulingData);
+      await auditLogger.logDataAccess(req, 'create', 'adaptive_scheduling', data.id, true);
+      res.json(data);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'adaptive_scheduling', undefined, false);
+      res.status(400).json({ error: "Failed to create adaptive scheduling data" });
+    }
+  });
+
+  app.get("/api/analytics/optimal-timing", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { context, targetType } = req.query;
+      const optimalTime = await storage.getOptimalSchedulingTime(userId, context as string, targetType as string);
+      await auditLogger.logDataAccess(req, 'read', 'optimal_timing', userId);
+      res.json(optimalTime);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch optimal scheduling time" });
+    }
+  });
+
+  // Performance Analytics
+  app.get("/api/analytics/performance", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { timeframe, category } = req.query;
+      const analytics = await storage.getPerformanceAnalytics(userId, timeframe as string, category as string);
+      await auditLogger.logDataAccess(req, 'read', 'performance_analytics', userId);
+      res.json(analytics);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch performance analytics" });
+    }
+  });
+
+  app.post("/api/analytics/performance", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const analyticsData = { ...req.body, userId };
+      const analytics = await storage.createPerformanceAnalytics(analyticsData);
+      await auditLogger.logDataAccess(req, 'create', 'performance_analytics', analytics.id, true);
+      res.json(analytics);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'performance_analytics', undefined, false);
+      res.status(400).json({ error: "Failed to create performance analytics" });
+    }
+  });
+
+  app.get("/api/analytics/latest-analytics", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { category } = req.query;
+      const analytics = await storage.getLatestAnalytics(userId, category as string);
+      await auditLogger.logDataAccess(req, 'read', 'latest_analytics', userId);
+      res.json(analytics);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch latest analytics" });
+    }
+  });
+
+  // Trend Analysis
+  app.get("/api/analytics/trends", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { trendType, isActive } = req.query;
+      const trends = await storage.getTrendAnalysis(
+        userId, 
+        trendType as string, 
+        isActive ? isActive === 'true' : undefined
+      );
+      await auditLogger.logDataAccess(req, 'read', 'trend_analysis', userId);
+      res.json(trends);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch trend analysis" });
+    }
+  });
+
+  app.post("/api/analytics/trends", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const trendData = { ...req.body, userId };
+      const trend = await storage.createTrendAnalysis(trendData);
+      await auditLogger.logDataAccess(req, 'create', 'trend_analysis', trend.id, true);
+      res.json(trend);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'trend_analysis', undefined, false);
+      res.status(400).json({ error: "Failed to create trend analysis" });
+    }
+  });
+
+  app.get("/api/analytics/active-trends", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const trends = await storage.getActiveTrends(userId);
+      await auditLogger.logDataAccess(req, 'read', 'active_trends', userId);
+      res.json(trends);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch active trends" });
     }
   });
 
@@ -455,10 +690,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      await auditLogger.logDataAccess(req, 'generate', 'music_contract', id, true);
+      await auditLogger.logDataAccess(req, 'read', 'music_contract', id, true);
       res.json({ generatedContract, contract });
     } catch (error) {
-      await auditLogger.logDataAccess(req, 'generate', 'music_contract', req.params.id, false);
+      await auditLogger.logDataAccess(req, 'read', 'music_contract', req.params.id, false);
       res.status(500).json({ error: "Failed to generate contract" });
     }
   });

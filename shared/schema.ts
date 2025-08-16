@@ -445,6 +445,97 @@ export const automatedTasks = pgTable("automated_tasks", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Smart Learning & Optimization Tables
+export const campaignPerformanceMetrics = pgTable("campaign_performance_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  campaignId: varchar("campaign_id"),
+  jobId: varchar("job_id").references(() => aiAutomationJobs.id),
+  taskId: varchar("task_id").references(() => automatedTasks.id),
+  metricType: text("metric_type").notNull(), // email_open, email_click, response_rate, conversion, engagement
+  metricValue: decimal("metric_value").notNull(),
+  target: text("target"), // recipient email, platform, contact type
+  timestamp: timestamp("timestamp").defaultNow(),
+  metadata: jsonb("metadata"), // Additional context (platform, content type, etc.)
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const aiLearningData = pgTable("ai_learning_data", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  context: text("context").notNull(), // email_subject, content_tone, timing, platform, target_audience
+  pattern: jsonb("pattern").notNull(), // The successful pattern identified
+  successMetric: text("success_metric").notNull(), // open_rate, response_rate, click_rate, conversion
+  successValue: decimal("success_value").notNull(),
+  confidence: decimal("confidence").notNull(), // AI confidence in this pattern (0-1)
+  timesValidated: integer("times_validated").default(1),
+  lastValidated: timestamp("last_validated").defaultNow(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const successPredictionScores = pgTable("success_prediction_scores", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  targetType: text("target_type").notNull(), // radio_station, music_supervisor, grant_org
+  targetId: varchar("target_id").notNull(), // ID of the target (station, supervisor, etc.)
+  contentType: text("content_type").notNull(), // song, audiobook, pitch
+  contentId: varchar("content_id").notNull(),
+  predictionScore: decimal("prediction_score").notNull(), // 0-1 probability of success
+  factorsAnalyzed: jsonb("factors_analyzed").notNull(), // What the AI considered
+  actualOutcome: text("actual_outcome"), // response, no_response, positive, negative (filled after contact)
+  actualSuccess: boolean("actual_success"), // True outcome for learning
+  predictionAccuracy: decimal("prediction_accuracy"), // How accurate the prediction was
+  createdAt: timestamp("created_at").defaultNow(),
+  outcomeDate: timestamp("outcome_date"),
+});
+
+export const adaptiveSchedulingData = pgTable("adaptive_scheduling_data", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  context: text("context").notNull(), // email_send, social_post, follow_up
+  targetType: text("target_type"), // radio_station, music_supervisor, general
+  dayOfWeek: integer("day_of_week"), // 0-6 (Sunday-Saturday)
+  hourOfDay: integer("hour_of_day"), // 0-23
+  timeZone: text("time_zone"),
+  responseRate: decimal("response_rate").notNull(),
+  engagementRate: decimal("engagement_rate"),
+  sampleSize: integer("sample_size").default(1),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Advanced Analytics Tables
+export const performanceAnalytics = pgTable("performance_analytics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  timeframe: text("timeframe").notNull(), // hourly, daily, weekly, monthly
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  category: text("category").notNull(), // automation, campaigns, outreach, revenue
+  metrics: jsonb("metrics").notNull(), // Aggregated analytics data
+  trends: jsonb("trends"), // Trend analysis (up, down, stable)
+  insights: jsonb("insights"), // AI-generated insights
+  recommendations: jsonb("recommendations"), // AI recommendations for improvement
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const trendAnalysis = pgTable("trend_analysis", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  trendType: text("trend_type").notNull(), // industry, user_behavior, platform_algorithm, seasonal
+  category: text("category").notNull(), // music_genre, email_timing, social_engagement, grant_funding
+  trendData: jsonb("trend_data").notNull(), // The actual trend information
+  impact: text("impact"), // high, medium, low
+  actionableInsights: jsonb("actionable_insights"), // What the user should do
+  confidence: decimal("confidence").notNull(), // AI confidence in trend (0-1)
+  validityPeriod: integer("validity_period"), // Days this trend is expected to be valid
+  source: text("source"), // ai_analysis, external_data, user_behavior
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -603,6 +694,36 @@ export const insertAutomatedTaskSchema = createInsertSchema(automatedTasks).omit
   createdAt: true,
 });
 
+export const insertCampaignPerformanceMetricsSchema = createInsertSchema(campaignPerformanceMetrics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAiLearningDataSchema = createInsertSchema(aiLearningData).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSuccessPredictionScoresSchema = createInsertSchema(successPredictionScores).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAdaptiveSchedulingDataSchema = createInsertSchema(adaptiveSchedulingData).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPerformanceAnalyticsSchema = createInsertSchema(performanceAnalytics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTrendAnalysisSchema = createInsertSchema(trendAnalysis).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -690,3 +811,21 @@ export type InsertAutomationCampaign = z.infer<typeof insertAutomationCampaignSc
 
 export type AutomatedTask = typeof automatedTasks.$inferSelect;
 export type InsertAutomatedTask = z.infer<typeof insertAutomatedTaskSchema>;
+
+export type CampaignPerformanceMetrics = typeof campaignPerformanceMetrics.$inferSelect;
+export type InsertCampaignPerformanceMetrics = z.infer<typeof insertCampaignPerformanceMetricsSchema>;
+
+export type AiLearningData = typeof aiLearningData.$inferSelect;
+export type InsertAiLearningData = z.infer<typeof insertAiLearningDataSchema>;
+
+export type SuccessPredictionScores = typeof successPredictionScores.$inferSelect;
+export type InsertSuccessPredictionScores = z.infer<typeof insertSuccessPredictionScoresSchema>;
+
+export type AdaptiveSchedulingData = typeof adaptiveSchedulingData.$inferSelect;
+export type InsertAdaptiveSchedulingData = z.infer<typeof insertAdaptiveSchedulingDataSchema>;
+
+export type PerformanceAnalytics = typeof performanceAnalytics.$inferSelect;
+export type InsertPerformanceAnalytics = z.infer<typeof insertPerformanceAnalyticsSchema>;
+
+export type TrendAnalysis = typeof trendAnalysis.$inferSelect;
+export type InsertTrendAnalysis = z.infer<typeof insertTrendAnalysisSchema>;
