@@ -536,6 +536,102 @@ export const trendAnalysis = pgTable("trend_analysis", {
   expiresAt: timestamp("expires_at"),
 });
 
+// Real-time Monitoring & Dashboard
+export const realTimeMetrics = pgTable("real_time_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  jobId: varchar("job_id").references(() => aiAutomationJobs.id),
+  campaignId: varchar("campaign_id"),
+  metricType: text("metric_type").notNull(), // live_opens, live_clicks, live_responses, live_conversions
+  currentValue: decimal("current_value").notNull(),
+  previousValue: decimal("previous_value"),
+  changePercent: decimal("change_percent"),
+  alertThreshold: decimal("alert_threshold"),
+  isAlertTriggered: boolean("is_alert_triggered").default(false),
+  timeWindow: text("time_window").notNull(), // 1hour, 24hour, 7day
+  timestamp: timestamp("timestamp").defaultNow(),
+  metadata: jsonb("metadata"), // Additional real-time context
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// A/B Testing System
+export const abTestCampaigns = pgTable("ab_test_campaigns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  testType: text("test_type").notNull(), // email_subject, content_tone, timing, platform, pitch_style
+  status: text("status").notNull().default('active'), // active, paused, completed, analyzing
+  targetMetric: text("target_metric").notNull(), // open_rate, response_rate, click_rate, conversion_rate
+  confidenceLevel: decimal("confidence_level").default('0.95'), // Statistical confidence required
+  minSampleSize: integer("min_sample_size").default(100),
+  currentSampleSize: integer("current_sample_size").default(0),
+  winnerVariant: varchar("winner_variant"), // A or B or null if no winner yet
+  statisticalSignificance: decimal("statistical_significance"),
+  startDate: timestamp("start_date").defaultNow(),
+  endDate: timestamp("end_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const abTestVariants = pgTable("ab_test_variants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  testCampaignId: varchar("test_campaign_id").references(() => abTestCampaigns.id).notNull(),
+  variantName: text("variant_name").notNull(), // A, B, C, etc.
+  configuration: jsonb("configuration").notNull(), // The variant settings
+  trafficAllocation: decimal("traffic_allocation").notNull(), // Percentage of traffic (0.5 = 50%)
+  currentMetricValue: decimal("current_metric_value"),
+  sampleSize: integer("sample_size").default(0),
+  conversionCount: integer("conversion_count").default(0),
+  isControl: boolean("is_control").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const abTestResults = pgTable("ab_test_results", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  testCampaignId: varchar("test_campaign_id").references(() => abTestCampaigns.id).notNull(),
+  variantId: varchar("variant_id").references(() => abTestVariants.id).notNull(),
+  interactionType: text("interaction_type").notNull(), // open, click, response, conversion
+  timestamp: timestamp("timestamp").defaultNow(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  metadata: jsonb("metadata"), // Additional context about the interaction
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Content Optimization System
+export const contentOptimizationSuggestions = pgTable("content_optimization_suggestions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  contentType: text("content_type").notNull(), // email_subject, email_body, social_post, pitch
+  contentId: varchar("content_id"), // Reference to the content being optimized
+  originalContent: text("original_content").notNull(),
+  optimizedContent: text("optimized_content").notNull(),
+  optimizationType: text("optimization_type").notNull(), // tone, length, timing, keywords, personalization
+  confidenceScore: decimal("confidence_score").notNull(), // AI confidence in suggestion (0-1)
+  expectedImprovement: decimal("expected_improvement"), // Expected percentage improvement
+  rationale: text("rationale").notNull(), // Why this optimization is suggested
+  basedOnData: jsonb("based_on_data"), // What data/patterns this is based on
+  status: text("status").notNull().default('pending'), // pending, accepted, rejected, tested
+  actualImprovement: decimal("actual_improvement"), // Measured improvement after implementation
+  implementedAt: timestamp("implemented_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const contentPerformanceHistory = pgTable("content_performance_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  contentType: text("content_type").notNull(),
+  contentHash: text("content_hash").notNull(), // Hash of content for similarity matching
+  contentLength: integer("content_length"),
+  tone: text("tone"), // professional, casual, creative, urgent
+  keywords: jsonb("keywords"), // Key words/phrases used
+  platform: text("platform"), // email, social, pitch
+  audienceType: text("audience_type"), // radio_station, music_supervisor, general
+  performanceMetrics: jsonb("performance_metrics").notNull(), // open_rate, response_rate, etc.
+  timestamp: timestamp("timestamp").defaultNow(),
+  campaignId: varchar("campaign_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -724,6 +820,37 @@ export const insertTrendAnalysisSchema = createInsertSchema(trendAnalysis).omit(
   createdAt: true,
 });
 
+// New feature insert schemas
+export const insertRealTimeMetricsSchema = createInsertSchema(realTimeMetrics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAbTestCampaignsSchema = createInsertSchema(abTestCampaigns).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAbTestVariantsSchema = createInsertSchema(abTestVariants).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAbTestResultsSchema = createInsertSchema(abTestResults).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertContentOptimizationSuggestionsSchema = createInsertSchema(contentOptimizationSuggestions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertContentPerformanceHistorySchema = createInsertSchema(contentPerformanceHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -829,3 +956,22 @@ export type InsertPerformanceAnalytics = z.infer<typeof insertPerformanceAnalyti
 
 export type TrendAnalysis = typeof trendAnalysis.$inferSelect;
 export type InsertTrendAnalysis = z.infer<typeof insertTrendAnalysisSchema>;
+
+// New feature types
+export type RealTimeMetrics = typeof realTimeMetrics.$inferSelect;
+export type InsertRealTimeMetrics = z.infer<typeof insertRealTimeMetricsSchema>;
+
+export type AbTestCampaigns = typeof abTestCampaigns.$inferSelect;
+export type InsertAbTestCampaigns = z.infer<typeof insertAbTestCampaignsSchema>;
+
+export type AbTestVariants = typeof abTestVariants.$inferSelect;
+export type InsertAbTestVariants = z.infer<typeof insertAbTestVariantsSchema>;
+
+export type AbTestResults = typeof abTestResults.$inferSelect;
+export type InsertAbTestResults = z.infer<typeof insertAbTestResultsSchema>;
+
+export type ContentOptimizationSuggestions = typeof contentOptimizationSuggestions.$inferSelect;
+export type InsertContentOptimizationSuggestions = z.infer<typeof insertContentOptimizationSuggestionsSchema>;
+
+export type ContentPerformanceHistory = typeof contentPerformanceHistory.$inferSelect;
+export type InsertContentPerformanceHistory = z.infer<typeof insertContentPerformanceHistorySchema>;

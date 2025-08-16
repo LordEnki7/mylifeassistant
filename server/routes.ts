@@ -408,6 +408,231 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Real-time Monitoring & Dashboard endpoints
+  app.get("/api/monitoring/real-time-metrics", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { timeWindow, metricType } = req.query;
+      const metrics = await storage.getRealTimeMetrics(userId, timeWindow as string, metricType as string);
+      await auditLogger.logDataAccess(req, 'read', 'real_time_metrics', userId);
+      res.json(metrics);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch real-time metrics" });
+    }
+  });
+
+  app.post("/api/monitoring/real-time-metrics", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const metricData = { ...req.body, userId };
+      const metric = await storage.createRealTimeMetric(metricData);
+      await auditLogger.logDataAccess(req, 'create', 'real_time_metric', metric.id, true);
+      res.json(metric);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'real_time_metric', undefined, false);
+      res.status(400).json({ error: "Failed to create real-time metric" });
+    }
+  });
+
+  app.get("/api/monitoring/active-alerts", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const alerts = await storage.getActiveAlerts(userId);
+      await auditLogger.logDataAccess(req, 'read', 'active_alerts', userId);
+      res.json(alerts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch active alerts" });
+    }
+  });
+
+  app.get("/api/monitoring/job-metrics/:jobId", requireAuth, async (req, res) => {
+    try {
+      const { jobId } = req.params;
+      const metrics = await storage.getMetricsByJob(jobId);
+      await auditLogger.logDataAccess(req, 'read', 'job_metrics', jobId);
+      res.json(metrics);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch job metrics" });
+    }
+  });
+
+  // A/B Testing System endpoints
+  app.get("/api/ab-testing/campaigns", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { status } = req.query;
+      const campaigns = await storage.getAbTestCampaigns(userId, status as string);
+      await auditLogger.logDataAccess(req, 'read', 'ab_test_campaigns', userId);
+      res.json(campaigns);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch A/B test campaigns" });
+    }
+  });
+
+  app.post("/api/ab-testing/campaigns", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const campaignData = { ...req.body, userId };
+      const campaign = await storage.createAbTestCampaign(campaignData);
+      await auditLogger.logDataAccess(req, 'create', 'ab_test_campaign', campaign.id, true);
+      res.json(campaign);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'ab_test_campaign', undefined, false);
+      res.status(400).json({ error: "Failed to create A/B test campaign" });
+    }
+  });
+
+  app.get("/api/ab-testing/campaigns/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const campaign = await storage.getAbTestCampaign(id);
+      if (!campaign) {
+        return res.status(404).json({ error: "A/B test campaign not found" });
+      }
+      await auditLogger.logDataAccess(req, 'read', 'ab_test_campaign', id);
+      res.json(campaign);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch A/B test campaign" });
+    }
+  });
+
+  app.get("/api/ab-testing/campaigns/:id/variants", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const variants = await storage.getAbTestVariants(id);
+      await auditLogger.logDataAccess(req, 'read', 'ab_test_variants', id);
+      res.json(variants);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch A/B test variants" });
+    }
+  });
+
+  app.post("/api/ab-testing/variants", requireAuth, async (req, res) => {
+    try {
+      const variant = await storage.createAbTestVariant(req.body);
+      await auditLogger.logDataAccess(req, 'create', 'ab_test_variant', variant.id, true);
+      res.json(variant);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'ab_test_variant', undefined, false);
+      res.status(400).json({ error: "Failed to create A/B test variant" });
+    }
+  });
+
+  app.get("/api/ab-testing/campaigns/:id/results", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { variantId } = req.query;
+      const results = await storage.getAbTestResults(id, variantId as string);
+      await auditLogger.logDataAccess(req, 'read', 'ab_test_results', id);
+      res.json(results);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch A/B test results" });
+    }
+  });
+
+  app.post("/api/ab-testing/results", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const resultData = { ...req.body, userId };
+      const result = await storage.createAbTestResult(resultData);
+      await auditLogger.logDataAccess(req, 'create', 'ab_test_result', result.id, true);
+      res.json(result);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'ab_test_result', undefined, false);
+      res.status(400).json({ error: "Failed to create A/B test result" });
+    }
+  });
+
+  app.get("/api/ab-testing/campaigns/:id/analysis", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const analysis = await storage.getAbTestAnalysis(id);
+      await auditLogger.logDataAccess(req, 'read', 'ab_test_analysis', id);
+      res.json(analysis);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch A/B test analysis" });
+    }
+  });
+
+  // Content Optimization System endpoints
+  app.get("/api/content-optimization/suggestions", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { status, contentType } = req.query;
+      const suggestions = await storage.getContentOptimizationSuggestions(userId, status as string, contentType as string);
+      await auditLogger.logDataAccess(req, 'read', 'content_optimization_suggestions', userId);
+      res.json(suggestions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch content optimization suggestions" });
+    }
+  });
+
+  app.post("/api/content-optimization/suggestions", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const suggestionData = { ...req.body, userId };
+      const suggestion = await storage.createContentOptimizationSuggestion(suggestionData);
+      await auditLogger.logDataAccess(req, 'create', 'content_optimization_suggestion', suggestion.id, true);
+      res.json(suggestion);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'content_optimization_suggestion', undefined, false);
+      res.status(400).json({ error: "Failed to create content optimization suggestion" });
+    }
+  });
+
+  app.put("/api/content-optimization/suggestions/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const suggestion = await storage.updateContentOptimizationSuggestion(id, req.body);
+      if (!suggestion) {
+        return res.status(404).json({ error: "Content optimization suggestion not found" });
+      }
+      await auditLogger.logDataAccess(req, 'update', 'content_optimization_suggestion', id, true);
+      res.json(suggestion);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'update', 'content_optimization_suggestion', req.params.id, false);
+      res.status(400).json({ error: "Failed to update content optimization suggestion" });
+    }
+  });
+
+  app.get("/api/content-optimization/performance-history", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { contentType, platform } = req.query;
+      const history = await storage.getContentPerformanceHistory(userId, contentType as string, platform as string);
+      await auditLogger.logDataAccess(req, 'read', 'content_performance_history', userId);
+      res.json(history);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch content performance history" });
+    }
+  });
+
+  app.post("/api/content-optimization/performance-history", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const historyData = { ...req.body, userId };
+      const history = await storage.createContentPerformanceHistory(historyData);
+      await auditLogger.logDataAccess(req, 'create', 'content_performance_history', history.id, true);
+      res.json(history);
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'content_performance_history', undefined, false);
+      res.status(400).json({ error: "Failed to create content performance history" });
+    }
+  });
+
+  app.get("/api/content-optimization/top-performing/:contentType", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { contentType } = req.params;
+      const { limit } = req.query;
+      const topContent = await storage.getTopPerformingContent(userId, contentType, limit ? parseInt(limit as string) : undefined);
+      await auditLogger.logDataAccess(req, 'read', 'top_performing_content', userId);
+      res.json(topContent);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch top performing content" });
+    }
+  });
+
   app.get("/api/auth/user", requireAuth, async (req, res) => {
     try {
       const userId = getUserId(req);

@@ -34,6 +34,12 @@ import {
   type AdaptiveSchedulingData, type InsertAdaptiveSchedulingData,
   type PerformanceAnalytics, type InsertPerformanceAnalytics,
   type TrendAnalysis, type InsertTrendAnalysis,
+  type RealTimeMetrics, type InsertRealTimeMetrics,
+  type AbTestCampaigns, type InsertAbTestCampaigns,
+  type AbTestVariants, type InsertAbTestVariants,
+  type AbTestResults, type InsertAbTestResults,
+  type ContentOptimizationSuggestions, type InsertContentOptimizationSuggestions,
+  type ContentPerformanceHistory, type InsertContentPerformanceHistory,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -278,6 +284,40 @@ export interface IStorage {
     grantOpportunities: number;
     revenue: number;
   }>;
+
+  // Real-time Monitoring & Dashboard
+  getRealTimeMetrics(userId: string, timeWindow?: string, metricType?: string): Promise<RealTimeMetrics[]>;
+  createRealTimeMetric(metric: InsertRealTimeMetrics): Promise<RealTimeMetrics>;
+  updateRealTimeMetric(id: string, metric: Partial<RealTimeMetrics>): Promise<RealTimeMetrics | undefined>;
+  getActiveAlerts(userId: string): Promise<RealTimeMetrics[]>;
+  getMetricsByJob(jobId: string): Promise<RealTimeMetrics[]>;
+
+  // A/B Testing System
+  getAbTestCampaigns(userId: string, status?: string): Promise<AbTestCampaigns[]>;
+  getAbTestCampaign(id: string): Promise<AbTestCampaigns | undefined>;
+  createAbTestCampaign(campaign: InsertAbTestCampaigns): Promise<AbTestCampaigns>;
+  updateAbTestCampaign(id: string, campaign: Partial<AbTestCampaigns>): Promise<AbTestCampaigns | undefined>;
+  deleteAbTestCampaign(id: string): Promise<boolean>;
+
+  getAbTestVariants(testCampaignId: string): Promise<AbTestVariants[]>;
+  createAbTestVariant(variant: InsertAbTestVariants): Promise<AbTestVariants>;
+  updateAbTestVariant(id: string, variant: Partial<AbTestVariants>): Promise<AbTestVariants | undefined>;
+  deleteAbTestVariant(id: string): Promise<boolean>;
+
+  getAbTestResults(testCampaignId: string, variantId?: string): Promise<AbTestResults[]>;
+  createAbTestResult(result: InsertAbTestResults): Promise<AbTestResults>;
+  getAbTestAnalysis(testCampaignId: string): Promise<any>; // Returns statistical analysis
+
+  // Content Optimization System
+  getContentOptimizationSuggestions(userId: string, status?: string, contentType?: string): Promise<ContentOptimizationSuggestions[]>;
+  createContentOptimizationSuggestion(suggestion: InsertContentOptimizationSuggestions): Promise<ContentOptimizationSuggestions>;
+  updateContentOptimizationSuggestion(id: string, suggestion: Partial<ContentOptimizationSuggestions>): Promise<ContentOptimizationSuggestions | undefined>;
+  getSuggestionsByContent(contentId: string): Promise<ContentOptimizationSuggestions[]>;
+
+  getContentPerformanceHistory(userId: string, contentType?: string, platform?: string): Promise<ContentPerformanceHistory[]>;
+  createContentPerformanceHistory(history: InsertContentPerformanceHistory): Promise<ContentPerformanceHistory>;
+  getPerformanceByContentHash(contentHash: string): Promise<ContentPerformanceHistory[]>;
+  getTopPerformingContent(userId: string, contentType: string, limit?: number): Promise<ContentPerformanceHistory[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -317,6 +357,13 @@ export class MemStorage implements IStorage {
   private adaptiveSchedulingData: Map<string, AdaptiveSchedulingData>;
   private performanceAnalytics: Map<string, PerformanceAnalytics>;
   private trendAnalysis: Map<string, TrendAnalysis>;
+  // New features data
+  private realTimeMetrics: Map<string, RealTimeMetrics>;
+  private abTestCampaigns: Map<string, AbTestCampaigns>;
+  private abTestVariants: Map<string, AbTestVariants>;
+  private abTestResults: Map<string, AbTestResults>;
+  private contentOptimizationSuggestions: Map<string, ContentOptimizationSuggestions>;
+  private contentPerformanceHistory: Map<string, ContentPerformanceHistory>;
 
   constructor() {
     this.users = new Map();
@@ -355,6 +402,13 @@ export class MemStorage implements IStorage {
     this.adaptiveSchedulingData = new Map();
     this.performanceAnalytics = new Map();
     this.trendAnalysis = new Map();
+    // New features initialization
+    this.realTimeMetrics = new Map();
+    this.abTestCampaigns = new Map();
+    this.abTestVariants = new Map();
+    this.abTestResults = new Map();
+    this.contentOptimizationSuggestions = new Map();
+    this.contentPerformanceHistory = new Map();
 
     // Initialize with demo user
     this.initializeDemoData();
@@ -3165,6 +3219,240 @@ PHONE #: {{witness_phone}}`,
       t.isActive && 
       (!t.expiresAt || t.expiresAt > now)
     );
+  }
+
+  // Real-time Monitoring & Dashboard Methods
+  async getRealTimeMetrics(userId: string, timeWindow?: string, metricType?: string): Promise<RealTimeMetrics[]> {
+    return Array.from(this.realTimeMetrics.values()).filter(m => 
+      m.userId === userId && 
+      (!timeWindow || m.timeWindow === timeWindow) && 
+      (!metricType || m.metricType === metricType)
+    );
+  }
+
+  async createRealTimeMetric(metric: InsertRealTimeMetrics): Promise<RealTimeMetrics> {
+    const newMetric: RealTimeMetrics = {
+      id: randomUUID(),
+      ...metric,
+      jobId: metric.jobId ?? null,
+      campaignId: metric.campaignId ?? null,
+      previousValue: metric.previousValue ?? null,
+      changePercent: metric.changePercent ?? null,
+      alertThreshold: metric.alertThreshold ?? null,
+      isAlertTriggered: metric.isAlertTriggered ?? false,
+      metadata: metric.metadata ?? null,
+      createdAt: new Date(),
+    };
+    this.realTimeMetrics.set(newMetric.id, newMetric);
+    return newMetric;
+  }
+
+  async updateRealTimeMetric(id: string, metric: Partial<RealTimeMetrics>): Promise<RealTimeMetrics | undefined> {
+    const existing = this.realTimeMetrics.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...metric };
+    this.realTimeMetrics.set(id, updated);
+    return updated;
+  }
+
+  async getActiveAlerts(userId: string): Promise<RealTimeMetrics[]> {
+    return Array.from(this.realTimeMetrics.values()).filter(m => 
+      m.userId === userId && m.isAlertTriggered
+    );
+  }
+
+  async getMetricsByJob(jobId: string): Promise<RealTimeMetrics[]> {
+    return Array.from(this.realTimeMetrics.values()).filter(m => m.jobId === jobId);
+  }
+
+  // A/B Testing System Methods
+  async getAbTestCampaigns(userId: string, status?: string): Promise<AbTestCampaigns[]> {
+    return Array.from(this.abTestCampaigns.values()).filter(c => 
+      c.userId === userId && (!status || c.status === status)
+    );
+  }
+
+  async getAbTestCampaign(id: string): Promise<AbTestCampaigns | undefined> {
+    return this.abTestCampaigns.get(id);
+  }
+
+  async createAbTestCampaign(campaign: InsertAbTestCampaigns): Promise<AbTestCampaigns> {
+    const newCampaign: AbTestCampaigns = {
+      id: randomUUID(),
+      ...campaign,
+      description: campaign.description ?? null,
+      status: campaign.status ?? 'active',
+      confidenceLevel: campaign.confidenceLevel ?? '0.95',
+      minSampleSize: campaign.minSampleSize ?? 100,
+      currentSampleSize: campaign.currentSampleSize ?? 0,
+      winnerVariant: campaign.winnerVariant ?? null,
+      statisticalSignificance: campaign.statisticalSignificance ?? null,
+      endDate: campaign.endDate ?? null,
+      createdAt: new Date(),
+    };
+    this.abTestCampaigns.set(newCampaign.id, newCampaign);
+    return newCampaign;
+  }
+
+  async updateAbTestCampaign(id: string, campaign: Partial<AbTestCampaigns>): Promise<AbTestCampaigns | undefined> {
+    const existing = this.abTestCampaigns.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...campaign };
+    this.abTestCampaigns.set(id, updated);
+    return updated;
+  }
+
+  async deleteAbTestCampaign(id: string): Promise<boolean> {
+    return this.abTestCampaigns.delete(id);
+  }
+
+  async getAbTestVariants(testCampaignId: string): Promise<AbTestVariants[]> {
+    return Array.from(this.abTestVariants.values()).filter(v => v.testCampaignId === testCampaignId);
+  }
+
+  async createAbTestVariant(variant: InsertAbTestVariants): Promise<AbTestVariants> {
+    const newVariant: AbTestVariants = {
+      id: randomUUID(),
+      ...variant,
+      currentMetricValue: variant.currentMetricValue ?? null,
+      sampleSize: variant.sampleSize ?? 0,
+      conversionCount: variant.conversionCount ?? 0,
+      isControl: variant.isControl ?? false,
+      createdAt: new Date(),
+    };
+    this.abTestVariants.set(newVariant.id, newVariant);
+    return newVariant;
+  }
+
+  async updateAbTestVariant(id: string, variant: Partial<AbTestVariants>): Promise<AbTestVariants | undefined> {
+    const existing = this.abTestVariants.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...variant };
+    this.abTestVariants.set(id, updated);
+    return updated;
+  }
+
+  async deleteAbTestVariant(id: string): Promise<boolean> {
+    return this.abTestVariants.delete(id);
+  }
+
+  async getAbTestResults(testCampaignId: string, variantId?: string): Promise<AbTestResults[]> {
+    return Array.from(this.abTestResults.values()).filter(r => 
+      r.testCampaignId === testCampaignId && (!variantId || r.variantId === variantId)
+    );
+  }
+
+  async createAbTestResult(result: InsertAbTestResults): Promise<AbTestResults> {
+    const newResult: AbTestResults = {
+      id: randomUUID(),
+      ...result,
+      metadata: result.metadata ?? null,
+      createdAt: new Date(),
+    };
+    this.abTestResults.set(newResult.id, newResult);
+    return newResult;
+  }
+
+  async getAbTestAnalysis(testCampaignId: string): Promise<any> {
+    const variants = await this.getAbTestVariants(testCampaignId);
+    const results = await this.getAbTestResults(testCampaignId);
+    
+    const analysis = variants.map(variant => {
+      const variantResults = results.filter(r => r.variantId === variant.id);
+      const conversions = variantResults.filter(r => r.interactionType === 'conversion').length;
+      const conversionRate = variant.sampleSize > 0 ? conversions / variant.sampleSize : 0;
+      
+      return {
+        variantId: variant.id,
+        variantName: variant.variantName,
+        sampleSize: variant.sampleSize,
+        conversions,
+        conversionRate,
+        isControl: variant.isControl
+      };
+    });
+
+    return { campaignId: testCampaignId, variants: analysis };
+  }
+
+  // Content Optimization System Methods
+  async getContentOptimizationSuggestions(userId: string, status?: string, contentType?: string): Promise<ContentOptimizationSuggestions[]> {
+    return Array.from(this.contentOptimizationSuggestions.values()).filter(s => 
+      s.userId === userId && 
+      (!status || s.status === status) && 
+      (!contentType || s.contentType === contentType)
+    );
+  }
+
+  async createContentOptimizationSuggestion(suggestion: InsertContentOptimizationSuggestions): Promise<ContentOptimizationSuggestions> {
+    const newSuggestion: ContentOptimizationSuggestions = {
+      id: randomUUID(),
+      ...suggestion,
+      contentId: suggestion.contentId ?? null,
+      expectedImprovement: suggestion.expectedImprovement ?? null,
+      basedOnData: suggestion.basedOnData ?? null,
+      status: suggestion.status ?? 'pending',
+      actualImprovement: suggestion.actualImprovement ?? null,
+      implementedAt: suggestion.implementedAt ?? null,
+      createdAt: new Date(),
+    };
+    this.contentOptimizationSuggestions.set(newSuggestion.id, newSuggestion);
+    return newSuggestion;
+  }
+
+  async updateContentOptimizationSuggestion(id: string, suggestion: Partial<ContentOptimizationSuggestions>): Promise<ContentOptimizationSuggestions | undefined> {
+    const existing = this.contentOptimizationSuggestions.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...suggestion };
+    this.contentOptimizationSuggestions.set(id, updated);
+    return updated;
+  }
+
+  async getSuggestionsByContent(contentId: string): Promise<ContentOptimizationSuggestions[]> {
+    return Array.from(this.contentOptimizationSuggestions.values()).filter(s => s.contentId === contentId);
+  }
+
+  async getContentPerformanceHistory(userId: string, contentType?: string, platform?: string): Promise<ContentPerformanceHistory[]> {
+    return Array.from(this.contentPerformanceHistory.values()).filter(h => 
+      h.userId === userId && 
+      (!contentType || h.contentType === contentType) && 
+      (!platform || h.platform === platform)
+    );
+  }
+
+  async createContentPerformanceHistory(history: InsertContentPerformanceHistory): Promise<ContentPerformanceHistory> {
+    const newHistory: ContentPerformanceHistory = {
+      id: randomUUID(),
+      ...history,
+      contentLength: history.contentLength ?? null,
+      tone: history.tone ?? null,
+      keywords: history.keywords ?? null,
+      platform: history.platform ?? null,
+      audienceType: history.audienceType ?? null,
+      campaignId: history.campaignId ?? null,
+      createdAt: new Date(),
+    };
+    this.contentPerformanceHistory.set(newHistory.id, newHistory);
+    return newHistory;
+  }
+
+  async getPerformanceByContentHash(contentHash: string): Promise<ContentPerformanceHistory[]> {
+    return Array.from(this.contentPerformanceHistory.values()).filter(h => h.contentHash === contentHash);
+  }
+
+  async getTopPerformingContent(userId: string, contentType: string, limit: number = 10): Promise<ContentPerformanceHistory[]> {
+    const content = Array.from(this.contentPerformanceHistory.values())
+      .filter(h => h.userId === userId && h.contentType === contentType)
+      .sort((a, b) => {
+        // Sort by performance metrics (assuming higher values are better)
+        const aScore = typeof a.performanceMetrics === 'object' ? 
+          Object.values(a.performanceMetrics as any).reduce((sum: number, val: any) => sum + (Number(val) || 0), 0) : 0;
+        const bScore = typeof b.performanceMetrics === 'object' ? 
+          Object.values(b.performanceMetrics as any).reduce((sum: number, val: any) => sum + (Number(val) || 0), 0) : 0;
+        return bScore - aScore;
+      });
+    
+    return content.slice(0, limit);
   }
 }
 
