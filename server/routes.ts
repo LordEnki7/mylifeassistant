@@ -2401,8 +2401,7 @@ async function processAIMessage(
                 priority: taskData.priority || 'medium',
                 category: taskData.category || 'general',
                 dueDate: taskData.dueDate ? new Date(taskData.dueDate) : null,
-                status: 'pending',
-                completed: false
+                status: 'pending'
               });
               
               actions.push({ 
@@ -2449,6 +2448,7 @@ async function processAIMessage(
               const grantResults = searchCarenGrants(searchData);
               
               // Auto-add promising grants to the database
+              let addedCount = 0;
               for (const grant of grantResults) {
                 try {
                   await storage.createGrant({
@@ -2463,6 +2463,7 @@ async function processAIMessage(
                     applicationUrl: grant.url || '',
                     notes: `Auto-discovered by Sunshine AI - Focus: ${searchData.focus_area}`
                   });
+                  addedCount++;
                 } catch (dbError) {
                   console.log('Grant may already exist or DB error:', dbError);
                 }
@@ -2474,6 +2475,7 @@ async function processAIMessage(
                   ...searchData, 
                   results: grantResults,
                   count: grantResults.length,
+                  addedCount,
                   success: true 
                 } 
               });
@@ -2481,7 +2483,7 @@ async function processAIMessage(
               console.error('Error searching grants:', error);
               actions.push({ 
                 type: 'search_grants', 
-                data: { ...searchData, success: false, error: 'Failed to search grants' } 
+                data: { ...searchData, success: false, error: (error as Error).message || 'Failed to search grants' } 
               });
             }
           }
@@ -2710,8 +2712,8 @@ function searchCarenGrants(searchData: any) {
   
   // Sort by priority and relevance
   filteredGrants = filteredGrants.sort((a, b) => {
-    const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
-    return priorityOrder[b.priority] - priorityOrder[a.priority];
+    const priorityOrder: { [key: string]: number } = { 'high': 3, 'medium': 2, 'low': 1 };
+    return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
   });
   
   // Return top 5 most relevant results
