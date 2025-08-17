@@ -1,6 +1,6 @@
 # Overview
 
-This is a personal Life Assistant application called "My Life Assistant" that helps the user manage their daily activities and music industry work. The application serves as an AI-powered platform for managing email outreach, radio station contacts, sync licensing opportunities, grant applications, invoicing, calendar events, and knowledge management. It features a comprehensive dashboard, AI assistant integration, and specialized modules for different aspects of the music business including radio promotion, licensing scouts, grant tracking for a project called C.A.R.E.N., and professional invoicing with payment processing. The app includes hardwired email identification for automatic user recognition and AI task management capabilities.
+"My Life Assistant" is an AI-powered personal application designed to help users manage daily activities and music industry operations. It serves as a comprehensive platform for email outreach, radio station contacts, sync licensing, grant applications, invoicing, calendar management, and knowledge organization. The application features a main dashboard, integrated AI assistant, and specialized modules for radio promotion, licensing scouts, grant tracking (specifically for the C.A.R.E.N. project), and professional invoicing with payment processing. It includes hardwired email identification for automatic user recognition and advanced AI task management capabilities. The project aims to provide an AI assistant with expertise in legal & commercial law, consumer protection, wealth building, and practical financial tools, offering expert guidance and automated actions.
 
 # User Preferences
 
@@ -8,148 +8,81 @@ Preferred communication style: Simple, everyday language.
 
 # System Architecture
 
-## Frontend Architecture
-- **Framework**: React with TypeScript using Vite as the build tool
-- **UI Library**: Radix UI components with shadcn/ui component system for consistent design
-- **Styling**: Tailwind CSS with custom design tokens and CSS variables for theming
-- **Routing**: Wouter for lightweight client-side routing
-- **State Management**: TanStack Query (React Query) for server state management
-- **Forms**: React Hook Form with Zod validation through @hookform/resolvers
+## Frontend
+- **Framework**: React with TypeScript (Vite build tool)
+- **UI/UX**: Radix UI components with shadcn/ui for consistent design, Material Design-inspired system, mobile-first responsive design, app shell pattern with desktop sidebar and mobile navigation.
+- **Styling**: Tailwind CSS with custom design tokens and CSS variables.
+- **Routing**: Wouter for client-side routing.
+- **State Management**: TanStack Query (React Query) for server state.
+- **Forms**: React Hook Form with Zod validation.
+- **Icon System**: Lucide React icons.
 
-## Backend Architecture
-- **Runtime**: Node.js with Express.js framework
-- **Language**: TypeScript with ES modules
-- **API Design**: RESTful API endpoints with structured error handling
-- **Development**: tsx for TypeScript execution in development
-- **Build**: esbuild for production bundling with external package handling
+## Backend
+- **Runtime**: Node.js with Express.js.
+- **Language**: TypeScript with ES modules.
+- **API Design**: RESTful API with structured error handling.
+- **Development**: tsx for development, esbuild for production bundling.
 
 ## Data Layer
-- **Database**: PostgreSQL with Drizzle ORM for type-safe database operations
-- **Database Provider**: Neon Database serverless PostgreSQL
-- **Schema Management**: Drizzle Kit for migrations and schema management
-- **Validation**: Zod schemas for runtime type validation with drizzle-zod integration
+- **Database**: PostgreSQL with Drizzle ORM.
+- **Database Provider**: Neon Database (serverless PostgreSQL).
+- **Schema Management**: Drizzle Kit for migrations.
+- **Validation**: Zod schemas for runtime type validation (drizzle-zod).
 
 ## Authentication & Session Management
-- **Session Storage**: PostgreSQL-based sessions using connect-pg-simple
-- **Session Security**: Secure session handling with proper configuration for production
+- **Session Storage**: PostgreSQL-based sessions (connect-pg-simple).
+- **Session Security**: Secure session handling.
 
 ## Component Architecture
-- **Design System**: Material Design-inspired component system with consistent spacing and elevation
-- **Responsive Design**: Mobile-first approach with dedicated mobile navigation (bottom nav + sidebar)
-- **Layout Structure**: App shell pattern with desktop sidebar and mobile-optimized navigation
-- **Icon System**: Lucide React icons with centralized icon management
+- **Design System**: Consistent spacing and elevation.
+- **Layout Structure**: Desktop sidebar and mobile-optimized navigation.
 
 ## Development Environment
-- **Type Safety**: Comprehensive TypeScript configuration with strict mode enabled
-- **Path Aliases**: Organized import structure with @ aliases for components, shared code, and utilities
-- **Development Tools**: Replit-specific plugins for development environment integration
-- **Error Handling**: Runtime error overlay for development debugging
+- **Type Safety**: Comprehensive TypeScript configuration with strict mode.
+- **Path Aliases**: Organized import structure with `@` aliases.
+- **Error Handling**: Runtime error overlay.
+
+## AI System Architecture
+- **Core Functionality**: AI assistant (Sunshine) for task creation, scheduling, and monitoring.
+- **Knowledge Integration**: Comprehensive training on legal, commercial, consumer protection, and financial topics.
+- **Task Automation**: Automated creation of tasks, contacts, and grants based on AI determination.
+- **Grant Search**: "Find Grants with Sunshine" feature for C.A.R.E.N. project funding opportunities.
+- **Communication Adaptation**: AI learns and adjusts communication style based on user preferences and feedback, maintaining natural conversational flow.
+- **Result Display**: Detailed display of AI-generated results, including comprehensive grant information with filtering options.
 
 # External Dependencies
 
 ## Database & ORM
-- **@neondatabase/serverless**: Serverless PostgreSQL database connection
-- **drizzle-orm**: Type-safe ORM with PostgreSQL dialect
-- **drizzle-kit**: Database migration and schema management tools
+- **@neondatabase/serverless**: Serverless PostgreSQL connection.
+- **drizzle-orm**: Type-safe ORM.
+- **drizzle-kit**: Database migration and schema management.
 
 ## UI & Styling
-- **@radix-ui/react-***: Comprehensive set of unstyled, accessible UI primitives
-- **tailwindcss**: Utility-first CSS framework with custom configuration
-- **class-variance-authority**: Utility for creating variant-based component styles
-- **clsx**: Conditional className utility
+- **@radix-ui/react-***: Accessible UI primitives.
+- **tailwindcss**: Utility-first CSS framework.
+- **class-variance-authority**: Variant-based component styles.
+- **clsx**: Conditional className utility.
 
 ## State Management & Data Fetching
-- **@tanstack/react-query**: Server state management and caching
-- **wouter**: Lightweight routing library for React
+- **@tanstack/react-query**: Server state management.
+- **wouter**: Lightweight routing library.
 
 ## Form Handling
-- **react-hook-form**: Performant form library with minimal re-renders
-- **@hookform/resolvers**: Integration with validation libraries
-- **zod**: Schema validation and TypeScript type inference
+- **react-hook-form**: Form library.
+- **@hookform/resolvers**: Validation library integration.
+- **zod**: Schema validation.
 
 ## Development & Build Tools
-- **vite**: Fast build tool and development server
-- **@vitejs/plugin-react**: React support for Vite
-- **esbuild**: Fast JavaScript bundler for production builds
-- **tsx**: TypeScript execution for Node.js
+- **vite**: Fast build tool and development server.
+- **@vitejs/plugin-react**: React support for Vite.
+- **esbuild**: JavaScript bundler.
+- **tsx**: TypeScript execution for Node.js.
 
 ## Session Management
-- **express-session**: Session middleware for Express
-- **connect-pg-simple**: PostgreSQL session store
+- **express-session**: Session middleware for Express.
+- **connect-pg-simple**: PostgreSQL session store.
 
 ## Utilities
-- **date-fns**: Date manipulation and formatting
-- **nanoid**: URL-safe unique ID generator
-- **embla-carousel-react**: Carousel component library
-
-# Recent Changes
-
-- **Code Quality & Security Policies (Today)**: 
-  * **ESLint Configuration**: Added modern ESLint v9 configuration with TypeScript and React rules
-  * **Prettier Formatting**: Implemented consistent code formatting standards
-  * **Security Documentation**: Created comprehensive security policy (SECURITY.md) and code standards (CODE_STANDARDS.md)
-  * **Quality Scripts**: Added automated quality check and code fixing scripts
-  * **Development Standards**: Established TypeScript strict mode, input validation, and audit logging standards
-  * **Dependency Security**: Added npm audit integration for vulnerability scanning
-- **Logo Integration (Today)**: Added custom logo to all layout components (desktop sidebar, mobile header, mobile sidebar, and loading screen)
-- **App Branding Update**: Changed from "MusicBiz Pro" to "My Life Assistant" throughout the application
-- **Hardwired Authentication**: Implemented automatic user identification with hardwired email (user@mylifeassistant.com)
-- **AI Task Management**: Enhanced AI assistant with task creation, scheduling, and monitoring capabilities
-- **Advanced AI Training (Today)**: Integrated comprehensive training material including:
-  * **Legal & Commercial Law**: Title 15 US Code (Commerce & Trade), UCC Article 3 (Negotiable Instruments), debt settlement strategies, payment tender laws
-  * **Consumer Protection Law Expertise**: FDCPA (Fair Debt Collection Practices Act), FCRA (Fair Credit Reporting Act), HJR 192 (House Joint Resolution 192), debt validation procedures, credit dispute processes, consumer remedies and protections
-  * **Wealth Building Mastery**: "Money Does Grow on Trees" principles, rich vs. wealthy concepts, spiritual + physical money approaches, generational wealth building
-  * **Practical Financial Tools**: Payment refusal letters, promissory note creation, debt discharge methods, commercial remedies, validation letters, cease and desist templates
-  * **Enhanced Topic Recognition**: AI now recognizes and provides expert guidance on commercial law, consumer protection, debt collection defense, credit law, wealth building, and financial strategy topics
-- **C.A.R.E.N Project Integration (Today)**: 
-  * **Logo Integration**: Added C.A.R.E.N "Roadside Rights Protection Platform" logo as front page header on grants page
-  * **AI Grant Search**: Implemented "☀️ Find Grants with Sunshine" functionality that intelligently searches for funding opportunities specifically for C.A.R.E.N
-  * **Smart Grant Matching**: Sunshine can analyze C.A.R.E.N's focus areas (legal technology, roadside assistance, AI safety platforms, consumer protection) and automatically discover relevant federal grants, state grants, foundation grants, and private funding opportunities
-  * **Automated Grant Addition**: Found grants are automatically added to the grants database with comprehensive details including organization, amount, requirements, deadlines, and application URLs
-- **OpenAI API Resolution (Today)**: 
-  * **Service Account Key Integration**: Successfully updated to working service account API key (sk-svcacct-MYNX-SOB1esi...)
-  * **Quota Issues Resolved**: All AI features now fully operational after resolving persistent 429 quota errors
-  * **Sunshine AI Restored**: AI assistant capabilities fully restored and testing confirmed working
-- **Backup System Fixed (Today)**:
-  * **Authentication Bug Fixed**: Resolved backup download failures caused by invalid token authentication
-  * **Proper Auth Integration**: Updated backup component to use centralized auth service instead of localStorage tokens
-  * **Backup Confirmed Working**: Successfully created backup file `my-life-assistant-backup-2025-08-16T22-32-02-766Z.zip`
-- **Sunshine Enhanced with Complete C.A.R.E.N. Knowledge (Today)**:
-  * **Comprehensive C.A.R.E.N. Training**: Sunshine now has complete knowledge of C.A.R.E.N. (Citizen Assistance for Roadside Emergencies and Navigation) project from business plan, investor networks, and LegalTech fund documentation
-  * **Visual Working Status**: Enhanced chat interface with working status indicators showing "🤔 Thinking..." → "📝 Creating task..." → "✅ Task created!"
-  * **Improved Task Detection**: Enhanced task intent recognition with expanded keyword set including "i need", "can you", "help me", "don't forget", "set a reminder"
-  * **Actual Task Execution**: Backend now actually creates tasks, contacts, and grants in database when AI determines appropriate action
-  * **Intelligent Grant Search**: Added "☀️ Find Grants with Sunshine" functionality that automatically discovers and adds relevant funding opportunities for C.A.R.E.N.
-  * **C.A.R.E.N. Expert Knowledge**: Sunshine understands:
-    - Mission: Digital witness protection with real-time legal access and smart technology
-    - Technology Stack: React + TypeScript + Firebase + BLE hardware integration
-    - Business Model: Subscription tiers from $1-$49.99/month, projected $704K Year 3 revenue
-    - Team Structure: Shawn Williams (CEO), Erin Biundo (CIO), team of 6 specialists
-    - Funding Landscape: $750K seed round targeting LegalTech Fund, Arch Grants, Ohio Angel Collective, federal SBIR programs
-    - Social Impact: Addressing systemic inequality, protecting BIPOC/immigrant motorists, multilingual support
-    - Current Status: Prototypes complete, seeking hardware development and beta testing
-- **Adaptive Communication Style Enhanced (Today)**:
-  * **Learning & Adaptation**: Sunshine now learns from each interaction and adjusts her communication style based on user preferences, corrections, and feedback
-  * **Natural Conversation**: Removed repetitive phrases like constantly calling user "King" - now uses names naturally in conversation rather than as constant titles
-  * **User-Responsive**: Sunshine adapts her formality level, energy, and communication patterns based on how the user communicates with her
-  * **Preference Memory**: AI system now remembers communication corrections and preferences for future interactions
-  * **Contextual Intelligence**: Enhanced ability to match user's communication style and energy level for more natural interactions
-- **Enhanced Sunshine Result Display (Today)**:
-  * **Detailed Grant Search Results**: When Sunshine finds grants, she now displays comprehensive information including organization, title, amount, deadline, focus areas, description, and application URLs
-  * **Show Results Function**: Added new `show_grant_results` AI function allowing users to request detailed views of previous findings with filtering options (all, recent, high priority, federal, private, foundation)
-  * **Proactive Work Display**: Enhanced AI instructions to automatically show detailed work when users ask "show me what you found", "let me see the list", or similar requests
-  * **Comprehensive List Formatting**: Improved response formatting to display numbered lists with complete grant details rather than just summaries
-  * **Interactive Result Viewing**: Users can now ask Sunshine to show specific types of grants from their database with detailed breakdowns
-- **Natural Conversation Flow Enhancement (Today)**:
-  * **Conversational Transitions**: Enhanced Sunshine to use natural conversational connectors like "So," "Well," "Actually," and smooth thought transitions
-  * **Flowing Responses**: Removed choppy, bullet-point style responses in favor of natural, connected thoughts that sound like real conversation
-  * **Speech Rhythm**: Implemented varied sentence structures mixing short and longer sentences for natural conversation rhythm
-  * **Real-World Examples**: Added specific conversation flow examples showing natural alternatives to robotic responses
-  * **Friend-Like Communication**: Enhanced personality to sound like a warm, intelligent friend rather than a formal assistant
-  * **Error Message Improvement**: Updated technical error responses to sound natural and conversational rather than formal notifications
-- **Asterisk Formatting Issue Fixed (Today)**:
-  * **Root Cause Resolution**: Identified asterisk formatting was coming from double asterisks in the AI system prompt (e.g., **Witty & Playful**)
-  * **System Prompt Cleanup**: Removed all double asterisk formatting from buildLifeAssistantPrompt function across personality, capabilities, and expertise sections
-  * **Response Post-Processing**: Added cleanAsterisks() function that removes both double asterisks (**text**) and single asterisks (*text*) from all AI responses
-  * **Comprehensive Coverage**: Applied asterisk cleaning to successful responses, error responses, and fallback messages for complete consistency
-  * **Clean Response Format**: Sunshine now provides clean, readable responses without any asterisk formatting artifacts
+- **date-fns**: Date manipulation.
+- **nanoid**: URL-safe unique ID generator.
+- **embla-carousel-react**: Carousel component library.

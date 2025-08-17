@@ -24,6 +24,8 @@ import {
   schemas 
 } from "./middleware/inputValidation";
 import { contentFilter } from "./middleware/contentFilter";
+import { validateAndFixTools, performAIHealthCheck } from "./middleware/aiValidation";
+import { aiMonitoringService, withAIMonitoring } from "./middleware/aiMonitoring";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Apply global security middleware
@@ -35,6 +37,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint (no auth required)
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // AI system health check endpoint
+  // AI Monitoring Control Endpoints
+  app.get("/api/ai/monitoring/status", async (req, res) => {
+    try {
+      const health = aiMonitoringService.getHealthStatus();
+      res.json(health);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get monitoring status" });
+    }
+  });
+
+  app.post("/api/ai/monitoring/reset", async (req, res) => {
+    try {
+      aiMonitoringService.resetMetrics();
+      res.json({ message: "AI monitoring metrics reset successfully" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to reset monitoring metrics" });
+    }
+  });
+
+  app.get("/api/ai/monitoring/log", async (req, res) => {
+    try {
+      aiMonitoringService.logHealthStatus();
+      res.json({ message: "Health status logged to console" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to log health status" });
+    }
+  });
+
+  app.get("/api/ai/health", async (req, res) => {
+    try {
+      const healthCheck = performAIHealthCheck();
+      
+      // Also test basic OpenAI connectivity
+      const testOpenAI = new (await import('openai')).default({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+      
+      const completion = await testOpenAI.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: "Test" }],
+        max_tokens: 5,
+        temperature: 0
+      });
+      
+      const aiHealth = aiMonitoringService.getHealthStatus();
+      
+      res.json({
+        status: healthCheck.healthy && aiHealth.status !== 'critical' ? "healthy" : "unhealthy",
+        config_issues: healthCheck.issues,
+        ai_metrics: aiHealth.metrics,
+        ai_status: aiHealth.status,
+        recommendations: aiHealth.recommendations,
+        openai_connectivity: "working",
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: "unhealthy",
+        issues: ["OpenAI API connectivity failed"],
+        error: error instanceof Error ? error.message : "Unknown error",
+        timestamp: new Date().toISOString()
+      });
+    }
   });
 
   // OpenAI API key test endpoint
@@ -2268,7 +2336,7 @@ const openai = new OpenAI({
 });
 
 // Comprehensive Life Assistant powered by GPT-4o
-async function processAIMessage(
+const processAIMessage = withAIMonitoring(async function(
   message: string, 
   userId: string, 
   type: string = "general", 
@@ -2311,14 +2379,8 @@ async function processAIMessage(
       { role: 'user' as const, content: message }
     ];
     
-    // Call OpenAI GPT-4o for intelligent response
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o", // Latest and most capable model
-      messages: conversationHistory,
-      max_tokens: 1000,
-      temperature: 0.7,
-      response_format: { type: "json_object" },
-      tools: [
+    // Define and validate OpenAI tools configuration
+    const rawTools = [
         {
           type: "function",
           function: {
@@ -2399,7 +2461,19 @@ async function processAIMessage(
             }
           }
         }
-      ]
+      ];
+
+    // Validate and fix tools configuration before using
+    const validatedTools = validateAndFixTools(rawTools);
+    
+    // Call OpenAI GPT-4o for intelligent response with validated tools
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o", // Latest and most capable model
+      messages: conversationHistory,
+      max_tokens: 1000,
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+      tools: validatedTools
     });
     
     // Handle tool calls first, then parse the response
@@ -2672,7 +2746,7 @@ async function processAIMessage(
       ]
     };
   }
-}
+}, "processAIMessage"); // Close the withAIMonitoring wrapper
 
 // Intelligent grant search function specifically for C.A.R.E.N. project
 function searchCarenGrants(searchData: any) {
