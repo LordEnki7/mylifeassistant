@@ -5,6 +5,8 @@
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
+App usage: Personal application for sole user - optimize for individual workflow rather than multi-user features.
+Focus: Prioritize functionality that directly assists with C.A.R.E.N. project development, music industry operations, and AI-powered task automation.
 
 # System Architecture
 
