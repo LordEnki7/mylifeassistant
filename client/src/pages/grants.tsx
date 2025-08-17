@@ -151,6 +151,151 @@ export default function Grants() {
           </p>
         </div>
         
+        {/* C.A.R.E.N. Investor One-Pager */}
+        <Card className="material-card mb-8 max-w-4xl mx-auto">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold text-gray-900">📄 C.A.R.E.N. – Investor One-Pager</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            {/* The Problem */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">The Problem</h3>
+              <p className="text-gray-700 leading-relaxed">
+                Roadside encounters are unpredictable and too often deadly. Drivers and families live in fear, without proof or protection when things go wrong. The lack of accountability has left a gap in trust, safety, and justice.
+              </p>
+            </div>
+
+            {/* The Dream Outcome */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">The Dream Outcome</h3>
+              <p className="text-gray-700 leading-relaxed">
+                A world where every roadside interaction is transparent, documented, and safe. Families know their loved ones will come home, and communities gain peace of mind through accountability and fairness.
+              </p>
+            </div>
+
+            {/* The Solution */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">The Solution: C.A.R.E.N.</h3>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                Citizen Assistance for Roadside Emergencies & Navigation (C.A.R.E.N.) is a mobile/web platform and in-car device that:
+              </p>
+              <ul className="space-y-2 text-gray-700 ml-4">
+                <li className="flex items-start">
+                  <span className="text-primary-600 mr-2">•</span>
+                  Records video/audio with secure cloud storage
+                </li>
+                <li className="flex items-start">
+                  <span className="text-primary-600 mr-2">•</span>
+                  Logs GPS + timestamps for truth & evidence
+                </li>
+                <li className="flex items-start">
+                  <span className="text-primary-600 mr-2">•</span>
+                  Instantly connects to attorneys and emergency alerts
+                </li>
+                <li className="flex items-start">
+                  <span className="text-primary-600 mr-2">•</span>
+                  Supports multiple languages for diverse communities
+                </li>
+              </ul>
+              <p className="text-lg font-semibold text-primary-600 mt-4">
+                👉 C.A.R.E.N. saves lives.
+              </p>
+            </div>
+
+            {/* Why Now */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Why Now?</h3>
+              <ul className="space-y-2 text-gray-700 ml-4">
+                <li className="flex items-start">
+                  <span className="text-primary-600 mr-2">•</span>
+                  Heightened public awareness of roadside safety issues
+                </li>
+                <li className="flex items-start">
+                  <span className="text-primary-600 mr-2">•</span>
+                  Affordable, scalable tech (AI, cloud, IoT) makes it possible today
+                </li>
+                <li className="flex items-start">
+                  <span className="text-primary-600 mr-2">•</span>
+                  Strong cultural momentum toward transparency & accountability
+                </li>
+              </ul>
+            </div>
+
+            {/* Proof of Interest */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Proof of Interest</h3>
+              <ul className="space-y-2 text-gray-700 ml-4">
+                <li className="flex items-start">
+                  <span className="text-green-600 mr-2">✓</span>
+                  Core development team and legal advisors assembled
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-600 mr-2">✓</span>
+                  Beta app under development
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-600 mr-2">✓</span>
+                  Hardware prototype in design
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-600 mr-2">✓</span>
+                  Signed attorney participation agreements
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-600 mr-2">✓</span>
+                  Early user interest and community support building
+                </li>
+              </ul>
+            </div>
+
+            {/* The Team */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">The Team</h3>
+              <div className="space-y-3 text-gray-700">
+                <div>
+                  <span className="font-semibold">Shawn Williams</span> – Founder & CEO 
+                  <span className="text-gray-600"> (Visionary entrepreneur, tech innovator)</span>
+                </div>
+                <div>
+                  <span className="font-semibold">Erin Biundo</span> – Lead Developer 
+                  <span className="text-gray-600"> (Full-stack engineer, AI systems)</span>
+                </div>
+                <div>
+                  <span className="font-semibold">Robert Hill</span> – Strategic Growth & Operations Advisor
+                </div>
+                <div>
+                  <span className="font-semibold">Legal Advisory Partners</span> – Committed attorneys
+                </div>
+              </div>
+            </div>
+
+            {/* The Ask */}
+            <div className="bg-gradient-to-r from-primary-50 to-primary-100 p-6 rounded-lg border border-primary-200">
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">The Ask</h3>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                We are opening the door for early investors.
+              </p>
+              <ul className="space-y-2 text-gray-700 ml-4 mb-4">
+                <li className="flex items-start">
+                  <span className="text-primary-600 mr-2">•</span>
+                  Raising early-stage investment for development and launch
+                </li>
+                <li className="flex items-start">
+                  <span className="text-primary-600 mr-2">•</span>
+                  Offering <span className="font-semibold">1% equity stakes</span> in Caren Web App LLC
+                </li>
+                <li className="flex items-start">
+                  <span className="text-primary-600 mr-2">•</span>
+                  Investors gain a seat at the table + early influence in shaping the company's future
+                </li>
+              </ul>
+              <p className="text-lg font-semibold text-primary-700">
+                👉 This is more than an investment—it's a movement. Join us in making roadside safety a reality for all.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
           <Button 
