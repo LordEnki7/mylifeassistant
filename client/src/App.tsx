@@ -21,6 +21,7 @@ import Knowledge from "@/pages/knowledge";
 import Contracts from "@/pages/contracts";
 import Audiobooks from "@/pages/audiobooks";
 import AudiobookPromotion from "@/pages/audiobook-promotion";
+import DataDiscoveryDemo from "@/pages/DataDiscoveryDemo";
 import AppShell from "@/components/layout/app-shell";
 import { FloatingVoiceButton } from "@/components/ui/voice-command-button";
 
@@ -41,6 +42,7 @@ function AuthenticatedApp() {
         <Route path="/calendar" component={Calendar} />
         <Route path="/invoices" component={Invoices} />
         <Route path="/knowledge" component={Knowledge} />
+        <Route path="/demo" component={DataDiscoveryDemo} />
         <Route component={NotFound} />
       </Switch>
       <FloatingVoiceButton />

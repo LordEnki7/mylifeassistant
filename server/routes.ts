@@ -2344,6 +2344,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Demo endpoint for intelligent data discovery
+  app.post("/api/sunshine/demo", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { message } = req.body;
+
+      if (!message) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      // Use the new modular AI core with data discovery
+      const { aiProcessor } = await import('./ai/core');
+      const response = await aiProcessor.processMessage(message, userId, "demo");
+
+      res.json({
+        ...response,
+        demonstration: {
+          architecture: "Modular AI Core",
+          components: ["Data Discovery", "AI Processor", "Action Executor"],
+          discoveredDataCount: response.discoveredData?.length || 0,
+          actionsExecuted: response.actions?.length || 0,
+          systemInfo: "Sunshine using clean modular architecture"
+        }
+      });
+    } catch (error) {
+      console.error("Error in Sunshine demo:", error);
+      res.status(500).json({ 
+        error: "Demo failed", 
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
