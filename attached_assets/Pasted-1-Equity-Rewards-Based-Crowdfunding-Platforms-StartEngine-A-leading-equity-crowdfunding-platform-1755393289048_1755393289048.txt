@@ -1,0 +1,66 @@
+1. Equity & Rewards-Based Crowdfunding Platforms
+StartEngine
+
+A leading equity crowdfunding platform for U.S. startups. It enables non-accredited investors to purchase shares under Reg CF or Reg A+. Pros include control over your offering and quick fund access after raising $10K. $50M max under Reg A+, $1.07M under Reg CF.
+Startup Savant
++1
+Startup Savant
++1
+
+Wefunder
+
+Equity crowdfunding platform that supports unaccredited investors getting into early-stage startups under the JOBS Act. Popular for community-driven investment rounds.
+Wikipedia
+
+Indiegogo
+
+Reward-based crowdfunding with global reach—perfect for hardware and tech products. Supports hardware campaigns and has flexible funding models with a 5% platform fee plus payment processing fees.
+Startup Savant
+Startup Savant
++1
+
+MicroVentures
+
+A FINRA-registered brokerage equity crowdfunding site. Accepts both accredited and qualified non-accredited investors. Average raise ≈$250K.
+YouTube
+
+2. Impact & Angel Investor Networks
+Black Angel Group (BAG)
+
+Angel collective investing from seed to Series A, with a focus on scalable and impactful ventures.
+Black Angel Group
++2
+Amazon
++2
+
+SWAN Impact Network
+
+Early-stage impact investor network prioritizing startups that provide measurable societal/environmental benefits—an excellent fit for C.A.R.E.N.’s mission.
+SWAN Impact Network
+
+3. Venture Capital & Mobility Sector Investment
+
+VC landscape strong for public‑safety tech: In 2025, U.S. venture investment in safety- and law-enforcement-tech nearly doubled to $990M. Firms like Andreessen Horowitz and Sequoia Capital are backing AI-enabled incident-response and transparency tools.
+wsj.com
++2
+angelspartners.com
++2
+
+Target firms known for mobility/legal/public-safety: Andreessen Horowitz, Sequoia Capital, Eniac Ventures, and public-safety arms like US Innovative Technology Fund.
+businessinsider.com
+
+Summary Table
+Type	Platform / Option	Fit for C.A.R.E.N.
+Equity Crowdfunding	StartEngine, Wefunder	Raise capital from public while building community alignment
+Rewards Crowdfunding	Indiegogo	Pre-sell C.A.R.E.N. Units and generate early user interest
+Impact Angel Networks	BAG, SWAN Impact Network	Raise mission-aligned funds from experienced and socially minded investors
+VC / Strategic Partners	Andreessen Horowitz, Sequoia, etc.	Seek strategic capital from VCs interested in public safety and AI
+Why This Matters for C.A.R.E.N.
+
+Rapid, flexible access to capital: Reg CF or rewards crowdfunding get your minimum viable product tested in the market.
+
+Mission alignment: Investor communities like SWAN and BAG are attracted to your public-safety and justice-oriented brand.
+
+Strategic backing: VCs in public-safety and mobility offer scale and credibility, fueling rapid expansion.
+
+Blended strategy: Start with community-backed equity/funding, then move to impact angel networks, and later engage VCs for scale.

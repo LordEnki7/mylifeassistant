@@ -357,6 +357,67 @@ Focus on being proactive, intelligent, and helpful for professional success.`;
         description: "Innovative solutions for transportation safety and emergency response",
         url: "https://dot.gov/grants",
         requirements: "Transportation safety focus with emergency response component"
+      },
+      // Crowdfunding and Alternative Funding Sources
+      {
+        organization: "StartEngine (Equity Crowdfunding)",
+        title: "C.A.R.E.N. Community Equity Campaign",
+        amount: "$500,000 - $1,070,000",
+        deadline: "Ongoing",
+        focus: ["crowdfunding", "equity", "community"],
+        description: "Equity crowdfunding under Reg CF/A+ for community-driven investment in C.A.R.E.N.",
+        url: "https://startengine.com",
+        requirements: "Non-accredited investors welcome, $10K minimum before fund access"
+      },
+      {
+        organization: "Wefunder (Community Investment)",
+        title: "C.A.R.E.N. JOBS Act Crowdfunding",
+        amount: "$100,000 - $1,070,000",
+        deadline: "Ongoing",
+        focus: ["crowdfunding", "community", "impact"],
+        description: "Community-driven investment rounds for early-stage roadside safety technology",
+        url: "https://wefunder.com",
+        requirements: "JOBS Act compliance, community-focused mission alignment"
+      },
+      {
+        organization: "Indiegogo (Rewards-Based)",
+        title: "C.A.R.E.N. Unit Pre-Order Campaign",
+        amount: "$50,000 - $500,000",
+        deadline: "Flexible",
+        focus: ["hardware", "rewards", "pre_sales"],
+        description: "Pre-sell C.A.R.E.N. Units and generate early user interest with rewards-based crowdfunding",
+        url: "https://indiegogo.com",
+        requirements: "5% platform fee, hardware campaign experience preferred"
+      },
+      {
+        organization: "SWAN Impact Network",
+        title: "Early-Stage Impact Investment",
+        amount: "$250,000 - $1,000,000",
+        deadline: "Rolling basis",
+        focus: ["impact", "societal_benefit", "early_stage"],
+        description: "Impact investor network for startups with measurable societal benefits - perfect for C.A.R.E.N.",
+        url: "https://swanimpactnetwork.com",
+        requirements: "Demonstrate measurable social impact and community benefit"
+      },
+      {
+        organization: "Black Angel Group (BAG)",
+        title: "Seed to Series A Investment",
+        amount: "$100,000 - $2,000,000",
+        deadline: "Rolling applications",
+        focus: ["angel", "scalable", "impact"],
+        description: "Angel collective for scalable, impactful ventures with diverse leadership",
+        url: "https://blackangelgroup.com",
+        requirements: "Scalable business model, strong impact mission, diverse founding team"
+      },
+      {
+        organization: "America Business Capital",
+        title: "Business Growth Capital Loan",
+        amount: "$50,000 - $2,000,000",
+        deadline: "Ongoing applications",
+        focus: ["lending", "equipment", "working_capital"],
+        description: "Business loans and capital solutions for C.A.R.E.N. operations and equipment",
+        url: "https://americabusinesscapital.com",
+        requirements: "Established business plan, equipment financing, SBA loan eligible"
       }
     ];
 

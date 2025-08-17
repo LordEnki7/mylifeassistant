@@ -16,6 +16,7 @@ const navigation = [
   { name: "My Audiobooks", href: "/audiobooks", icon: Icons.music },
   { name: "Book Promotion", href: "/audiobook-promotion", icon: Icons.trending },
   { name: "Grants (C.A.R.E.N.)", href: "/grants", icon: Icons.building },
+  { name: "Crowdfunding", href: "/crowdfunding", icon: Icons.dollar },
   { name: "Calendar", href: "/calendar", icon: Icons.calendar },
   { name: "Invoices", href: "/invoices", icon: Icons.receipt },
   { name: "Knowledge Base", href: "/knowledge", icon: Icons.book },

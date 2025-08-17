@@ -2377,6 +2377,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // C.A.R.E.N. Crowdfunding Platform Routes
+  app.get("/api/crowdfunding/platforms", requireAuth, async (req, res) => {
+    try {
+      const { crowdfundingPlatforms, impactInvestorNetworks, vcFirms, businessCapitalSources } = await import('./data/crowdfunding-platforms');
+      
+      // Combine all funding sources
+      const allPlatforms = [
+        ...crowdfundingPlatforms,
+        ...impactInvestorNetworks,
+        ...vcFirms,
+        ...businessCapitalSources
+      ];
+      
+      res.json(allPlatforms);
+    } catch (error) {
+      console.error("Error fetching crowdfunding platforms:", error);
+      res.status(500).json({ error: "Failed to fetch platforms" });
+    }
+  });
+
+  app.get("/api/crowdfunding/strategy", requireAuth, async (req, res) => {
+    try {
+      const { carenFundingStrategy, campaignProfile } = await import('./data/crowdfunding-platforms');
+      
+      res.json({
+        strategy: carenFundingStrategy,
+        profile: campaignProfile
+      });
+    } catch (error) {
+      console.error("Error fetching funding strategy:", error);
+      res.status(500).json({ error: "Failed to fetch strategy" });
+    }
+  });
+
+  app.get("/api/crowdfunding/campaigns", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const campaigns = await storage.getCrowdfundingCampaigns(userId);
+      res.json(campaigns);
+    } catch (error) {
+      console.error("Error fetching campaigns:", error);
+      res.status(500).json({ error: "Failed to fetch campaigns" });
+    }
+  });
+
+  app.post("/api/crowdfunding/campaigns", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const campaignData = { ...req.body, userId };
+      const campaign = await storage.createCrowdfundingCampaign(campaignData);
+      res.status(201).json(campaign);
+    } catch (error) {
+      console.error("Error creating campaign:", error);
+      res.status(500).json({ error: "Failed to create campaign" });
+    }
+  });
+
+  app.put("/api/crowdfunding/campaigns/:id", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { id } = req.params;
+      
+      // Verify ownership
+      const campaigns = await storage.getCrowdfundingCampaigns(userId);
+      const campaign = campaigns.find(c => c.id === id);
+      if (!campaign) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
+      const updated = await storage.updateCrowdfundingCampaign(id, req.body);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating campaign:", error);
+      res.status(500).json({ error: "Failed to update campaign" });
+    }
+  });
+
+  app.delete("/api/crowdfunding/campaigns/:id", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { id } = req.params;
+      
+      // Verify ownership
+      const campaigns = await storage.getCrowdfundingCampaigns(userId);
+      const campaign = campaigns.find(c => c.id === id);
+      if (!campaign) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
+      await storage.deleteCrowdfundingCampaign(id);
+      res.json({ message: "Campaign deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting campaign:", error);
+      res.status(500).json({ error: "Failed to delete campaign" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

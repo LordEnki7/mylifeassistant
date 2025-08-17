@@ -43,6 +43,22 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
+// Crowdfunding campaign type for storage
+interface CrowdfundingCampaign {
+  id: string;
+  userId: string;
+  platform: string;
+  title: string;
+  goal: number;
+  raised: number;
+  backers: number;
+  status: 'draft' | 'active' | 'funded' | 'closed';
+  deadline: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface IStorage {
   // Users
   getUser(id: string): Promise<User | undefined>;
@@ -318,6 +334,13 @@ export interface IStorage {
   createContentPerformanceHistory(history: InsertContentPerformanceHistory): Promise<ContentPerformanceHistory>;
   getPerformanceByContentHash(contentHash: string): Promise<ContentPerformanceHistory[]>;
   getTopPerformingContent(userId: string, contentType: string, limit?: number): Promise<ContentPerformanceHistory[]>;
+
+  // Crowdfunding Campaigns
+  getCrowdfundingCampaigns(userId: string): Promise<CrowdfundingCampaign[]>;
+  getCrowdfundingCampaign(id: string): Promise<CrowdfundingCampaign | undefined>;
+  createCrowdfundingCampaign(campaign: Omit<CrowdfundingCampaign, 'id' | 'createdAt' | 'updatedAt'>): Promise<CrowdfundingCampaign>;
+  updateCrowdfundingCampaign(id: string, campaign: Partial<CrowdfundingCampaign>): Promise<CrowdfundingCampaign | undefined>;
+  deleteCrowdfundingCampaign(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -364,6 +387,9 @@ export class MemStorage implements IStorage {
   private abTestResults: Map<string, AbTestResults>;
   private contentOptimizationSuggestions: Map<string, ContentOptimizationSuggestions>;
   private contentPerformanceHistory: Map<string, ContentPerformanceHistory>;
+  
+  // Crowdfunding Campaigns
+  private crowdfundingCampaigns: Map<string, CrowdfundingCampaign>;
 
   constructor() {
     this.users = new Map();
@@ -409,6 +435,9 @@ export class MemStorage implements IStorage {
     this.abTestResults = new Map();
     this.contentOptimizationSuggestions = new Map();
     this.contentPerformanceHistory = new Map();
+    
+    // Initialize Crowdfunding storage
+    this.crowdfundingCampaigns = new Map();
 
     // Initialize with demo user
     this.initializeDemoData();
@@ -3453,6 +3482,45 @@ PHONE #: {{witness_phone}}`,
       });
     
     return content.slice(0, limit);
+  }
+
+  // Crowdfunding Campaign Methods
+  async getCrowdfundingCampaigns(userId: string): Promise<CrowdfundingCampaign[]> {
+    return Array.from(this.crowdfundingCampaigns.values()).filter(c => c.userId === userId);
+  }
+
+  async getCrowdfundingCampaign(id: string): Promise<CrowdfundingCampaign | undefined> {
+    return this.crowdfundingCampaigns.get(id);
+  }
+
+  async createCrowdfundingCampaign(campaign: Omit<CrowdfundingCampaign, 'id' | 'createdAt' | 'updatedAt'>): Promise<CrowdfundingCampaign> {
+    const newCampaign: CrowdfundingCampaign = {
+      id: randomUUID(),
+      ...campaign,
+      raised: campaign.raised || 0,
+      backers: campaign.backers || 0,
+      status: campaign.status || 'draft',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    this.crowdfundingCampaigns.set(newCampaign.id, newCampaign);
+    return newCampaign;
+  }
+
+  async updateCrowdfundingCampaign(id: string, campaign: Partial<CrowdfundingCampaign>): Promise<CrowdfundingCampaign | undefined> {
+    const existing = this.crowdfundingCampaigns.get(id);
+    if (!existing) return undefined;
+    const updated = { 
+      ...existing, 
+      ...campaign, 
+      updatedAt: new Date().toISOString() 
+    };
+    this.crowdfundingCampaigns.set(id, updated);
+    return updated;
+  }
+
+  async deleteCrowdfundingCampaign(id: string): Promise<boolean> {
+    return this.crowdfundingCampaigns.delete(id);
   }
 }
 
