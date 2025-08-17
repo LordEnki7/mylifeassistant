@@ -40,6 +40,8 @@ import {
   type AbTestResults, type InsertAbTestResults,
   type ContentOptimizationSuggestions, type InsertContentOptimizationSuggestions,
   type ContentPerformanceHistory, type InsertContentPerformanceHistory,
+  type UserPreferences, type InsertUserPreferences,
+  type CarenProject, type InsertCarenProject,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -341,6 +343,16 @@ export interface IStorage {
   createCrowdfundingCampaign(campaign: Omit<CrowdfundingCampaign, 'id' | 'createdAt' | 'updatedAt'>): Promise<CrowdfundingCampaign>;
   updateCrowdfundingCampaign(id: string, campaign: Partial<CrowdfundingCampaign>): Promise<CrowdfundingCampaign | undefined>;
   deleteCrowdfundingCampaign(id: string): Promise<boolean>;
+
+  // User Preferences (Personal optimization)
+  getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
+  createUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences>;
+  updateUserPreferences(userId: string, preferences: Partial<UserPreferences>): Promise<UserPreferences | undefined>;
+
+  // C.A.R.E.N. Project Tracking (Personal optimization)
+  getCarenProject(userId: string): Promise<CarenProject | undefined>;
+  createCarenProject(project: InsertCarenProject): Promise<CarenProject>;
+  updateCarenProject(userId: string, project: Partial<CarenProject>): Promise<CarenProject | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -390,6 +402,10 @@ export class MemStorage implements IStorage {
   
   // Crowdfunding Campaigns
   private crowdfundingCampaigns: Map<string, CrowdfundingCampaign>;
+  
+  // Personal optimization features
+  private userPreferences: Map<string, UserPreferences>;
+  private carenProjects: Map<string, CarenProject>;
 
   constructor() {
     this.users = new Map();
@@ -438,6 +454,10 @@ export class MemStorage implements IStorage {
     
     // Initialize Crowdfunding storage
     this.crowdfundingCampaigns = new Map();
+    
+    // Initialize personal optimization storage
+    this.userPreferences = new Map();
+    this.carenProjects = new Map();
 
     // Initialize with demo user
     this.initializeDemoData();
@@ -3521,6 +3541,65 @@ PHONE #: {{witness_phone}}`,
 
   async deleteCrowdfundingCampaign(id: string): Promise<boolean> {
     return this.crowdfundingCampaigns.delete(id);
+  }
+
+  // User Preferences Methods (Personal optimization)
+  async getUserPreferences(userId: string): Promise<UserPreferences | undefined> {
+    return Array.from(this.userPreferences.values()).find(p => p.userId === userId);
+  }
+
+  async createUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences> {
+    const newPreferences: UserPreferences = {
+      id: randomUUID(),
+      ...preferences,
+      dashboardLayout: preferences.dashboardLayout ?? {},
+      quickActionButtons: preferences.quickActionButtons ?? [],
+      preferredTasks: preferences.preferredTasks ?? [],
+      carenMetrics: preferences.carenMetrics ?? {},
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.userPreferences.set(newPreferences.id, newPreferences);
+    return newPreferences;
+  }
+
+  async updateUserPreferences(userId: string, preferences: Partial<UserPreferences>): Promise<UserPreferences | undefined> {
+    const existing = await this.getUserPreferences(userId);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...preferences, updatedAt: new Date() };
+    this.userPreferences.set(existing.id, updated);
+    return updated;
+  }
+
+  // C.A.R.E.N. Project Tracking Methods (Personal optimization)
+  async getCarenProject(userId: string): Promise<CarenProject | undefined> {
+    return Array.from(this.carenProjects.values()).find(p => p.userId === userId);
+  }
+
+  async createCarenProject(project: InsertCarenProject): Promise<CarenProject> {
+    const newProject: CarenProject = {
+      id: randomUUID(),
+      ...project,
+      investorContacts: project.investorContacts ?? 0,
+      grantApplications: project.grantApplications ?? 0,
+      developmentProgress: project.developmentProgress ?? 0,
+      fundraisingGoal: project.fundraisingGoal ?? null,
+      currentFunding: project.currentFunding ?? '0',
+      nextMilestone: project.nextMilestone ?? null,
+      milestoneDate: project.milestoneDate ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.carenProjects.set(newProject.id, newProject);
+    return newProject;
+  }
+
+  async updateCarenProject(userId: string, project: Partial<CarenProject>): Promise<CarenProject | undefined> {
+    const existing = await this.getCarenProject(userId);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...project, updatedAt: new Date() };
+    this.carenProjects.set(existing.id, updated);
+    return updated;
   }
 }
 

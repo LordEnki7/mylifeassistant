@@ -30,6 +30,7 @@ Focus: Prioritize functionality that directly assists with C.A.R.E.N. project de
 - **Database Provider**: Neon Database (serverless PostgreSQL).
 - **Schema Management**: Drizzle Kit for migrations.
 - **Validation**: Zod schemas for runtime type validation (drizzle-zod).
+- **Personal Data**: User preferences and C.A.R.E.N. project tracking with dedicated schemas and API endpoints.
 
 ## Authentication & Session Management
 - **Session Storage**: PostgreSQL-based sessions (connect-pg-simple).
@@ -55,6 +56,15 @@ Focus: Prioritize functionality that directly assists with C.A.R.E.N. project de
 - **Result Display**: Detailed display of AI-generated results, including comprehensive grant information with filtering options.
 - **Monitoring & Validation**: Advanced AI validation and monitoring systems for reliability.
 - **Clean Architecture**: Removed legacy monolithic functions in favor of maintainable modular components.
+
+## Personal Optimization System
+- **Dashboard Personalization**: Custom dashboard layout with C.A.R.E.N.-focused quick actions and metrics display.
+- **User Preferences Management**: Persistent user preferences for dashboard layout, preferred tasks, and workflow optimization.
+- **C.A.R.E.N. Project Tracking**: Dedicated project tracking with funding progress, development milestones, and investor metrics.
+- **Quick Action System**: Customizable quick action buttons optimized for the owner's most frequent workflows.
+- **Personal vs Business Views**: Tab-based dashboard allowing focus on personal C.A.R.E.N. project or broader business operations.
+- **Workflow Templates**: Pre-configured workflows for investor outreach, grant applications, and development tasks.
+- **Automated Reminders**: Smart milestone tracking with deadline awareness and progress visualization.
 
 # External Dependencies
 

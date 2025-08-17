@@ -68,6 +68,33 @@ export const invoices = pgTable("invoices", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// User preferences for dashboard customization
+export const userPreferences = pgTable("user_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  dashboardLayout: jsonb("dashboard_layout").default({}),
+  quickActionButtons: jsonb("quick_action_buttons").default([]),
+  preferredTasks: jsonb("preferred_tasks").default([]),
+  carenMetrics: jsonb("caren_metrics").default({}),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// C.A.R.E.N. project tracking
+export const carenProject = pgTable("caren_project", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  investorContacts: integer("investor_contacts").default(0),
+  grantApplications: integer("grant_applications").default(0),
+  developmentProgress: integer("development_progress").default(0),
+  fundraisingGoal: decimal("fundraising_goal"),
+  currentFunding: decimal("current_funding").default('0'),
+  nextMilestone: text("next_milestone"),
+  milestoneDate: timestamp("milestone_date"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const tasks = pgTable("tasks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id).notNull(),
@@ -851,9 +878,25 @@ export const insertContentPerformanceHistorySchema = createInsertSchema(contentP
   createdAt: true,
 });
 
+export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCarenProjectSchema = createInsertSchema(carenProject).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UserPreferences = typeof userPreferences.$inferSelect;
+export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
+export type CarenProject = typeof carenProject.$inferSelect;
+export type InsertCarenProject = z.infer<typeof insertCarenProjectSchema>;
 
 export type Contact = typeof contacts.$inferSelect;
 export type InsertContact = z.infer<typeof insertContactSchema>;

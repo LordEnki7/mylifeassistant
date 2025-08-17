@@ -2474,6 +2474,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Personal Optimization Routes - User Preferences
+  app.get("/api/user/preferences", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const preferences = await storage.getUserPreferences(userId);
+      
+      if (!preferences) {
+        // Create default preferences for first-time users
+        const defaultPreferences = {
+          userId,
+          dashboardLayout: {
+            quickActions: { visible: true, order: 1 },
+            aiAssistant: { visible: true, order: 2 },
+            carenMetrics: { visible: true, order: 3 },
+            recentTasks: { visible: true, order: 4 }
+          },
+          quickActionButtons: [
+            'create_task', 'find_grants', 'add_contact', 'music_sync'
+          ],
+          preferredTasks: [
+            'C.A.R.E.N. development', 'investor_outreach', 'grant_applications'
+          ],
+          carenMetrics: {
+            showFundingProgress: true,
+            showInvestorCount: true,
+            showMilestones: true,
+            preferredChart: 'progress'
+          }
+        };
+        
+        const newPreferences = await storage.createUserPreferences(defaultPreferences);
+        return res.json(newPreferences);
+      }
+      
+      await auditLogger.logDataAccess(req, 'read', 'user_preferences', userId);
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error fetching user preferences:", error);
+      res.status(500).json({ error: "Failed to fetch user preferences" });
+    }
+  });
+
+  app.put("/api/user/preferences", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const updatedPreferences = await storage.updateUserPreferences(userId, req.body);
+      
+      if (!updatedPreferences) {
+        return res.status(404).json({ error: "User preferences not found" });
+      }
+      
+      await auditLogger.logDataAccess(req, 'update', 'user_preferences', userId, true);
+      res.json(updatedPreferences);
+    } catch (error) {
+      console.error("Error updating user preferences:", error);
+      await auditLogger.logDataAccess(req, 'update', 'user_preferences', getUserId(req), false);
+      res.status(500).json({ error: "Failed to update user preferences" });
+    }
+  });
+
+  // Personal Optimization Routes - C.A.R.E.N. Project Tracking
+  app.get("/api/caren/project", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      let project = await storage.getCarenProject(userId);
+      
+      if (!project) {
+        // Create default C.A.R.E.N. project tracking
+        const defaultProject = {
+          userId,
+          projectName: "C.A.R.E.N. - Citizen Assistance for Roadside Emergencies and Navigation",
+          currentPhase: "Seed Funding",
+          investorContacts: 0,
+          grantApplications: 0,
+          developmentProgress: 15, // 15% complete based on current state
+          fundraisingGoal: "250000", // $250K seed goal
+          currentFunding: "0",
+          nextMilestone: "Complete investor one-pager presentation",
+          milestoneDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 2 weeks
+        };
+        
+        project = await storage.createCarenProject(defaultProject);
+      }
+      
+      await auditLogger.logDataAccess(req, 'read', 'caren_project', userId);
+      res.json(project);
+    } catch (error) {
+      console.error("Error fetching C.A.R.E.N. project:", error);
+      res.status(500).json({ error: "Failed to fetch C.A.R.E.N. project" });
+    }
+  });
+
+  app.put("/api/caren/project", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const updatedProject = await storage.updateCarenProject(userId, req.body);
+      
+      if (!updatedProject) {
+        return res.status(404).json({ error: "C.A.R.E.N. project not found" });
+      }
+      
+      await auditLogger.logDataAccess(req, 'update', 'caren_project', userId, true);
+      res.json(updatedProject);
+    } catch (error) {
+      console.error("Error updating C.A.R.E.N. project:", error);
+      await auditLogger.logDataAccess(req, 'update', 'caren_project', getUserId(req), false);
+      res.status(500).json({ error: "Failed to update C.A.R.E.N. project" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
