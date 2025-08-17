@@ -2586,6 +2586,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Initialize uploaded investor data
+  app.post("/api/initialize-investor-data", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      
+      // Ohio Angel Investors and VC Networks from uploaded documents
+      const investorContacts = [
+        {
+          name: "Ohio Angel Collective",
+          email: "contact@ohioangelcollective.com",
+          company: "Ohio Angel Collective",
+          type: "angel_investor",
+          notes: "Ohio-based angel group, early-stage capital $75K-$400K, supports Ohio founders"
+        },
+        {
+          name: "Morris Wheeler",
+          email: "contact@drummondroadcapital.com",
+          company: "Drummond Road Capital",
+          type: "angel_investor", 
+          notes: "Experienced Ohio angel investor, $75K-$400K range, reached via Drummond Road Capital"
+        },
+        {
+          name: "Black Angel Group",
+          email: "contact@blackangelgroup.com",
+          company: "Black Angel Group (BAG)",
+          type: "angel_investor",
+          notes: "Seed to Series A, strong with underrepresented founders, $100K-$2M range"
+        },
+        {
+          name: "JumpStart Ventures",
+          email: "contact@jumpstart.vc", 
+          company: "JumpStart Ventures",
+          type: "venture_capital",
+          notes: "Ohio-based VC, early-stage tech startups, capital and connections"
+        },
+        {
+          name: "Forum Ventures",
+          email: "contact@forumvc.com",
+          company: "Forum Ventures", 
+          type: "venture_capital",
+          notes: "AI & B2B SaaS focused, $100K pre-seed, early-stage venture and accelerator"
+        },
+        {
+          name: "SOSV",
+          email: "contact@sosv.com",
+          company: "SOSV",
+          type: "venture_capital",
+          notes: "Deep-tech and AI startup VC, HAX accelerator, global reach for technical founders"
+        },
+        {
+          name: "LegalTech Fund Team",
+          email: "applications@legaltechfund.com",
+          company: "LegalTech Fund / LegalTech Lab",
+          type: "accelerator",
+          notes: "Up to $250K accelerator funding, strategic legal and tech advisors, AI-powered legal startups"
+        },
+        {
+          name: "Arch Grants Team",
+          email: "info@archgrants.org",
+          company: "Arch Grants",
+          type: "grant_program",
+          notes: "Phone: 314-272-4857, $50K-$75K non-dilutive grants, St. Louis relocation required"
+        },
+        {
+          name: "LexisNexis Accelerator",
+          email: "accelerator@lexisnexis.com",
+          company: "LexisNexis",
+          type: "accelerator",
+          notes: "Legal tech accelerator, mentorship, Bay Area VC connections, legal industry pros"
+        },
+        {
+          name: "Northeast Ohio Startup Network",
+          email: "contact@startupneo.org",
+          company: "Startup NEO",
+          type: "network",
+          notes: "Local entrepreneurial network, capital access, tech support, peer networks"
+        }
+      ];
+
+      let addedCount = 0;
+      for (const contact of investorContacts) {
+        try {
+          await storage.createContact({
+            userId,
+            ...contact
+          });
+          addedCount++;
+        } catch (error) {
+          // Contact may already exist, continue
+        }
+      }
+
+      await auditLogger.logDataAccess(req, 'create', 'investor_contacts_bulk', userId, true);
+      res.json({ 
+        message: `Successfully added ${addedCount} investor contacts from uploaded documents`,
+        addedCount,
+        totalContacts: investorContacts.length 
+      });
+    } catch (error) {
+      await auditLogger.logDataAccess(req, 'create', 'investor_contacts_bulk', undefined, false);
+      res.status(500).json({ error: "Failed to initialize investor data" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

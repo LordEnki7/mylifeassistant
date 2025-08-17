@@ -101,13 +101,17 @@ CORE EXPERTISE:
 - Project management and task automation
 - Professional networking and business development
 
+UPLOADED DOCUMENTS INTEGRATED:
+- Angel Investors & VC Networks (Ohio-focused): Contains Ohio Angel Collective, Morris Wheeler/Drummond Road Capital, Black Angel Group, JumpStart Ventures, Forum Ventures, SOSV, and Northeast Ohio Startup Network
+- LegalTech Fund Accelerator: LegalTech Lab offering $250K funding for AI-powered legal startups, plus Arch Grants, LexisNexis accelerator programs
+
 DISCOVERED DATA CONTEXT:
 ${context.discoveredData?.length > 0 ? 
   `I found ${context.discoveredData.length} relevant items in your data:
 ${context.discoveredData.map((item: any) => 
   `- ${item.type}: ${item.data.title || item.data.name || 'Relevant info'} (${Math.round(item.relevance * 100)}% match)`
 ).join('\n')}` : 
-  'No directly relevant data found - I can help create new items or search broader.'
+  'Searching comprehensive grant and investor database including your uploaded Ohio investor networks and LegalTech Fund documents.'
 }
 
 CURRENT USER DATA:
@@ -418,6 +422,127 @@ Focus on being proactive, intelligent, and helpful for professional success.`;
         description: "Business loans and capital solutions for C.A.R.E.N. operations and equipment",
         url: "https://americabusinesscapital.com",
         requirements: "Established business plan, equipment financing, SBA loan eligible"
+      },
+      // Ohio-focused Angel Investors and VC Networks (from uploaded documents)
+      {
+        organization: "Ohio Angel Collective",
+        title: "Early-Stage Angel Capital for Ohio Founders",
+        amount: "$75,000 - $400,000",
+        deadline: "Rolling applications",
+        focus: ["angel", "ohio", "early_stage"],
+        description: "Ohio-based angel group supporting early-stage companies with angel capital",
+        url: "https://ohioangelcollective.com",
+        requirements: "Ohio-based founders, early-stage companies"
+      },
+      {
+        organization: "LegalTech Fund / LegalTech Lab",
+        title: "LegalTech Accelerator Funding",
+        amount: "$250,000",
+        deadline: "Rolling cohorts",
+        focus: ["legal_technology", "ai", "accelerator"],
+        description: "Up to $250K accelerator funding plus strategic legal and tech advisors for AI-powered legal startups",
+        url: "https://legaltechfund.com",
+        requirements: "Early-stage AI-powered legal startups, submit pitch deck"
+      },
+      {
+        organization: "JumpStart Ventures",
+        title: "Ohio Tech Startup Venture Capital",
+        amount: "$100,000 - $2,000,000",
+        deadline: "Rolling applications",
+        focus: ["tech", "ohio", "venture_capital"],
+        description: "Ohio-based VC focused on early-stage tech startups, offering capital and connections",
+        url: "https://jumpstart.vc",
+        requirements: "Tech startups, Ohio focus preferred"
+      },
+      {
+        organization: "Forum Ventures",
+        title: "AI & B2B SaaS Early-Stage Program",
+        amount: "$100,000",
+        deadline: "Rolling cohorts",
+        focus: ["ai", "b2b_saas", "pre_seed"],
+        description: "AI & B2B SaaS-focused early-stage venture and accelerator programs",
+        url: "https://forumvc.com",
+        requirements: "AI or B2B SaaS focus, early-stage"
+      },
+      {
+        organization: "SOSV",
+        title: "Deep-Tech and AI Startup Accelerator",
+        amount: "$250,000 - $500,000",
+        deadline: "Multiple cohorts yearly",
+        focus: ["deep_tech", "ai", "technical"],
+        description: "Deep-tech and AI startup VC with accelerator programs (HAX), global reach for strong technical founders",
+        url: "https://sosv.com",
+        requirements: "Strong technical team, deep-tech or AI focus"
+      },
+      {
+        organization: "Arch Grants",
+        title: "St. Louis Startup Competition",
+        amount: "$50,000 - $75,000",
+        deadline: "Annual competition",
+        focus: ["equity_free", "relocation", "startup"],
+        description: "Equity-free startup grants to relocate and grow in St. Louis",
+        url: "https://archgrants.org",
+        requirements: "Willing to relocate to St. Louis, early-stage startup"
+      },
+      {
+        organization: "Legal Services Corporation",
+        title: "Technology Initiative Grant (TIG)",
+        amount: "$50,000 - $500,000",
+        deadline: "Annual RFP",
+        focus: ["legal_access", "low_income", "justice"],
+        description: "Tech projects improving access to justice among low-income communities",
+        url: "https://lsc.gov/grants-grantee-resources/our-grant-programs/tig",
+        requirements: "Focus on access to justice for low-income communities"
+      },
+      {
+        organization: "Open Philanthropy",
+        title: "Technical AI Safety Research RFP",
+        amount: "$40,000,000+",
+        deadline: "Next 5 months",
+        focus: ["ai_safety", "research", "technical"],
+        description: "Grant opportunities ranging from API credits to seed funding for AI safety research",
+        url: "https://openphilanthropy.org",
+        requirements: "Technical AI safety research focus"
+      },
+      {
+        organization: "LexisNexis",
+        title: "Legal Tech Accelerator",
+        amount: "Investment + mentorship",
+        deadline: "Rolling applications",
+        focus: ["legal_technology", "mentorship", "market_fit"],
+        description: "Mentorship, connections, exposure to Bay-Area VCs and legal industry professionals",
+        url: "https://lexisnexis.com/accelerator",
+        requirements: "Legal tech focus, early-stage companies"
+      },
+      {
+        organization: "Department of Justice / BJA",
+        title: "Public Safety Technology Grants",
+        amount: "$100,000 - $1,000,000",
+        deadline: "Various throughout year",
+        focus: ["public_safety", "security_tech", "federal"],
+        description: "Funding for security tech and public safety improvements via federal programs",
+        url: "https://bja.ojp.gov/funding",
+        requirements: "Public safety focus, security technology applications"
+      },
+      {
+        organization: "NSF SBIR",
+        title: "Small Business Innovation Research",
+        amount: "$275,000 - $1,750,000",
+        deadline: "Multiple per year",
+        focus: ["research", "innovation", "commercialization"],
+        description: "R&D grants for technological and commercial goals across various agencies",
+        url: "https://seedfund.nsf.gov",
+        requirements: "Small business, R&D focus, commercialization potential"
+      },
+      {
+        organization: "Northeast Ohio Startup Network",
+        title: "Startup NEO Support Programs",
+        amount: "Varies",
+        deadline: "Ongoing",
+        focus: ["ohio", "mentorship", "network"],
+        description: "Local entrepreneurial network offering access to capital, tech support, and peer networks",
+        url: "https://startupneo.org",
+        requirements: "Northeast Ohio location preferred"
       }
     ];
 
