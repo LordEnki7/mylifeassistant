@@ -15,7 +15,12 @@ export default function MobileHeader() {
           variant="ghost"
           size="sm"
           className="text-white hover:bg-primary-600 p-2"
-          onClick={toggleMobileMenu}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Mobile header menu button clicked');
+            toggleMobileMenu();
+          }}
         >
           <Icons.menu className="h-6 w-6" />
         </Button>

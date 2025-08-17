@@ -24,6 +24,8 @@ const navigation = [
 export default function MobileSidebar() {
   const { isMobileMenuOpen, closeMobileMenu, isActiveRoute } = useNavigation();
 
+  console.log('MobileSidebar render, isMobileMenuOpen:', isMobileMenuOpen);
+
   if (!isMobileMenuOpen) return null;
 
   return (
