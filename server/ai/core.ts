@@ -369,6 +369,115 @@ Focus on being proactive, intelligent, and helpful for professional success.`;
     
     return grants;
   }
+
+  async monitorUserTasks(userId: string) {
+    const tasks = await storage.getTasks(userId);
+    const overdueTasks = tasks.filter(task => 
+      task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed'
+    );
+    const highPriorityTasks = tasks.filter(task => 
+      task.priority === 'high' && task.status !== 'completed'
+    );
+    
+    return {
+      totalTasks: tasks.length,
+      completedTasks: tasks.filter(t => t.status === 'completed').length,
+      pendingTasks: tasks.filter(t => t.status === 'pending').length,
+      overdueCount: overdueTasks.length,
+      highPriorityCount: highPriorityTasks.length,
+      recommendations: this.generateTaskRecommendations(tasks),
+      overdueTasks: overdueTasks.slice(0, 5),
+      urgentTasks: highPriorityTasks.slice(0, 5)
+    };
+  }
+
+  async searchGrantsWithAI(params: {
+    projectName: string;
+    description: string;
+    focus: string;
+    userId: string;
+  }) {
+    const discoveredGrants = await dataDiscoveryService.discoverData(
+      `grants for ${params.projectName} ${params.description} ${params.focus}`,
+      params.userId
+    );
+    
+    const searchTerms = [params.projectName, params.focus, 'funding', 'grants'].filter(Boolean);
+    
+    return {
+      grants: discoveredGrants.map(item => ({
+        title: item.data.title || item.data.organization,
+        organization: item.data.organization,
+        amount: item.data.amount,
+        deadline: item.data.deadline,
+        description: item.data.description,
+        relevance: item.relevance,
+        source: 'ai_discovery'
+      })),
+      searchTerms,
+      totalFound: discoveredGrants.length
+    };
+  }
+
+  async searchLicensingWithAI(params: {
+    songTitle: string;
+    artist: string;
+    genre: string;
+    description: string;
+    userId: string;
+  }) {
+    const discoveredOpportunities = await dataDiscoveryService.discoverData(
+      `licensing opportunities ${params.songTitle} ${params.artist} ${params.genre} sync music`,
+      params.userId
+    );
+    
+    const searchTerms = [params.songTitle, params.artist, params.genre, 'licensing', 'sync'].filter(Boolean);
+    
+    return {
+      opportunities: discoveredOpportunities.map(item => ({
+        title: item.data.title || item.data.name,
+        company: item.data.company || item.data.organization,
+        type: item.data.type || 'sync licensing',
+        description: item.data.description,
+        contact: item.data.email || item.data.contact,
+        relevance: item.relevance,
+        source: 'ai_discovery'
+      })),
+      searchTerms,
+      totalFound: discoveredOpportunities.length
+    };
+  }
+
+  private generateTaskRecommendations(tasks: any[]) {
+    const recommendations = [];
+    
+    const overdueTasks = tasks.filter(task => 
+      task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed'
+    );
+    
+    if (overdueTasks.length > 0) {
+      recommendations.push(`You have ${overdueTasks.length} overdue tasks that need immediate attention.`);
+    }
+    
+    const highPriorityPending = tasks.filter(task => 
+      task.priority === 'high' && task.status === 'pending'
+    );
+    
+    if (highPriorityPending.length > 0) {
+      recommendations.push(`Focus on ${highPriorityPending.length} high-priority pending tasks.`);
+    }
+    
+    const carenTasks = tasks.filter(task => 
+      task.title?.toLowerCase().includes('caren') || 
+      task.description?.toLowerCase().includes('caren')
+    );
+    
+    if (carenTasks.length > 0) {
+      recommendations.push(`${carenTasks.length} tasks are related to the C.A.R.E.N. project.`);
+    }
+    
+    return recommendations;
+  }
 }
 
 // Export wrapped with monitoring

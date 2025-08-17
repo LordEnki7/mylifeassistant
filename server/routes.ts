@@ -1447,7 +1447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/ai/monitor-tasks", requireAuth, async (req, res) => {
     try {
       const userId = getUserId(req);
-      const monitoring = await monitorUserTasks(userId);
+      const monitoring = await aiProcessor.monitorUserTasks(userId);
       await auditLogger.logDataAccess(req, 'read', 'task_monitoring', userId);
       res.json(monitoring);
     } catch (error) {
@@ -1462,7 +1462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       
       // Use AI to search for relevant grants online
-      const grantSearchResults = await searchGrantsWithAI({
+      const grantSearchResults = await aiProcessor.searchGrantsWithAI({
         projectName,
         description,
         focus,
@@ -1819,7 +1819,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       
       // Use AI to search for relevant sync licensing opportunities
-      const licensingSearchResults = await searchLicensingWithAI({
+      const licensingSearchResults = await aiProcessor.searchLicensingWithAI({
         songTitle,
         artist,
         genre,
