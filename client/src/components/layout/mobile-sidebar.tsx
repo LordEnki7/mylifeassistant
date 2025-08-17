@@ -26,7 +26,12 @@ export default function MobileSidebar() {
 
   console.log('MobileSidebar render, isMobileMenuOpen:', isMobileMenuOpen);
 
-  if (!isMobileMenuOpen) return null;
+  if (!isMobileMenuOpen) {
+    console.log('Mobile sidebar not showing because isMobileMenuOpen is false');
+    return null;
+  }
+
+  console.log('Mobile sidebar should be visible now!');
 
   return (
     <div className="fixed inset-0 z-50 lg:hidden">

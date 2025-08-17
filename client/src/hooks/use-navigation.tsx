@@ -7,7 +7,9 @@ export function useNavigation() {
 
   const toggleMobileMenu = () => {
     console.log('Toggle mobile menu clicked, current state:', isMobileMenuOpen);
-    setIsMobileMenuOpen(!isMobileMenuOpen);
+    const newState = !isMobileMenuOpen;
+    console.log('Setting new state to:', newState);
+    setIsMobileMenuOpen(newState);
   };
 
   const closeMobileMenu = () => {
