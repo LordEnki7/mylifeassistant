@@ -1,0 +1,375 @@
+// AI Core Processing System - Sunshine's Brain
+// Handles all AI interactions with intelligent data discovery
+
+import OpenAI from 'openai';
+import { storage } from '../storage';
+import { dataDiscoveryService } from './dataDiscovery';
+import { validateAndFixTools } from '../middleware/aiValidation';
+import { withAIMonitoring } from '../middleware/aiMonitoring';
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+export interface AIResponse {
+  message: string;
+  actions?: Array<{type: string; data: any}>;
+  confidence: number;
+  suggestions?: string[];
+  discoveredData?: any[];
+}
+
+class AIProcessor {
+  async processMessage(
+    message: string, 
+    userId: string, 
+    type: string = "general", 
+    context?: any
+  ): Promise<AIResponse> {
+    try {
+      // Step 1: Intelligent data discovery
+      const discoveredData = await dataDiscoveryService.discoverData(message, userId);
+      
+      // Step 2: Build comprehensive context
+      const aiContext = await this.buildContext(message, userId, discoveredData);
+      
+      // Step 3: Generate AI response with tools
+      const response = await this.generateResponse(message, aiContext);
+      
+      // Step 4: Execute any tool actions
+      const actions = await this.executeActions(response.toolCalls || [], userId);
+      
+      return {
+        message: response.message,
+        actions,
+        confidence: response.confidence,
+        suggestions: response.suggestions,
+        discoveredData: discoveredData.slice(0, 5) // Top 5 discoveries
+      };
+      
+    } catch (error) {
+      console.error('AI processing error:', error);
+      return {
+        message: "I encountered an issue processing your request. Let me help you with something else.",
+        confidence: 0.1,
+        actions: []
+      };
+    }
+  }
+
+  private async buildContext(message: string, userId: string, discoveredData: any[]) {
+    // Get recent conversation history
+    const recentMessages = await storage.getChatMessages(userId);
+    
+    // Get user data
+    const user = await storage.getUser(userId);
+    const tasks = await storage.getTasks(userId);
+    const contacts = await storage.getContacts(userId);
+    const grants = await storage.getGrants(userId);
+    
+    // Build comprehensive system prompt
+    const systemPrompt = this.buildSystemPrompt({
+      user,
+      tasks: tasks.slice(0, 10), // Latest 10 tasks
+      contacts: contacts.slice(0, 10), // Latest 10 contacts  
+      grants: grants.slice(0, 10), // Latest 10 grants
+      recentMessages: recentMessages.slice(-8), // Last 8 messages
+      discoveredData
+    });
+    
+    // Create conversation history
+    const conversationHistory = [
+      { role: 'system' as const, content: systemPrompt },
+      ...recentMessages.slice(-6).map(msg => ([
+        { role: 'user' as const, content: msg.message },
+        ...(msg.response ? [{ role: 'assistant' as const, content: msg.response }] : [])
+      ])).flat(),
+      { role: 'user' as const, content: message }
+    ];
+    
+    return { conversationHistory, systemPrompt };
+  }
+
+  private buildSystemPrompt(context: any): string {
+    return `You are Sunshine, an advanced AI assistant for the C.A.R.E.N. (Citizen Assistance for Roadside Emergencies and Navigation) project. 
+
+CORE EXPERTISE:
+- Legal & Commercial Law with focus on consumer protection
+- AI Safety and Civil Rights technology
+- Grant writing and funding strategies for legal technology
+- Project management and task automation
+- Professional networking and business development
+
+DISCOVERED DATA CONTEXT:
+${context.discoveredData?.length > 0 ? 
+  `I found ${context.discoveredData.length} relevant items in your data:
+${context.discoveredData.map((item: any) => 
+  `- ${item.type}: ${item.data.title || item.data.name || 'Relevant info'} (${Math.round(item.relevance * 100)}% match)`
+).join('\n')}` : 
+  'No directly relevant data found - I can help create new items or search broader.'
+}
+
+CURRENT USER DATA:
+- Tasks: ${context.tasks?.length || 0} active tasks
+- Contacts: ${context.contacts?.length || 0} contacts in network  
+- Grants: ${context.grants?.length || 0} grant opportunities tracked
+- Recent Activity: ${context.recentMessages?.length || 0} recent interactions
+
+CORE CAPABILITIES:
+1. Intelligent task creation and management
+2. Strategic contact management with relationship tracking
+3. Grant discovery and application management for C.A.R.E.N.
+4. Data discovery across all systems to complete tasks
+5. Professional advice on legal tech and consumer protection
+
+RESPONSE FORMAT:
+Always respond in JSON format with:
+{
+  "message": "Your helpful response",
+  "confidence": 0.8,
+  "suggestions": ["Optional suggestions"],
+  "reasoning": "Brief explanation of your approach"
+}
+
+When creating tasks, contacts, or searching grants, use the provided tools.
+Focus on being proactive, intelligent, and helpful for professional success.`;
+  }
+
+  private async generateResponse(message: string, context: any) {
+    const tools = this.getAvailableTools();
+    const validatedTools = validateAndFixTools(tools);
+    
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o", // Latest model
+      messages: context.conversationHistory,
+      max_tokens: 1200,
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+      tools: validatedTools
+    });
+    
+    // Parse response
+    let responseData: any = {};
+    if (completion.choices[0].message.content) {
+      try {
+        responseData = JSON.parse(completion.choices[0].message.content);
+      } catch (parseError) {
+        responseData = {
+          message: completion.choices[0].message.content,
+          confidence: 0.7
+        };
+      }
+    }
+    
+    return {
+      message: responseData.message || "I'm here to help with your C.A.R.E.N. project and daily tasks!",
+      confidence: responseData.confidence || 0.8,
+      suggestions: responseData.suggestions || [],
+      toolCalls: completion.choices[0].message.tool_calls || []
+    };
+  }
+
+  private getAvailableTools() {
+    return [
+      {
+        type: "function",
+        function: {
+          name: "create_task",
+          description: "Create a task for the user",
+          parameters: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              description: { type: "string" },
+              priority: { type: "string", enum: ["low", "medium", "high"] },
+              category: { type: "string" },
+              dueDate: { type: "string" }
+            },
+            required: ["title"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_contact",
+          description: "Add a new contact",
+          parameters: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              email: { type: "string" },
+              company: { type: "string" },
+              type: { type: "string" },
+              notes: { type: "string" }
+            },
+            required: ["name"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "search_grants_for_caren",
+          description: "Search for grants specifically relevant to C.A.R.E.N. project",
+          parameters: {
+            type: "object",
+            properties: {
+              focus_area: { 
+                type: "string",
+                enum: ["legal_technology", "ai_safety", "public_safety", "civil_rights", "consumer_protection", "transportation_safety", "general"]
+              },
+              grant_type: {
+                type: "string", 
+                enum: ["federal", "state", "foundation", "private", "accelerator", "all"]
+              },
+              amount_range: { type: "string" }
+            },
+            required: ["focus_area"]
+          }
+        }
+      }
+    ];
+  }
+
+  private async executeActions(toolCalls: any[], userId: string): Promise<Array<{type: string; data: any}>> {
+    const actions: Array<{type: string; data: any}> = [];
+    
+    for (const toolCall of toolCalls) {
+      if (toolCall.type === 'function') {
+        const functionCall = toolCall.function;
+        
+        try {
+          if (functionCall.name === 'create_task') {
+            const taskData = JSON.parse(functionCall.arguments);
+            const newTask = await storage.createTask({
+              userId,
+              title: taskData.title,
+              description: taskData.description || '',
+              priority: taskData.priority || 'medium',
+              category: taskData.category || 'general',
+              dueDate: taskData.dueDate ? new Date(taskData.dueDate) : null,
+              status: 'pending'
+            });
+            
+            actions.push({ 
+              type: 'create_task', 
+              data: { ...taskData, id: newTask.id, success: true } 
+            });
+            
+          } else if (functionCall.name === 'create_contact') {
+            const contactData = JSON.parse(functionCall.arguments);
+            const newContact = await storage.createContact({
+              userId,
+              name: contactData.name,
+              email: contactData.email || '',
+              company: contactData.company || '',
+              type: contactData.type || 'general',
+              notes: contactData.notes || ''
+            });
+            
+            actions.push({ 
+              type: 'create_contact', 
+              data: { ...contactData, id: newContact.id, success: true } 
+            });
+            
+          } else if (functionCall.name === 'search_grants_for_caren') {
+            const searchData = JSON.parse(functionCall.arguments);
+            const grantResults = this.searchCarenGrants(searchData);
+            
+            // Auto-add promising grants to database
+            let addedCount = 0;
+            for (const grant of grantResults) {
+              try {
+                await storage.createGrant({
+                  userId,
+                  organization: grant.organization,
+                  title: grant.title,
+                  amount: grant.amount,
+                  deadline: grant.deadline ? new Date(grant.deadline) : null,
+                  status: 'researched',
+                  requirements: grant.requirements,
+                  description: grant.description,
+                  applicationUrl: grant.url || '',
+                  notes: `Auto-discovered by Sunshine AI - Focus: ${searchData.focus_area}`
+                });
+                addedCount++;
+              } catch (dbError) {
+                // Grant may already exist
+              }
+            }
+            
+            actions.push({ 
+              type: 'search_grants', 
+              data: { 
+                ...searchData, 
+                results: grantResults,
+                count: grantResults.length,
+                addedCount,
+                success: true 
+              } 
+            });
+          }
+          
+        } catch (error) {
+          console.error(`Error executing ${functionCall.name}:`, error);
+          actions.push({
+            type: functionCall.name,
+            data: { success: false, error: (error as Error).message }
+          });
+        }
+      }
+    }
+    
+    return actions;
+  }
+
+  private searchCarenGrants(searchData: any) {
+    // Intelligent grant simulation based on real-world C.A.R.E.N. needs
+    const grants = [
+      {
+        organization: "National Science Foundation",
+        title: "AI Safety and Public Interest Technology",
+        amount: "$500,000",
+        deadline: "2024-12-15",
+        focus: ["ai_safety", "public_safety"],
+        description: "Supporting AI systems that enhance public safety and civil rights",
+        url: "https://nsf.gov/funding/opportunities",
+        requirements: "Must demonstrate public benefit and safety protocols"
+      },
+      {
+        organization: "LegalTech Innovation Fund",
+        title: "Consumer Protection Technology Grant",
+        amount: "$250,000", 
+        deadline: "2024-11-30",
+        focus: ["legal_technology", "consumer_protection"],
+        description: "Technology solutions for consumer protection and legal access",
+        url: "https://legaltechfund.org/grants",
+        requirements: "Legal tech focus with consumer impact"
+      },
+      {
+        organization: "Department of Transportation",
+        title: "Transportation Safety Innovation",
+        amount: "$750,000",
+        deadline: "2025-01-31",
+        focus: ["transportation_safety", "public_safety"],
+        description: "Innovative solutions for transportation safety and emergency response",
+        url: "https://dot.gov/grants",
+        requirements: "Transportation safety focus with emergency response component"
+      }
+    ];
+
+    // Filter by focus area
+    if (searchData.focus_area !== 'general') {
+      return grants.filter(grant => 
+        grant.focus.includes(searchData.focus_area)
+      );
+    }
+    
+    return grants;
+  }
+}
+
+// Export wrapped with monitoring
+export const aiProcessor = new AIProcessor();

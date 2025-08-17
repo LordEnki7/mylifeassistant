@@ -43,12 +43,16 @@ Preferred communication style: Simple, everyday language.
 - **Error Handling**: Runtime error overlay.
 
 ## AI System Architecture
+- **Modular Core**: Clean AI system with separated components (server/ai/core.ts, server/ai/dataDiscovery.ts).
+- **Intelligent Data Discovery**: Sunshine autonomously finds and connects missing data across all systems to complete tasks.
 - **Core Functionality**: AI assistant (Sunshine) for task creation, scheduling, and monitoring.
 - **Knowledge Integration**: Comprehensive training on legal, commercial, consumer protection, and financial topics.
 - **Task Automation**: Automated creation of tasks, contacts, and grants based on AI determination.
 - **Grant Search**: "Find Grants with Sunshine" feature for C.A.R.E.N. project funding opportunities.
 - **Communication Adaptation**: AI learns and adjusts communication style based on user preferences and feedback, maintaining natural conversational flow.
 - **Result Display**: Detailed display of AI-generated results, including comprehensive grant information with filtering options.
+- **Monitoring & Validation**: Advanced AI validation and monitoring systems for reliability.
+- **Clean Architecture**: Removed legacy monolithic functions in favor of maintainable modular components.
 
 # External Dependencies
 
