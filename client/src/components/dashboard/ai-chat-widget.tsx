@@ -61,6 +61,9 @@ export default function AIChatWidget() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/chat-messages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/grants"] }); // Refresh grants if any were created
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] }); // Refresh tasks if any were created
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts"] }); // Refresh contacts if any were created
       setMessage("");
       
       // Speak the AI response if speech is enabled
@@ -198,7 +201,72 @@ export default function AIChatWidget() {
                       ☀️
                     </div>
                     <div className="flex-1 bg-gray-100 rounded-lg p-3">
-                      <p className="text-sm text-gray-900">{msg.response}</p>
+                      <p className="text-sm text-gray-900 whitespace-pre-wrap">{msg.response}</p>
+                      
+                      {/* Show AI Actions and Search Results */}
+                      {msg.context && typeof msg.context === 'object' && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          {/* Grant Search Results */}
+                          {(msg.context as any).grantResults && (msg.context as any).grantResults.length > 0 && (
+                            <div className="mb-3">
+                              <h4 className="text-xs font-semibold text-gray-600 mb-2">
+                                📋 Found {(msg.context as any).grantResults.length} Grants:
+                              </h4>
+                              <div className="space-y-2">
+                                {(msg.context as any).grantResults.slice(0, 3).map((grant: any, index: number) => (
+                                  <div key={index} className="bg-white rounded p-2 border border-gray-200">
+                                    <div className="text-xs font-medium text-gray-800">{grant.title}</div>
+                                    <div className="text-xs text-gray-600">{grant.organization} • {grant.amount}</div>
+                                    {grant.deadline && (
+                                      <div className="text-xs text-red-600">Deadline: {grant.deadline}</div>
+                                    )}
+                                  </div>
+                                ))}
+                                {(msg.context as any).grantResults.length > 3 && (
+                                  <div className="text-xs text-gray-500">
+                                    ...and {(msg.context as any).grantResults.length - 3} more grants found
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Actions Taken */}
+                          {(msg.context as any).actions && (msg.context as any).actions.length > 0 && (
+                            <div className="mb-2">
+                              <h4 className="text-xs font-semibold text-gray-600 mb-1">
+                                ⚡ Actions Completed:
+                              </h4>
+                              <div className="space-y-1">
+                                {(msg.context as any).actions.map((action: any, index: number) => (
+                                  <div key={index} className="text-xs text-green-600">
+                                    ✅ {action.type === 'search_grants' ? 
+                                      `Found and saved ${action.data.addedCount || action.data.count} grants` :
+                                      action.type === 'create_task' ? 
+                                      `Created task: ${action.data.title}` :
+                                      action.type === 'create_contact' ?
+                                      `Added contact: ${action.data.name}` :
+                                      `Completed: ${action.type}`
+                                    }
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Discovered Data */}
+                          {(msg.context as any).discoveredData && (msg.context as any).discoveredData.length > 0 && (
+                            <div>
+                              <h4 className="text-xs font-semibold text-gray-600 mb-1">
+                                🔍 Used Existing Data:
+                              </h4>
+                              <div className="text-xs text-gray-500">
+                                Found {(msg.context as any).discoveredData.length} relevant items in your database
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

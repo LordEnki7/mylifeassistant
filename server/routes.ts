@@ -1370,7 +1370,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sources: [],
           confidence: aiResponse.confidence || 0.8,
           actions: aiResponse.actions || [],
-          filtered: filteredResponse.disclaimer ? true : false
+          filtered: filteredResponse.disclaimer ? true : false,
+          discoveredData: aiResponse.discoveredData || [],
+          grantResults: aiResponse.actions?.find(action => action.type === 'search_grants')?.data?.results || []
         }
       });
       
