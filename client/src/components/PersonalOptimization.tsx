@@ -186,9 +186,9 @@ export function PersonalOptimization() {
       {/* Header with customization toggle */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Personal Dashboard</h1>
-          <p className="text-muted-foreground">
-            Optimized for your C.A.R.E.N. project workflow
+          <h2 className="text-xl font-semibold text-foreground">Your Projects & Tasks</h2>
+          <p className="text-sm text-muted-foreground">
+            Track progress and manage your workflow
           </p>
         </div>
         <Button

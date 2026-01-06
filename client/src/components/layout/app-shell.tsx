@@ -15,7 +15,7 @@ export default function AppShell({ children }: AppShellProps) {
   const { isMobileMenuOpen, toggleMobileMenu } = useNavigation();
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Mobile Header */}
       <MobileHeader />
 
@@ -27,7 +27,7 @@ export default function AppShell({ children }: AppShellProps) {
         <MobileSidebar />
 
         {/* Main Content Area */}
-        <main className="flex-1 lg:ml-0">
+        <main className="flex-1 lg:ml-0 bg-gradient-to-br from-background via-background to-muted/30">
           {children}
         </main>
       </div>
@@ -37,7 +37,7 @@ export default function AppShell({ children }: AppShellProps) {
 
       {/* Floating Action Button (Mobile) */}
       <Button
-        className="lg:hidden fixed bottom-20 right-4 w-14 h-14 rounded-full shadow-lg z-40 p-0"
+        className="lg:hidden fixed bottom-20 right-4 w-14 h-14 rounded-full shadow-xl z-40 p-0 btn-gold"
         onClick={toggleMobileMenu}
       >
         <Icons.plus className="h-6 w-6" />
