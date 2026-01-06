@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import logoImage from "@assets/My Life Assistant_1755255862503.png";
+import logoImage from "@assets/My_Life_Assistant_Logo_1767679972274.png";
 
 export default function LoginScreen() {
   const { login, isLoading, error } = useAuth();
@@ -23,37 +23,40 @@ export default function LoginScreen() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <img src={logoImage} alt="My Life Assistant" className="h-16 w-16" />
+    <div className="min-h-screen flex items-center justify-center bg-[hsl(222,47%,11%)] p-4">
+      <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222,47%,15%)] via-[hsl(222,47%,11%)] to-[hsl(222,50%,8%)]" />
+      <Card className="w-full max-w-md relative z-10 bg-white/95 dark:bg-[hsl(222,45%,12%)] shadow-2xl border-0">
+        <CardHeader className="text-center pb-2">
+          <div className="flex justify-center mb-6">
+            <img src={logoImage} alt="My Life Assistant" className="h-24 w-24 rounded-xl shadow-xl" />
           </div>
-          <CardTitle className="text-2xl font-bold">My Life Assistant</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-[hsl(43,67%,45%)] to-[hsl(43,67%,55%)] bg-clip-text text-transparent">
+            My Life Assistant
+          </CardTitle>
+          <CardDescription className="text-base mt-2">
             Your personal AI-powered productivity companion
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6 pt-4">
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
           
-          <div className="text-center text-sm text-gray-600 mb-4">
+          <div className="text-center text-sm text-muted-foreground">
             Welcome! Click below to access your personal assistant.
           </div>
           
           <Button 
             onClick={handleLogin}
             disabled={isLoading || isAttemptingLogin}
-            className="w-full"
+            className="w-full btn-gold text-lg py-6 rounded-xl"
             size="lg"
           >
             {(isLoading || isAttemptingLogin) ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Signing in...
               </>
             ) : (
@@ -61,8 +64,8 @@ export default function LoginScreen() {
             )}
           </Button>
           
-          <div className="text-xs text-gray-500 text-center mt-4">
-            This is a personal single-user application with automatic authentication.
+          <div className="text-xs text-muted-foreground text-center">
+            Personal single-user application with automatic authentication
           </div>
         </CardContent>
       </Card>

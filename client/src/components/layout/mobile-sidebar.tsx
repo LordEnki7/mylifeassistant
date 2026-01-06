@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Icons } from "@/lib/icons";
 import { useNavigation } from "@/hooks/use-navigation";
 import { Button } from "@/components/ui/button";
-import logoImage from "@assets/My Life Assistant_1755255862503.png";
+import logoImage from "@assets/My_Life_Assistant_Logo_1767679972274.png";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Icons.dashboard },
@@ -36,28 +36,28 @@ export default function MobileSidebar() {
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50" 
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm" 
         onClick={closeMobileMenu}
       />
       <nav 
         className={cn(
-          "fixed left-0 top-0 bottom-0 w-80 max-w-sm bg-white shadow-xl transform transition-transform duration-300 ease-in-out",
+          "fixed left-0 top-0 bottom-0 w-80 max-w-sm bg-sidebar shadow-2xl transform transition-transform duration-300 ease-in-out",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="p-6 bg-primary-500 text-white">
+        <div className="p-6 navy-gradient text-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <img src={logoImage} alt="My Life Assistant" className="h-10 w-10" />
+              <img src={logoImage} alt="My Life Assistant" className="h-12 w-12 rounded-lg shadow-md" />
               <div>
-                <h2 className="text-lg font-semibold">My Life Assistant</h2>
-                <p className="text-primary-100 text-xs">AI-Powered Life Management</p>
+                <h2 className="text-lg font-semibold gold-text">My Life Assistant</h2>
+                <p className="text-white/70 text-xs">AI-Powered Life Management</p>
               </div>
             </div>
             <Button
               variant="ghost"
               size="sm"
-              className="text-white hover:bg-primary-600"
+              className="text-white hover:bg-white/10"
               onClick={closeMobileMenu}
             >
               <Icons.close className="h-5 w-5" />
@@ -65,7 +65,7 @@ export default function MobileSidebar() {
           </div>
         </div>
         
-        <div className="py-4">
+        <div className="py-4 overflow-y-auto max-h-[calc(100vh-180px)]">
           <ul className="space-y-1">
             {navigation.map((item) => {
               const isActive = isActiveRoute(item.href);
@@ -74,14 +74,14 @@ export default function MobileSidebar() {
                   <Link href={item.href}>
                     <a
                       className={cn(
-                        "flex items-center px-6 py-3",
+                        "flex items-center px-6 py-3 transition-all",
                         isActive
-                          ? "text-primary-600 bg-primary-50 border-r-2 border-primary-500"
-                          : "text-gray-700 hover:bg-gray-100"
+                          ? "text-sidebar-primary bg-sidebar-accent border-r-2 border-sidebar-primary font-medium"
+                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                       )}
                       onClick={closeMobileMenu}
                     >
-                      <item.icon className="mr-3 h-5 w-5" />
+                      <item.icon className={cn("mr-3 h-5 w-5", isActive && "text-sidebar-primary")} />
                       {item.name}
                     </a>
                   </Link>
@@ -91,14 +91,14 @@ export default function MobileSidebar() {
           </ul>
         </div>
         
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-gray-50">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-sidebar-border bg-sidebar">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white font-semibold">
+            <div className="w-10 h-10 gold-gradient rounded-full flex items-center justify-center text-[hsl(222,47%,11%)] font-semibold shadow-md">
               JD
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">User</p>
-              <p className="text-xs text-gray-500 truncate">user@mylifeassistant.com</p>
+              <p className="text-sm font-medium text-sidebar-foreground truncate">User</p>
+              <p className="text-xs text-sidebar-foreground/60 truncate">user@mylifeassistant.com</p>
             </div>
           </div>
         </div>
