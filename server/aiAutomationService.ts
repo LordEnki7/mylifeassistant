@@ -14,8 +14,18 @@ import type {
   Grant
 } from '@shared/schema';
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Lazy OpenAI client — initialized on first use so missing key at startup doesn't crash the server
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) {
+    _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return _openai;
+}
+const openai = { 
+  get chat() { return getOpenAI().chat; },
+  get models() { return getOpenAI().models; }
+};
 
 export interface AutomationConfig {
   type: 'marketing_schedule' | 'radio_outreach' | 'sync_licensing' | 'grant_search' | 'content_calendar';

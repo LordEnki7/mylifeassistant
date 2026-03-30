@@ -1,118 +1,233 @@
-import { useState, useRef, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Icons } from "@/lib/icons";
-import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
-import { useAI } from "@/hooks/useAI";
-import { Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { Mic, MicOff, Volume2, VolumeX, Zap, Brain } from "lucide-react";
 import type { ChatMessage } from "@shared/schema";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+const QUICK_PROMPTS = [
+  "What's on my task list?",
+  "Research grants for C.A.R.E.N.",
+  "Help me write an investor pitch",
+  "Schedule a follow-up reminder",
+  "Analyze my music licensing strategy",
+];
+
+interface StreamingMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  isStreaming?: boolean;
+  model?: string;
+}
 
 export default function Chat() {
   const [message, setMessage] = useState("");
-  const [taskSuggestions, setTaskSuggestions] = useState<string[]>([]);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speechEnabled, setSpeechEnabled] = useState(true);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const [streamingMessages, setStreamingMessages] = useState<StreamingMessage[]>([]);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const queryClient = useQueryClient();
-  const { user, isAuthenticated } = useAuth();
-  const { chat, isProcessing, workingStatus } = useAI();
+  const { user } = useAuth();
 
-  // Listen for voice AI commands
-  useEffect(() => {
-    const handleVoiceAI = (event: CustomEvent) => {
-      const { action, command } = event.detail;
-      
-      if (action === 'activate') {
-        // Activate AI assistant - just focus the input or show a message
-        const input = document.querySelector('textarea[placeholder="Type your message..."]') as HTMLTextAreaElement;
-        if (input) input.focus();
-      } else if (action === 'create-task' || action === 'process') {
-        // Process voice command with AI
-        setMessage(command);
-        // Message is set, user can submit manually or we could auto-submit
-        // For safety, we'll let the user decide to submit
-      }
-    };
-
-    window.addEventListener('voice-ai', handleVoiceAI as EventListener);
-    return () => window.removeEventListener('voice-ai', handleVoiceAI as EventListener);
-  }, []);
-
-  const { data: messages = [], isLoading } = useQuery<ChatMessage[]>({
+  const { data: savedMessages = [], isLoading } = useQuery<ChatMessage[]>({
     queryKey: ["/api/chat-messages"],
   });
 
-  // Initialize speech recognition and synthesis
+  // Scroll to bottom whenever messages change
   useEffect(() => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [streamingMessages, savedMessages]);
+
+  // Build display list from saved messages + any in-progress streaming
+  const displayMessages: StreamingMessage[] = [
+    ...savedMessages.map((m) => ([
+      { id: `user-${m.id}`, role: "user" as const, content: m.message },
+      ...(m.response ? [{ id: `ai-${m.id}`, role: "assistant" as const, content: m.response, model: (m.context as any)?.model }] : [])
+    ])).flat(),
+    ...streamingMessages
+  ];
+
+  // Init speech recognition + synthesis
+  useEffect(() => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SR) {
+      const recognition = new SR();
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = 'en-US';
-      
+      recognition.lang = "en-US";
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
-        setMessage(prev => prev + transcript);
+        setMessage(transcript);
         setIsListening(false);
+        // Auto-submit after voice
+        setTimeout(() => {
+          sendMessage(transcript);
+        }, 300);
       };
-      
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-      
-      recognition.onerror = () => {
-        setIsListening(false);
-      };
-      
+      recognition.onend = () => setIsListening(false);
+      recognition.onerror = () => setIsListening(false);
       recognitionRef.current = recognition;
     }
-    
-    if ('speechSynthesis' in window) {
+    if ("speechSynthesis" in window) {
       synthRef.current = window.speechSynthesis;
     }
   }, []);
 
-  const sendMessageMutation = useMutation({
-    mutationFn: async (messageText: string) => {
-      // Use enhanced AI service for processing
-      const aiResponse = await chat(messageText);
-      
-      // Also store in chat history
-      const response = await apiRequest("POST", "/api/chat-messages", {
-        message: messageText,
-      });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/chat-messages"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      setMessage("");
-      
-      // Speak the AI response if speech is enabled
-      if (speechEnabled && data.response && synthRef.current) {
-        speakText(data.response);
+  // Voice event listener from other parts of the app
+  useEffect(() => {
+    const handleVoiceAI = (event: CustomEvent) => {
+      const { action, command } = event.detail;
+      if (action === "process" || action === "create-task") {
+        sendMessage(command);
       }
-    },
-  });
+    };
+    window.addEventListener("voice-ai", handleVoiceAI as EventListener);
+    return () => window.removeEventListener("voice-ai", handleVoiceAI as EventListener);
+  }, []);
 
-  const handleSendMessage = () => {
-    if (message.trim()) {
-      sendMessageMutation.mutate(message);
+  const speakText = useCallback((text: string) => {
+    if (!synthRef.current || isSpeaking || !speechEnabled) return;
+    const utterance = new SpeechSynthesisUtterance(text.replace(/[#*`]/g, ""));
+    const voices = synthRef.current.getVoices();
+    const voice = voices.find(v =>
+      ["samantha", "allison", "ava", "emma", "aria"].some(n => v.name.toLowerCase().includes(n))
+    ) || voices.find(v => v.lang.startsWith("en"));
+    if (voice) utterance.voice = voice;
+    utterance.rate = 1.0;
+    utterance.pitch = 1.3;
+    utterance.volume = 0.8;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    synthRef.current.speak(utterance);
+  }, [isSpeaking, speechEnabled]);
+
+  const sendMessage = useCallback(async (text?: string) => {
+    const msg = (text || message).trim();
+    if (!msg || isStreaming) return;
+
+    setMessage("");
+    setIsStreaming(true);
+
+    const userMsgId = `user-stream-${Date.now()}`;
+    const aiMsgId = `ai-stream-${Date.now()}`;
+
+    setStreamingMessages(prev => [
+      ...prev,
+      { id: userMsgId, role: "user", content: msg }
+    ]);
+
+    abortRef.current = new AbortController();
+
+    try {
+      const response = await fetch("/api/chat/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: msg }),
+        signal: abortRef.current.signal,
+        credentials: "include"
+      });
+
+      if (!response.ok) throw new Error("Stream request failed");
+
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let accumulatedContent = "";
+      let detectedModel = "";
+
+      setStreamingMessages(prev => [
+        ...prev,
+        { id: aiMsgId, role: "assistant", content: "", isStreaming: true }
+      ]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const event = JSON.parse(line.slice(6));
+            if (event.type === "model") {
+              detectedModel = event.model;
+            } else if (event.type === "chunk") {
+              accumulatedContent += event.content;
+              setStreamingMessages(prev =>
+                prev.map(m =>
+                  m.id === aiMsgId
+                    ? { ...m, content: accumulatedContent, model: detectedModel }
+                    : m
+                )
+              );
+            } else if (event.type === "done") {
+              setStreamingMessages(prev =>
+                prev.map(m =>
+                  m.id === aiMsgId
+                    ? { ...m, content: event.fullContent || accumulatedContent, isStreaming: false, model: detectedModel }
+                    : m
+                )
+              );
+              // Refresh saved message list after stream completes
+              setTimeout(() => {
+                queryClient.invalidateQueries({ queryKey: ["/api/chat-messages"] });
+                queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+                queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+                // Clear streaming messages now that they're saved
+                setStreamingMessages([]);
+              }, 500);
+              if (speechEnabled) speakText(event.fullContent || accumulatedContent);
+            } else if (event.type === "error") {
+              setStreamingMessages(prev =>
+                prev.map(m =>
+                  m.id === aiMsgId
+                    ? { ...m, content: "Sorry, I ran into an issue. Please try again.", isStreaming: false }
+                    : m
+                )
+              );
+            }
+          } catch {
+            // ignore parse errors
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err.name !== "AbortError") {
+        setStreamingMessages(prev =>
+          prev.filter(m => m.id !== aiMsgId).concat({
+            id: aiMsgId,
+            role: "assistant",
+            content: "Connection error — please try again.",
+            isStreaming: false
+          })
+        );
+      }
+    } finally {
+      setIsStreaming(false);
     }
-  };
+  }, [message, isStreaming, speechEnabled, speakText, queryClient]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      sendMessage();
     }
   };
 
@@ -130,266 +245,238 @@ export default function Chat() {
     }
   };
 
-  const speakText = (text: string) => {
-    if (synthRef.current && !isSpeaking) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      
-      // Set up young female voice - prioritize voices that sound like a 23-year-old girl
-      const voices = synthRef.current.getVoices();
-      const youngFemaleVoice = voices.find(voice => 
-        voice.name.toLowerCase().includes('samantha') ||
-        voice.name.toLowerCase().includes('allison') ||
-        voice.name.toLowerCase().includes('ava') ||
-        voice.name.toLowerCase().includes('emma') ||
-        voice.name.toLowerCase().includes('olivia') ||
-        voice.name.toLowerCase().includes('sophia') ||
-        voice.name.toLowerCase().includes('zoe') ||
-        voice.name.toLowerCase().includes('chloe') ||
-        voice.name.toLowerCase().includes('aria') ||
-        voice.name.toLowerCase().includes('female')
-      ) || voices.find(voice => 
-        voice.lang.startsWith('en') && 
-        (voice.name.includes('Female') || voice.name.includes('Woman'))
-      ) || voices.find(voice => voice.lang.startsWith('en'));
-      
-      if (youngFemaleVoice) {
-        utterance.voice = youngFemaleVoice;
-      }
-      
-      utterance.rate = 1.0; // Slightly faster for youthful energy
-      utterance.pitch = 1.3; // Higher pitch for young female voice
-      utterance.volume = 0.8;
-      
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      
-      synthRef.current.speak(utterance);
-    }
-  };
-
   const stopSpeaking = () => {
-    if (synthRef.current) {
-      synthRef.current.cancel();
-      setIsSpeaking(false);
-    }
+    synthRef.current?.cancel();
+    setIsSpeaking(false);
   };
 
-  const toggleSpeech = () => {
-    setSpeechEnabled(!speechEnabled);
-    if (isSpeaking) {
-      stopSpeaking();
-    }
+  const stopStream = () => {
+    abortRef.current?.abort();
+    setIsStreaming(false);
   };
 
   return (
-    <div className="p-4 lg:p-8 max-w-4xl mx-auto">
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">☀️ Sunshine - Your AI Assistant</h1>
-            <p className="text-gray-600">Get help with your music business tasks and questions.</p>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-              <Icons.user className="h-3 w-3 mr-1" />
-              {user?.name || 'User'}
-            </Badge>
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              Auto-identified
-            </Badge>
-          </div>
+    <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-[calc(100vh-2rem)] max-w-4xl mx-auto p-4 lg:p-6">
+      {/* Header */}
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">☀️ Sunshine</h1>
+          <p className="text-sm text-gray-500">Your AI Life Assistant</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+            {user?.name || "Owner"}
+          </Badge>
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs flex items-center gap-1">
+            <Zap className="h-3 w-3" /> Streaming
+          </Badge>
         </div>
       </div>
 
-      <Card className="material-card">
-        <CardHeader className="border-b">
-          <CardTitle className="flex items-center">
-            <Icons.chat className="mr-2 h-5 w-5 text-primary-500" />
-            Chat with Sunshine
-          </CardTitle>
-        </CardHeader>
-        
-        <CardContent className="p-0">
-          {/* Chat Messages */}
-          <div className="h-96 overflow-y-auto p-6 space-y-4">
-            {isLoading ? (
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" />
-                <div className="flex-1 bg-gray-200 rounded-lg h-12 animate-pulse" />
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                  ☀️
+      {/* Messages */}
+      <Card className="flex-1 flex flex-col overflow-hidden">
+        <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2].map(i => (
+                <div key={i} className="flex items-start space-x-3">
+                  <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" />
+                  <div className="flex-1 bg-gray-200 rounded-lg h-14 animate-pulse" />
                 </div>
-                <div className="flex-1 bg-gray-100 rounded-lg p-4">
-                  <p className="text-sm text-gray-900">
-                    Hey there, sunshine! ☀️ I'm Sunshine, your witty and warm AI Life Assistant! I've already spotted you through your hardwired email ({user?.email}) - no sneaking past me! 😉 I can help you with:
-                  </p>
-                  <ul className="list-disc list-inside mt-2 text-sm text-gray-700 space-y-1">
-                    <li>🎯 **Creating and managing tasks** - Just tell me what you need to do</li>
-                    <li>📧 **Email outreach strategies** and templates</li>
-                    <li>📻 **Radio station submissions** and follow-ups</li>
-                    <li>💰 **C.A.R.E.N. grant research** and applications</li>
-                    <li>🎬 **Sync licensing opportunities** for movies, TV, games</li>
-                    <li>📊 **Invoice management** and payment tracking</li>
-                    <li>📅 **Scheduling and reminders** - I'll monitor your tasks</li>
-                  </ul>
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm text-blue-900 font-medium">💡 Try saying:</p>
-                    <ul className="text-xs text-blue-800 mt-1 space-y-1">
-                      <li>• "Hey Sunshine, remind me to submit my track to KQED tomorrow"</li>
-                      <li>• "Sunshine, I need to research grants for C.A.R.E.N."</li>
-                      <li>• "Sunshine, create an invoice for my recent gig"</li>
-                      <li>• "Sunshine, schedule a follow-up with that music supervisor"</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              messages.map((msg) => (
-                <div key={msg.id} className="space-y-4">
-                  {/* User Message */}
-                  <div className="flex items-start space-x-3 justify-end">
-                    <div className="bg-primary-500 text-white rounded-lg p-4 max-w-md">
-                      <p className="text-sm">{msg.message}</p>
-                    </div>
-                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 text-sm font-medium">
-                      U
-                    </div>
-                  </div>
-                  
-                  {/* AI Response */}
-                  {msg.response && (
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                        ☀️
-                      </div>
-                      <div className="flex-1 bg-gray-100 rounded-lg p-4">
-                        <p className="text-sm text-gray-900 whitespace-pre-wrap">{msg.response}</p>
-                        {msg.context && (msg.context as any).actions && (msg.context as any).actions.length > 0 && (
-                          <div className="mt-3 pt-3 border-t border-gray-200">
-                            <p className="text-xs text-gray-600 font-medium mb-2">Actions taken:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {(msg.context as any).actions.map((action: any, idx: number) => (
-                                <Badge key={idx} variant="secondary" className="text-xs">
-                                  {action.type.replace('_', ' ')}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-            
-            {(sendMessageMutation.isPending || isProcessing) && (
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-medium animate-pulse">
-                  ☀️
-                </div>
-                <div className="flex-1 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" />
-                      <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }} />
-                      <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
-                    </div>
-                    <div className="flex-1">
-                      {workingStatus ? (
-                        <div className="bg-white/80 rounded-md px-3 py-2 shadow-sm">
-                          <span className="text-sm font-medium text-gray-800">{workingStatus}</span>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-700 font-medium">Sunshine is working on your request...</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : displayMessages.length === 0 ? (
+            <WelcomeMessage userName={user?.name} onPrompt={(p) => sendMessage(p)} />
+          ) : (
+            displayMessages.map((msg) => (
+              <MessageBubble key={msg.id} message={msg} />
+            ))
+          )}
+          <div ref={messagesEndRef} />
+        </CardContent>
 
-          {/* Chat Input */}
-          <div className="border-t p-6">
-            <div className="space-y-4">
-              <Textarea
-                placeholder="Type your message here..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                disabled={sendMessageMutation.isPending || isProcessing}
-                className="min-h-[100px] resize-none"
-              />
-              <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-2">
-                  <p className="text-xs text-gray-500">
-                    Press Enter to send, Shift+Enter for new line
-                  </p>
-                  {!recognitionRef.current && (
-                    <p className="text-xs text-orange-500">
-                      Voice chat unavailable in this browser
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center space-x-2">
-                  {/* Speech toggle button */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={toggleSpeech}
-                    className={speechEnabled ? "text-blue-600" : "text-gray-400"}
-                    title={speechEnabled ? "Disable voice responses" : "Enable voice responses"}
-                  >
-                    {speechEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-                  </Button>
-                  
-                  {/* Stop speaking button */}
-                  {isSpeaking && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={stopSpeaking}
-                      className="text-red-600"
-                      title="Stop speaking"
-                    >
-                      <VolumeX className="h-4 w-4" />
-                    </Button>
-                  )}
-                  
-                  {/* Microphone button */}
-                  {recognitionRef.current && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={isListening ? stopListening : startListening}
-                      disabled={sendMessageMutation.isPending || isProcessing}
-                      className={isListening ? "bg-red-100 text-red-600 border-red-300 animate-pulse" : ""}
-                      title={isListening ? "Stop recording" : "Start voice input"}
-                    >
-                      {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                    </Button>
-                  )}
-                  
-                  {/* Send button */}
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={!message.trim() || sendMessageMutation.isPending || isProcessing}
-                    className="px-8"
-                  >
-                    <Icons.send className="h-4 w-4 mr-2" />
-                    Send
-                  </Button>
-                </div>
-              </div>
+        {/* Quick prompts — only when idle and no messages yet */}
+        {displayMessages.length === 0 && !isStreaming && (
+          <div className="px-4 pb-2 flex flex-wrap gap-2">
+            {QUICK_PROMPTS.map((p) => (
+              <button
+                key={p}
+                onClick={() => sendMessage(p)}
+                className="text-xs px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors text-gray-600"
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Input area */}
+        <div className="border-t p-4">
+          <div className="flex gap-2 items-end">
+            <Textarea
+              ref={textareaRef}
+              placeholder="Ask Sunshine anything… (Enter to send, Shift+Enter for new line)"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyPress}
+              disabled={isStreaming}
+              className="min-h-[60px] max-h-[160px] resize-none flex-1 text-sm"
+              rows={2}
+            />
+            <div className="flex flex-col gap-1">
+              {/* Mic */}
+              {recognitionRef.current && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={isListening ? stopListening : startListening}
+                  disabled={isStreaming}
+                  className={isListening ? "bg-red-100 text-red-600 border-red-300 animate-pulse" : ""}
+                  title={isListening ? "Stop recording" : "Voice input (auto-sends)"}
+                >
+                  {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </Button>
+              )}
+
+              {/* Speech toggle */}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => { if (isSpeaking) stopSpeaking(); else setSpeechEnabled(e => !e); }}
+                className={isSpeaking ? "text-red-600" : speechEnabled ? "text-blue-600" : "text-gray-400"}
+                title={isSpeaking ? "Stop speaking" : speechEnabled ? "Disable voice" : "Enable voice"}
+              >
+                {isSpeaking || speechEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+              </Button>
+
+              {/* Send / Stop */}
+              {isStreaming ? (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={stopStream}
+                  title="Stop response"
+                >
+                  <Icons.close className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  size="icon"
+                  onClick={() => sendMessage()}
+                  disabled={!message.trim()}
+                  className="bg-primary hover:bg-primary/90"
+                  title="Send message"
+                >
+                  <Icons.send className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
-        </CardContent>
+          {!recognitionRef.current && (
+            <p className="text-xs text-orange-500 mt-1">Voice input unavailable in this browser</p>
+          )}
+        </div>
       </Card>
+    </div>
+  );
+}
+
+function WelcomeMessage({ userName, onPrompt }: { userName?: string; onPrompt: (p: string) => void }) {
+  return (
+    <div className="flex items-start space-x-3">
+      <div className="w-9 h-9 bg-primary rounded-full flex items-center justify-center text-white text-base flex-shrink-0">
+        ☀️
+      </div>
+      <div className="flex-1 bg-gray-50 rounded-2xl p-4 border border-gray-100">
+        <p className="text-sm font-medium text-gray-900 mb-2">
+          Hey{userName ? ` ${userName}` : ""}! I'm Sunshine, your AI Life Assistant. ✨
+        </p>
+        <p className="text-sm text-gray-600 mb-3">
+          I can help you manage tasks, research grants for C.A.R.E.N., handle music industry ops, draft emails, and much more. I now respond in real-time as I think — no more waiting!
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {QUICK_PROMPTS.map((p) => (
+            <button
+              key={p}
+              onClick={() => onPrompt(p)}
+              className="text-xs px-3 py-1.5 rounded-full bg-white border border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors text-gray-600 shadow-sm"
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MessageBubble({ message }: { message: StreamingMessage }) {
+  const isUser = message.role === "user";
+
+  if (isUser) {
+    return (
+      <div className="flex items-start space-x-3 justify-end">
+        <div className="bg-primary text-white rounded-2xl rounded-tr-sm px-4 py-3 max-w-[80%]">
+          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+        </div>
+        <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 text-xs font-bold flex-shrink-0">
+          U
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start space-x-3">
+      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-sm flex-shrink-0 ${message.isStreaming ? "bg-primary animate-pulse" : "bg-primary"}`}>
+        ☀️
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="bg-gray-50 border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3">
+          {message.isStreaming && !message.content ? (
+            <div className="flex space-x-1 items-center py-1">
+              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
+              <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: "0.15s" }} />
+              <div className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: "0.3s" }} />
+            </div>
+          ) : (
+            <div className="prose prose-sm max-w-none text-gray-900">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  p: ({ children }) => <p className="mb-2 last:mb-0 text-sm leading-relaxed">{children}</p>,
+                  ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-0.5 text-sm">{children}</ul>,
+                  ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-0.5 text-sm">{children}</ol>,
+                  li: ({ children }) => <li className="text-sm">{children}</li>,
+                  strong: ({ children }) => <strong className="font-semibold text-gray-900">{children}</strong>,
+                  h1: ({ children }) => <h1 className="text-base font-bold mb-1 mt-2">{children}</h1>,
+                  h2: ({ children }) => <h2 className="text-sm font-bold mb-1 mt-2">{children}</h2>,
+                  h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 mt-1">{children}</h3>,
+                  code: ({ children, className }) => {
+                    const isBlock = className?.includes("language-");
+                    return isBlock
+                      ? <code className="block bg-gray-100 rounded p-2 text-xs font-mono my-2 whitespace-pre-wrap">{children}</code>
+                      : <code className="bg-gray-100 rounded px-1 py-0.5 text-xs font-mono">{children}</code>;
+                  },
+                  blockquote: ({ children }) => <blockquote className="border-l-4 border-blue-300 pl-3 italic text-gray-600 my-2 text-sm">{children}</blockquote>,
+                  a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{children}</a>,
+                }}
+              >
+                {message.content}
+              </ReactMarkdown>
+              {message.isStreaming && (
+                <span className="inline-block w-0.5 h-4 bg-gray-400 animate-pulse ml-0.5 align-text-bottom" />
+              )}
+            </div>
+          )}
+        </div>
+        {message.model && !message.isStreaming && (
+          <div className="flex items-center gap-1 mt-1 ml-1">
+            <Brain className="h-3 w-3 text-gray-400" />
+            <span className="text-xs text-gray-400">{message.model}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

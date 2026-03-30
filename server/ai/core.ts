@@ -7,10 +7,17 @@ import { dataDiscoveryService } from './dataDiscovery';
 import { validateAndFixTools } from '../middleware/aiValidation';
 import { withAIMonitoring } from '../middleware/aiMonitoring';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+// Lazy OpenAI client — initialized on first use so missing key at startup doesn't crash the server
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) {
+    _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return _openai;
+}
+const openai = {
+  get chat() { return getOpenAI().chat; }
+};
 
 export interface AIResponse {
   message: string;

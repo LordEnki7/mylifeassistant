@@ -1450,6 +1450,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Streaming chat endpoint — Server-Sent Events with OpenAI streaming
+  app.post("/api/chat/stream", requireAuth, aiRateLimit, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { message } = req.body;
+      if (!message?.trim()) return res.status(400).json({ error: "Message required" });
+
+      // Set SSE headers
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+      res.flushHeaders();
+
+      const send = (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+
+      // Load context from storage for a richer response
+      const [tasks, contacts, recentMessages] = await Promise.all([
+        storage.getTasks(userId).catch(() => []),
+        storage.getContacts(userId).catch(() => []),
+        storage.getChatMessages(userId).catch(() => []),
+      ]);
+
+      const recentHistory = recentMessages.slice(-6).flatMap((m: any) => [
+        { role: "user" as const, content: m.message },
+        { role: "assistant" as const, content: m.response || "" }
+      ]);
+
+      const systemPrompt = `You are Sunshine, a warm, witty, and highly capable AI Life Assistant. You help your owner with:
+- Task management and daily productivity
+- C.A.R.E.N. app development tracking and investor relations
+- Music industry operations (radio outreach, sync licensing, grants)
+- Legal, financial, and business strategy
+- Personal scheduling and reminders
+
+Current context:
+- Active tasks: ${tasks.length} tasks (${tasks.filter((t: any) => t.priority === 'high').length} high priority)
+- Contacts: ${contacts.length} tracked contacts
+
+Respond naturally using markdown formatting where helpful (bold, bullet points, headers). Be warm, direct, and genuinely useful. If creating a task or reminder, confirm what you created.`;
+
+      const { default: OpenAI } = await import('openai');
+      const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      let fullResponse = "";
+
+      // Use gpt-4o-mini for quick conversational replies, gpt-4o for analysis/complex tasks
+      const isComplexTask = /grant|legal|contract|analyze|research|strategy|investor|sync licens|invoice/i.test(message);
+      const model = isComplexTask ? "gpt-4o" : "gpt-4o-mini";
+
+      send({ type: "model", model });
+
+      const stream = await openaiClient.chat.completions.create({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...recentHistory,
+          { role: "user", content: message }
+        ],
+        max_tokens: 1500,
+        temperature: 0.7,
+        stream: true
+      });
+
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta?.content;
+        if (delta) {
+          fullResponse += delta;
+          send({ type: "chunk", content: delta });
+        }
+      }
+
+      // Save to database
+      const saved = await storage.createChatMessage({
+        userId,
+        message,
+        response: fullResponse,
+        context: { streaming: true, model, actions: [] }
+      });
+
+      send({ type: "done", messageId: saved.id, fullContent: fullResponse });
+      res.end();
+    } catch (error) {
+      console.error("Streaming chat error:", error);
+      res.write(`data: ${JSON.stringify({ type: "error", message: "Failed to get response from Sunshine." })}\n\n`);
+      res.end();
+    }
+  });
+
   // AI Processing Endpoints (protected with AI rate limiting)
   app.post("/api/ai/process", requireAuth, aiRateLimit, async (req, res) => {
     try {
