@@ -42,6 +42,8 @@ import {
   type ContentPerformanceHistory, type InsertContentPerformanceHistory,
   type UserPreferences, type InsertUserPreferences,
   type CarenProject, type InsertCarenProject,
+  type SunshineMemory, type InsertSunshineMemory,
+  type HeartbeatAlert, type InsertHeartbeatAlert,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -353,6 +355,18 @@ export interface IStorage {
   getCarenProject(userId: string): Promise<CarenProject | undefined>;
   createCarenProject(project: InsertCarenProject): Promise<CarenProject>;
   updateCarenProject(userId: string, project: Partial<CarenProject>): Promise<CarenProject | undefined>;
+
+  // Sunshine Memory
+  getSunshineMemories(userId: string): Promise<SunshineMemory[]>;
+  setSunshineMemory(userId: string, key: string, value: string, category?: string): Promise<SunshineMemory>;
+  deleteSunshineMemory(userId: string, key: string): Promise<void>;
+
+  // Heartbeat Alerts
+  getHeartbeatAlerts(userId: string, unreadOnly?: boolean): Promise<HeartbeatAlert[]>;
+  createHeartbeatAlert(alert: InsertHeartbeatAlert): Promise<HeartbeatAlert>;
+  markAlertRead(id: string): Promise<void>;
+  markAllAlertsRead(userId: string): Promise<void>;
+  getUnreadAlertCount(userId: string): Promise<number>;
 }
 
 export class MemStorage implements IStorage {
@@ -3592,6 +3606,57 @@ PHONE #: {{witness_phone}}`,
     };
     this.carenProjects.set(newProject.id, newProject);
     return newProject;
+  }
+
+  private sunshineMemories: Map<string, SunshineMemory> = new Map();
+  private heartbeatAlerts: Map<string, HeartbeatAlert> = new Map();
+
+  async getSunshineMemories(userId: string): Promise<SunshineMemory[]> {
+    return Array.from(this.sunshineMemories.values()).filter(m => m.userId === userId);
+  }
+
+  async setSunshineMemory(userId: string, key: string, value: string, category = "general"): Promise<SunshineMemory> {
+    const existing = Array.from(this.sunshineMemories.values()).find(m => m.userId === userId && m.key === key);
+    if (existing) {
+      const updated = { ...existing, value, category, updatedAt: new Date() };
+      this.sunshineMemories.set(existing.id, updated);
+      return updated;
+    }
+    const entry: SunshineMemory = { id: randomUUID(), userId, key, value, category, updatedAt: new Date() };
+    this.sunshineMemories.set(entry.id, entry);
+    return entry;
+  }
+
+  async deleteSunshineMemory(userId: string, key: string): Promise<void> {
+    const entry = Array.from(this.sunshineMemories.values()).find(m => m.userId === userId && m.key === key);
+    if (entry) this.sunshineMemories.delete(entry.id);
+  }
+
+  async getHeartbeatAlerts(userId: string, unreadOnly = false): Promise<HeartbeatAlert[]> {
+    return Array.from(this.heartbeatAlerts.values())
+      .filter(a => a.userId === userId && (!unreadOnly || !a.read))
+      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+  }
+
+  async createHeartbeatAlert(alert: InsertHeartbeatAlert): Promise<HeartbeatAlert> {
+    const entry: HeartbeatAlert = { id: randomUUID(), ...alert, read: alert.read ?? false, createdAt: new Date() };
+    this.heartbeatAlerts.set(entry.id, entry);
+    return entry;
+  }
+
+  async markAlertRead(id: string): Promise<void> {
+    const alert = this.heartbeatAlerts.get(id);
+    if (alert) this.heartbeatAlerts.set(id, { ...alert, read: true });
+  }
+
+  async markAllAlertsRead(userId: string): Promise<void> {
+    for (const [id, alert] of this.heartbeatAlerts.entries()) {
+      if (alert.userId === userId) this.heartbeatAlerts.set(id, { ...alert, read: true });
+    }
+  }
+
+  async getUnreadAlertCount(userId: string): Promise<number> {
+    return Array.from(this.heartbeatAlerts.values()).filter(a => a.userId === userId && !a.read).length;
   }
 
   async updateCarenProject(userId: string, project: Partial<CarenProject>): Promise<CarenProject | undefined> {

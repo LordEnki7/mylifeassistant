@@ -1450,14 +1450,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Streaming chat endpoint — Server-Sent Events with OpenAI streaming
+  // Streaming chat endpoint — Server-Sent Events + OpenAI streaming + Memory + Web Search
   app.post("/api/chat/stream", requireAuth, aiRateLimit, async (req, res) => {
     try {
       const userId = getUserId(req);
       const { message } = req.body;
       if (!message?.trim()) return res.status(400).json({ error: "Message required" });
 
-      // Set SSE headers
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
@@ -1465,11 +1464,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const send = (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`);
 
-      // Load context from storage for a richer response
-      const [tasks, contacts, recentMessages] = await Promise.all([
+      // Load all context in parallel (tasks, contacts, history, memory)
+      const { formatMemoryForPrompt } = await import("./memoryService");
+      const [tasks, contacts, recentMessages, memoryBlock] = await Promise.all([
         storage.getTasks(userId).catch(() => []),
         storage.getContacts(userId).catch(() => []),
         storage.getChatMessages(userId).catch(() => []),
+        formatMemoryForPrompt(userId)
       ]);
 
       const recentHistory = recentMessages.slice(-6).flatMap((m: any) => [
@@ -1477,65 +1478,217 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { role: "assistant" as const, content: m.response || "" }
       ]);
 
-      const systemPrompt = `You are Sunshine, a warm, witty, and highly capable AI Life Assistant. You help your owner with:
+      const pendingTasks = (tasks as any[]).filter(t => t.status !== "completed");
+      const highPriority = pendingTasks.filter(t => t.priority === "high");
+
+      const systemPrompt = `You are Sunshine, a warm, witty, and highly capable AI Life Assistant for your owner's personal and business life. You help with:
 - Task management and daily productivity
-- C.A.R.E.N. app development tracking and investor relations
+- C.A.R.E.N. app development, investor relations, and funding strategy
 - Music industry operations (radio outreach, sync licensing, grants)
 - Legal, financial, and business strategy
 - Personal scheduling and reminders
 
-Current context:
-- Active tasks: ${tasks.length} tasks (${tasks.filter((t: any) => t.priority === 'high').length} high priority)
-- Contacts: ${contacts.length} tracked contacts
+LIVE CONTEXT:
+- Tasks: ${pendingTasks.length} active (${highPriority.length} high priority)
+- Contacts: ${(contacts as any[]).length} in network
+${memoryBlock}
 
-Respond naturally using markdown formatting where helpful (bold, bullet points, headers). Be warm, direct, and genuinely useful. If creating a task or reminder, confirm what you created.`;
+TOOLS AVAILABLE:
+You have access to a "search_web" tool. Use it when the user asks about anything requiring current/real-world information: grants, radio stations, music supervisors, market research, news, pricing, etc.
+
+Respond naturally using markdown formatting. Be warm, direct, and genuinely useful.`;
 
       const { default: OpenAI } = await import('openai');
       const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-      let fullResponse = "";
-
-      // Use gpt-4o-mini for quick conversational replies, gpt-4o for analysis/complex tasks
-      const isComplexTask = /grant|legal|contract|analyze|research|strategy|investor|sync licens|invoice/i.test(message);
+      const isComplexTask = /grant|legal|contract|analyz|research|strategy|investor|sync licens|invoice|search|find|look up|who is|what is|how much|current|latest|news/i.test(message);
       const model = isComplexTask ? "gpt-4o" : "gpt-4o-mini";
-
       send({ type: "model", model });
 
-      const stream = await openaiClient.chat.completions.create({
-        model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...recentHistory,
-          { role: "user", content: message }
-        ],
-        max_tokens: 1500,
-        temperature: 0.7,
-        stream: true
-      });
+      const tools: any[] = [
+        {
+          type: "function",
+          function: {
+            name: "search_web",
+            description: "Search the web for current information about grants, contacts, market data, news, or anything requiring real-time knowledge.",
+            parameters: {
+              type: "object",
+              properties: {
+                query: { type: "string", description: "The search query" }
+              },
+              required: ["query"]
+            }
+          }
+        }
+      ];
 
-      for await (const chunk of stream) {
-        const delta = chunk.choices[0]?.delta?.content;
-        if (delta) {
-          fullResponse += delta;
-          send({ type: "chunk", content: delta });
+      // Helper: perform a real web search using DuckDuckGo
+      async function doWebSearch(query: string): Promise<string> {
+        try {
+          send({ type: "status", message: `🔍 Searching: "${query}"...` });
+          const encoded = encodeURIComponent(query);
+          const url = `https://api.duckduckgo.com/?q=${encoded}&format=json&no_html=1&skip_disambig=1`;
+          const resp = await fetch(url, { headers: { "User-Agent": "MyLifeAssistant/1.0" } });
+          const data: any = await resp.json();
+
+          const results: string[] = [];
+          if (data.AbstractText) results.push(data.AbstractText);
+          if (data.Answer) results.push(`Answer: ${data.Answer}`);
+          if (data.RelatedTopics?.length) {
+            const topics = data.RelatedTopics.slice(0, 4)
+              .filter((t: any) => t.Text)
+              .map((t: any) => `• ${t.Text}`);
+            results.push(...topics);
+          }
+          return results.length > 0 ? results.join("\n") : `No direct results found for "${query}". I'll answer from my knowledge.`;
+        } catch {
+          return `Search temporarily unavailable. I'll answer from my training knowledge.`;
         }
       }
 
-      // Save to database
+      let fullResponse = "";
+      const messages: any[] = [
+        { role: "system", content: systemPrompt },
+        ...recentHistory,
+        { role: "user", content: message }
+      ];
+
+      // Agentic loop: handle tool calls then stream the final response
+      let iterations = 0;
+      while (iterations < 3) {
+        iterations++;
+        const isLastIteration = iterations >= 3;
+
+        if (isLastIteration) {
+          // Stream the final response
+          const stream = await openaiClient.chat.completions.create({
+            model, messages, max_tokens: 1500, temperature: 0.7, stream: true
+          });
+          for await (const chunk of stream) {
+            const delta = chunk.choices[0]?.delta?.content;
+            if (delta) {
+              fullResponse += delta;
+              send({ type: "chunk", content: delta });
+            }
+          }
+          break;
+        }
+
+        // Check if the AI wants to call a tool (non-streaming check)
+        const check = await openaiClient.chat.completions.create({
+          model, messages, max_tokens: 200, temperature: 0, tools, tool_choice: "auto"
+        });
+
+        const choice = check.choices[0];
+        if (!choice.message.tool_calls?.length) {
+          // No tools needed — stream the response
+          messages.push(choice.message);
+          const stream = await openaiClient.chat.completions.create({
+            model, messages, max_tokens: 1500, temperature: 0.7, stream: true
+          });
+          for await (const chunk of stream) {
+            const delta = chunk.choices[0]?.delta?.content;
+            if (delta) {
+              fullResponse += delta;
+              send({ type: "chunk", content: delta });
+            }
+          }
+          break;
+        }
+
+        // Execute tool calls
+        messages.push(choice.message);
+        for (const toolCall of choice.message.tool_calls) {
+          if (toolCall.function.name === "search_web") {
+            const args = JSON.parse(toolCall.function.arguments);
+            const result = await doWebSearch(args.query);
+            messages.push({
+              role: "tool",
+              tool_call_id: toolCall.id,
+              content: result
+            });
+          }
+        }
+      }
+
+      // Save completed message to database
       const saved = await storage.createChatMessage({
-        userId,
-        message,
-        response: fullResponse,
+        userId, message, response: fullResponse,
         context: { streaming: true, model, actions: [] }
       });
 
       send({ type: "done", messageId: saved.id, fullContent: fullResponse });
       res.end();
+
+      // Extract and save memory in background (non-blocking)
+      const { extractAndSaveMemory } = await import("./memoryService");
+      extractAndSaveMemory(userId, message, fullResponse).catch(() => {});
+
     } catch (error) {
       console.error("Streaming chat error:", error);
       res.write(`data: ${JSON.stringify({ type: "error", message: "Failed to get response from Sunshine." })}\n\n`);
       res.end();
     }
+  });
+
+  // ── Heartbeat Alerts API ─────────────────────────────────────────────────────
+  app.get("/api/heartbeat/alerts", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const unreadOnly = req.query.unread === "true";
+      const alerts = await storage.getHeartbeatAlerts(userId, unreadOnly);
+      res.json(alerts);
+    } catch { res.status(500).json({ error: "Failed to fetch alerts" }); }
+  });
+
+  app.get("/api/heartbeat/unread-count", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const count = await storage.getUnreadAlertCount(userId);
+      res.json({ count });
+    } catch { res.status(500).json({ count: 0 }); }
+  });
+
+  app.patch("/api/heartbeat/alerts/:id/read", requireAuth, async (req, res) => {
+    try {
+      await storage.markAlertRead(req.params.id);
+      res.json({ success: true });
+    } catch { res.status(500).json({ error: "Failed to mark alert read" }); }
+  });
+
+  app.patch("/api/heartbeat/alerts/read-all", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      await storage.markAllAlertsRead(userId);
+      res.json({ success: true });
+    } catch { res.status(500).json({ error: "Failed to mark all read" }); }
+  });
+
+  // Manually trigger a heartbeat briefing (for testing)
+  app.post("/api/heartbeat/trigger", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { runHeartbeatForAllUsers } = await import("./heartbeat");
+      await runHeartbeatForAllUsers();
+      res.json({ success: true, message: "Heartbeat triggered" });
+    } catch { res.status(500).json({ error: "Failed to trigger heartbeat" }); }
+  });
+
+  // Sunshine Memory API
+  app.get("/api/memory", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const memories = await storage.getSunshineMemories(userId);
+      res.json(memories);
+    } catch { res.status(500).json({ error: "Failed to fetch memories" }); }
+  });
+
+  app.delete("/api/memory/:key", requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      await storage.deleteSunshineMemory(userId, decodeURIComponent(req.params.key));
+      res.json({ success: true });
+    } catch { res.status(500).json({ error: "Failed to delete memory" }); }
   });
 
   // AI Processing Endpoints (protected with AI rate limiting)

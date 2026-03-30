@@ -5,6 +5,7 @@ import { useNavigation } from "@/hooks/use-navigation";
 import { Button } from "@/components/ui/button";
 import logoImage from "@assets/My_Life_Assistant_Logo_1767679972274.png";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
+import { AlertsBell } from "./alerts-bell";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Icons.dashboard },
@@ -74,6 +75,7 @@ export default function DesktopSidebar() {
             <p className="text-xs text-sidebar-foreground/60 truncate">user@mylifeassistant.com</p>
           </div>
           <ThemeSwitcher />
+          <AlertsBell />
           <Button variant="ghost" size="sm" className="text-sidebar-foreground hover:text-sidebar-primary hover:bg-sidebar-accent">
             <Icons.more className="h-4 w-4" />
           </Button>

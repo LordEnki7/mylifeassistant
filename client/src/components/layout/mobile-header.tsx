@@ -4,6 +4,7 @@ import { useNavigation } from "@/hooks/use-navigation";
 import logoImage from "@assets/My_Life_Assistant_Logo_1767679972274.png";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { VoiceCommandButton } from "@/components/ui/voice-command-button";
+import { AlertsBell } from "./alerts-bell";
 
 export default function MobileHeader() {
   const { toggleMobileMenu } = useNavigation();
@@ -35,13 +36,7 @@ export default function MobileHeader() {
             className="text-white hover:bg-white/10 p-2"
           />
           <ThemeSwitcher />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-white hover:bg-white/10 p-2"
-          >
-            <Icons.bell className="h-6 w-6" />
-          </Button>
+          <AlertsBell />
         </div>
       </div>
     </header>

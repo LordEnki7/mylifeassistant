@@ -1018,3 +1018,32 @@ export type InsertContentOptimizationSuggestions = z.infer<typeof insertContentO
 
 export type ContentPerformanceHistory = typeof contentPerformanceHistory.$inferSelect;
 export type InsertContentPerformanceHistory = z.infer<typeof insertContentPerformanceHistorySchema>;
+
+// ─── Sunshine Memory ─────────────────────────────────────────────────────────
+export const sunshineMemory = pgTable("sunshine_memory", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  key: text("key").notNull(),
+  value: text("value").notNull(),
+  category: varchar("category").notNull().default("general"), // project | contact | goal | preference | reminder | general
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const insertSunshineMemorySchema = createInsertSchema(sunshineMemory).omit({ id: true, updatedAt: true });
+export type SunshineMemory = typeof sunshineMemory.$inferSelect;
+export type InsertSunshineMemory = z.infer<typeof insertSunshineMemorySchema>;
+
+// ─── Heartbeat Alerts ─────────────────────────────────────────────────────────
+export const heartbeatAlerts = pgTable("heartbeat_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  alertType: varchar("alert_type").notNull().default("briefing"), // briefing | deadline | reminder | milestone
+  read: boolean("read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertHeartbeatAlertSchema = createInsertSchema(heartbeatAlerts).omit({ id: true, createdAt: true });
+export type HeartbeatAlert = typeof heartbeatAlerts.$inferSelect;
+export type InsertHeartbeatAlert = z.infer<typeof insertHeartbeatAlertSchema>;

@@ -25,6 +25,7 @@ interface StreamingMessage {
   content: string;
   isStreaming?: boolean;
   model?: string;
+  searchStatus?: string;
 }
 
 export default function Chat() {
@@ -168,6 +169,10 @@ export default function Chat() {
             const event = JSON.parse(line.slice(6));
             if (event.type === "model") {
               detectedModel = event.model;
+            } else if (event.type === "status") {
+              setStreamingMessages(prev =>
+                prev.map(m => m.id === aiMsgId ? { ...m, searchStatus: event.message } : m)
+              );
             } else if (event.type === "chunk") {
               accumulatedContent += event.content;
               setStreamingMessages(prev =>
@@ -434,10 +439,15 @@ function MessageBubble({ message }: { message: StreamingMessage }) {
       <div className="flex-1 min-w-0">
         <div className="bg-gray-50 border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3">
           {message.isStreaming && !message.content ? (
-            <div className="flex space-x-1 items-center py-1">
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
-              <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: "0.15s" }} />
-              <div className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: "0.3s" }} />
+            <div className="flex flex-col gap-1.5 py-1">
+              <div className="flex space-x-1 items-center">
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: "0.15s" }} />
+                <div className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: "0.3s" }} />
+              </div>
+              {message.searchStatus && (
+                <p className="text-xs text-blue-600 font-medium">{message.searchStatus}</p>
+              )}
             </div>
           ) : (
             <div className="prose prose-sm max-w-none text-gray-900">
