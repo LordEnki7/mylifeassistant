@@ -1,0 +1,12 @@
+node_modules
+dist
+client/dist
+.git
+.env
+.env.*
+*.log
+.replit
+replit.nix
+.upm
+.tmp
+.DS_Store
