@@ -18,9 +18,10 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Install production dependencies only
+# Install all dependencies (vite is imported at module level in server/vite.ts
+# and must be present even in production even though it's never called)
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # Copy the entire built dist folder (contains both server + client)
 COPY --from=builder /app/dist ./dist

@@ -69,7 +69,7 @@ export default function BackupExport() {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Icons.shoppingCart className="h-5 w-5" />
+              <Icons.download className="h-5 w-5" />
               App Backup & Export
             </CardTitle>
             <CardDescription>
@@ -119,7 +119,7 @@ export default function BackupExport() {
                 </>
               ) : (
                 <>
-                  <Icons.user className="w-4 h-4 mr-2" />
+                  <Icons.download className="w-4 h-4 mr-2" />
                   Download Complete Backup
                 </>
               )}
