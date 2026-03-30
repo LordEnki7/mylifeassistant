@@ -1,0 +1,85 @@
+/**
+ * NIG COMMAND CENTER — Division Status Endpoint
+ * ================================================
+ * Add this to each of your division apps so the NIG Command Center
+ * can collect real-time health and metrics data.
+ *
+ * HOW TO USE:
+ * 1. Copy this file into your division app
+ * 2. Set the NIG_API_KEY environment variable to the same key
+ *    used in the Command Center (NIG_API_KEY env var)
+ * 3. Register the route in your Express app (see bottom of file)
+ * 4. Customize the getMetrics() function to return real data
+ *
+ * SECURITY:
+ * Every request must include the header:
+ *   Authorization: Bearer YOUR_NIG_API_KEY
+ * Requests without the correct key are rejected with 401.
+ */
+
+const NIG_API_KEY = process.env.NIG_API_KEY;
+
+// ─────────────────────────────────────────────
+// CUSTOMIZE THIS FUNCTION FOR YOUR DIVISION APP
+// Return real data from your database/services
+// ─────────────────────────────────────────────
+async function getMetrics() {
+  return {
+    // Required fields
+    status: "live",          // "live" | "maintenance" | "degraded" | "offline"
+    health: 98,              // 0-100 percentage
+
+    // Optional but recommended
+    activeUsers: 0,          // current active users
+    revenue: 0,              // monthly revenue in USD
+    subscribers: 0,          // total subscribers/customers
+    uptime: 99.9,            // uptime percentage (last 30 days)
+
+    // Any extra metrics specific to your app
+    metrics: {
+      // page_views: 1234,
+      // orders_today: 56,
+      // tickets_open: 3,
+    },
+
+    message: "All systems operational",
+  };
+}
+
+// ─────────────────────────────────────────────
+// ROUTE HANDLER — do not change below this line
+// ─────────────────────────────────────────────
+export async function nigStatusHandler(req, res) {
+  // Validate API key
+  const authHeader = req.headers["authorization"] || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+
+  if (NIG_API_KEY && token !== NIG_API_KEY) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    const metrics = await getMetrics();
+    return res.status(200).json({
+      ...metrics,
+      division: process.env.DIVISION_NAME || "Unknown Division",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    return res.status(500).json({
+      status: "offline",
+      health: 0,
+      error: err.message,
+      division: process.env.DIVISION_NAME || "Unknown Division",
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
+
+// ─────────────────────────────────────────────
+// REGISTER IN YOUR EXPRESS APP:
+//
+//   import { nigStatusHandler } from "./nig-status-endpoint.js";
+//   app.get("/api/nig-status", nigStatusHandler);
+//
+// ─────────────────────────────────────────────
