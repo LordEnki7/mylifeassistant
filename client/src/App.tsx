@@ -23,6 +23,8 @@ import Audiobooks from "@/pages/audiobooks";
 import AudiobookPromotion from "@/pages/audiobook-promotion";
 import DataDiscoveryDemo from "@/pages/DataDiscoveryDemo";
 import Crowdfunding from "@/pages/Crowdfunding";
+import Settings from "@/pages/settings";
+import CommandCenter from "@/pages/command-center";
 import AppShell from "@/components/layout/app-shell";
 import { FloatingVoiceButton } from "@/components/ui/voice-command-button";
 
@@ -45,6 +47,8 @@ function AuthenticatedApp() {
         <Route path="/invoices" component={Invoices} />
         <Route path="/knowledge" component={Knowledge} />
         <Route path="/demo" component={DataDiscoveryDemo} />
+        <Route path="/settings" component={Settings} />
+        <Route path="/command-center" component={CommandCenter} />
         <Route component={NotFound} />
       </Switch>
       <FloatingVoiceButton />

@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { BackupService } from "./backupService";
 import { aiAutomationService } from "./aiAutomationService";
+import { nigStatusHandler } from "./nig-status";
+import { execSync } from "child_process";
 // Note: Using validation schemas from middleware instead of Drizzle-generated ones
 // The middleware schemas are designed for request validation (no userId required)
 // while Drizzle schemas are for database operations (userId required)
@@ -39,6 +41,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint (no auth required)
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // NIG Command Center — Division Status Endpoint (no user auth, uses NIG_API_KEY)
+  app.get("/api/nig-status", nigStatusHandler);
+
+  // Settings — Save a secret/env variable (admin only, single-user app)
+  app.post("/api/settings/secret", requireAuth, async (req, res) => {
+    try {
+      const { key, value } = req.body;
+      if (!key || !value) {
+        return res.status(400).json({ error: "key and value are required" });
+      }
+      // Store in process.env for session use
+      process.env[key] = value;
+      await auditLogger.logDataAccess(req, 'write', 'settings', key, true);
+      return res.json({ success: true, key });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GitHub — Push code to GitHub repo
+  app.post("/api/github/push", requireAuth, async (req, res) => {
+    try {
+      const { branch = "main" } = req.body;
+      const token = process.env.GITHUB_TOKEN;
+      const repoUrl = "https://github.com/LordEnki7/mylifeassistant.git";
+
+      if (!token) {
+        return res.status(400).json({ error: "GITHUB_TOKEN is not set. Add it in Settings first." });
+      }
+
+      const authedUrl = repoUrl.replace("https://", `https://${token}@`);
+      const timestamp = new Date().toISOString();
+
+      // Configure git and push
+      execSync(`git config user.email "mylifeassistant@app.local"`, { stdio: "pipe" });
+      execSync(`git config user.name "My Life Assistant"`, { stdio: "pipe" });
+      execSync(`git add -A`, { stdio: "pipe" });
+      try {
+        execSync(`git commit -m "Auto-backup: ${timestamp}"`, { stdio: "pipe" });
+      } catch {
+        // Nothing to commit is OK
+      }
+      execSync(`git push ${authedUrl} HEAD:${branch} --force`, { stdio: "pipe" });
+
+      await auditLogger.logDataAccess(req, 'write', 'github', 'push', true);
+      return res.json({ success: true, branch, timestamp });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message || "Git push failed" });
+    }
   });
 
   // AI system health check endpoint

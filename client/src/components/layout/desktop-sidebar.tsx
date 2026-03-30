@@ -8,6 +8,7 @@ import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Icons.dashboard },
+  { name: "Command Center", href: "/command-center", icon: Icons.command },
   { name: "AI Assistant", href: "/chat", icon: Icons.chat },
   { name: "Email Outreach", href: "/outreach", icon: Icons.email },
   { name: "Radio Stations", href: "/radio", icon: Icons.radio },
@@ -20,6 +21,7 @@ const navigation = [
   { name: "Calendar", href: "/calendar", icon: Icons.calendar },
   { name: "Invoices", href: "/invoices", icon: Icons.receipt },
   { name: "Knowledge Base", href: "/knowledge", icon: Icons.book },
+  { name: "Settings", href: "/settings", icon: Icons.settings },
 ];
 
 export default function DesktopSidebar() {
