@@ -7,7 +7,6 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { VoiceCommandProvider } from "@/contexts/VoiceCommandContext";
 import { useAuth } from "@/hooks/useAuth";
 import logoImage from "@assets/My Life Assistant_1755255862503.png";
-import LoginScreen from "@/components/auth/login-screen";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Chat from "@/pages/chat";
@@ -72,19 +71,13 @@ function LoadingScreen() {
 }
 
 function Router() {
-  const { isLoading, isAuthenticated, error } = useAuth();
+  const { isLoading } = useAuth();
 
-  // Show loading screen while checking authentication
+  // Show loading screen briefly while auth initializes in background
   if (isLoading) {
     return <LoadingScreen />;
   }
 
-  // Show login screen if not authenticated or if there's an authentication error
-  if (!isAuthenticated || error) {
-    return <LoginScreen />;
-  }
-
-  // Show authenticated app
   return <AuthenticatedApp />;
 }
 
